@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balık Yakalama</title>
+<style>
+  :root{ --bg:#F7F5FF; --ink:#1B1B3A; --purple:#6C4EF5; --coral:#FF6B6B; --yellow:#FFD23F; --teal:#2EC4B6; }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 20% 80%, #DFF8F6, var(--bg) 60%);
+    font-family:'Nunito',system-ui,sans-serif; color:var(--ink); padding:16px;
+  }
+  h1{font-size:1.6rem; margin:0 0 8px;}
+  a.back{color:var(--purple); font-weight:800; text-decoration:none; align-self:flex-start; margin-bottom:6px;}
+  #hud{display:flex; gap:16px; margin-bottom:10px; font-weight:800;}
+  #hud span{background:#fff; padding:6px 14px; border-radius:999px; box-shadow:0 3px 0 #ddd;}
+  #wrap{position:relative;}
+  canvas{background:linear-gradient(#bfe9ff,#eafcff); border-radius:20px; box-shadow:0 10px 30px rgba(46,196,182,.25); touch-action:none;}
+  #over{position:absolute; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; background:rgba(255,255,255,.95); border-radius:20px; text-align:center;}
+  #over button{margin-top:10px; background:var(--coral); border:none; color:#fff; font-weight:800; padding:10px 22px; border-radius:999px; font-size:1rem; cursor:pointer; box-shadow:0 4px 0 #c94b4b;}
+  p.hint{font-size:.85rem; opacity:.7; margin-top:8px;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>🐟 Balık Yakalama</h1>
+  <div id="hud"><span>🐱 Puan: <span id="score">0</span></span><span>⏱️ <span id="time">30</span> sn</span></div>
+  <div id="wrap">
+    <canvas id="c" width="360" height="480"></canvas>
+    <div id="over">
+      <div style="font-size:2.5rem;">🐟</div>
+      <div style="font-weight:900; font-size:1.3rem;">Süre Bitti!</div>
+      <div id="finalScore" style="margin-top:6px; font-weight:800;"></div>
+      <button onclick="startGame()">Tekrar Oyna</button>
+    </div>
+  </div>
+  <p class="hint">Fareyi/parmağını sağa sola hareket ettirerek kediyi yönet, balıkları yakala!</p>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+let cat = {x: W/2, w: 60, h: 40};
+let items = [];
+let score = 0, timeLeft = 30, running = false, raf;
+
+function spawnItem(){
+  const isBad = Math.random() < 0.2;
+  items.push({
+    x: 20 + Math.random()*(W-40),
+    y: -20,
+    speed: 2 + Math.random()*2 + timeLeft*-0.02,
+    emoji: isBad ? '🦴' : (Math.random()<0.5 ? '🐟' : '🍣'),
+    bad: isBad
+  });
+}
+
+let spawnTimer, tickTimer;
+
+function startGame(){
+  score = 0; timeLeft = 30; items = []; running = true;
+  document.getElementById('score').textContent = score;
+  document.getElementById('time').textContent = timeLeft;
+  document.getElementById('over').style.display = 'none';
+  if(spawnTimer) clearInterval(spawnTimer);
+  if(tickTimer) clearInterval(tickTimer);
+  spawnTimer = setInterval(spawnItem, 700);
+  tickTimer = setInterval(()=>{
+    timeLeft--;
+    document.getElementById('time').textContent = timeLeft;
+    if(timeLeft<=0){
+      endGame();
+    }
+  }, 1000);
+  loop();
+}
+
+function endGame(){
+  running = false;
+  clearInterval(spawnTimer);
+  clearInterval(tickTimer);
+  cancelAnimationFrame(raf);
+  document.getElementById('finalScore').textContent = `Toplam puan: ${score}`;
+  document.getElementById('over').style.display = 'flex';
+}
+
+function loop(){
+  ctx.clearRect(0,0,W,H);
+  // items
+  for(let i=items.length-1;i>=0;i--){
+    const it = items[i];
+    it.y += it.speed;
+    ctx.font = '28px serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(it.emoji, it.x, it.y);
+    // collision with cat
+    if(it.y > H-70 && it.y < H-20 && Math.abs(it.x - cat.x) < cat.w/2+10){
+      if(it.bad){ score = Math.max(0, score-1); } else { score++; }
+      document.getElementById('score').textContent = score;
+      items.splice(i,1);
+      continue;
+    }
+    if(it.y > H+20) items.splice(i,1);
+  }
+  // cat
+  ctx.font = '48px serif';
+  ctx.fillText('🐱', cat.x, H-40);
+
+  if(running) raf = requestAnimationFrame(loop);
+}
+
+function setCatX(clientX){
+  const rect = canvas.getBoundingClientRect();
+  const x = (clientX - rect.left) * (W/rect.width);
+  cat.x = Math.max(30, Math.min(W-30, x));
+}
+
+canvas.addEventListener('mousemove', (e)=> setCatX(e.clientX));
+canvas.addEventListener('touchmove', (e)=>{ e.preventDefault(); setCatX(e.touches[0].clientX); }, {passive:false});
+
+startGame();
+</script>
+</body>
+</html>

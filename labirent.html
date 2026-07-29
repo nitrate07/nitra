@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Labirent Macerası</title>
+<style>
+  :root{
+    --bg:#F7F5FF; --ink:#1B1B3A; --purple:#6C4EF5; --coral:#FF6B6B; --yellow:#FFD23F; --teal:#2EC4B6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 20% 20%, #EDE9FF, var(--bg) 60%);
+    font-family:'Nunito',system-ui,sans-serif; color:var(--ink); padding:16px;
+  }
+  h1{font-size:1.6rem; margin:0 0 8px;}
+  #hud{display:flex; gap:16px; align-items:center; margin-bottom:10px; font-weight:800;}
+  #hud span{background:#fff; padding:6px 14px; border-radius:999px; box-shadow:0 3px 0 #ddd;}
+  #wrap{position:relative;}
+  canvas{background:#fff; border-radius:20px; box-shadow:0 10px 30px rgba(108,78,245,.25); touch-action:none;}
+  .controls{display:grid; grid-template-columns:60px 60px 60px; grid-template-rows:60px 60px 60px; gap:6px; margin-top:14px;}
+  .ctl{border:none; border-radius:16px; background:var(--purple); color:#fff; font-size:1.4rem; box-shadow:0 4px 0 #4a34c9; cursor:pointer;}
+  .ctl:active{transform:translateY(3px); box-shadow:0 1px 0 #4a34c9;}
+  #up{grid-column:2; grid-row:1;} #left{grid-column:1; grid-row:2;} #down{grid-column:2; grid-row:2;} #right{grid-column:3; grid-row:2;}
+  #win{position:absolute; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; background:rgba(255,255,255,.95); border-radius:20px; text-align:center;}
+  #win button, .top button{margin-top:10px; background:var(--coral); border:none; color:#fff; font-weight:800; padding:10px 22px; border-radius:999px; font-size:1rem; cursor:pointer; box-shadow:0 4px 0 #c94b4b;}
+  .top{margin-bottom:6px;}
+  a.back{color:var(--purple); font-weight:800; text-decoration:none;}
+</style>
+</head>
+<body>
+  <div class="top"><a class="back" href="index.html">← Oyunlara dön</a></div>
+  <h1>🌀 Labirent Macerası</h1>
+  <div id="hud"><span>⏱️ <span id="time">0</span> sn</span><span>🎯 Bölüm <span id="level">1</span></span></div>
+  <div id="wrap">
+    <canvas id="c" width="360" height="360"></canvas>
+    <div id="win">
+      <div style="font-size:2.5rem;">🎉</div>
+      <div style="font-weight:900; font-size:1.3rem;">Harika! Çıkışı buldun!</div>
+      <button id="nextBtn">Sonraki Bölüm</button>
+    </div>
+  </div>
+  <div class="controls">
+    <button class="ctl" id="up">↑</button>
+    <button class="ctl" id="left">←</button>
+    <button class="ctl" id="down">↓</button>
+    <button class="ctl" id="right">→</button>
+  </div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let cols = 9, rows = 9, cell = canvas.width/cols;
+let level = 1, seconds = 0, timer = null, playing = true;
+
+function genMaze(c, r){
+  const grid = Array.from({length:r}, () => Array.from({length:c}, () => ({N:true,S:true,E:true,W:true,visited:false})));
+  const stack = [[0,0]];
+  grid[0][0].visited = true;
+  const dirs = [[0,-1,'N','S'],[0,1,'S','N'],[1,0,'E','W'],[-1,0,'W','E']];
+  while(stack.length){
+    const [x,y] = stack[stack.length-1];
+    const neighbors = [];
+    for(const [dx,dy,a,b] of dirs){
+      const nx=x+dx, ny=y+dy;
+      if(nx>=0&&nx<c&&ny>=0&&ny<r&&!grid[ny][nx].visited) neighbors.push([nx,ny,a,b]);
+    }
+    if(neighbors.length){
+      const [nx,ny,a,b] = neighbors[Math.floor(Math.random()*neighbors.length)];
+      grid[y][x][a] = false; grid[ny][nx][b] = false;
+      grid[ny][nx].visited = true;
+      stack.push([nx,ny]);
+    } else stack.pop();
+  }
+  return grid;
+}
+
+let maze, player, goal;
+
+function setup(){
+  cols = 7 + level; rows = 7 + level;
+  if(cols>15) cols=15; if(rows>15) rows=15;
+  cell = canvas.width/cols;
+  maze = genMaze(cols, rows);
+  player = {x:0,y:0};
+  goal = {x:cols-1,y:rows-1};
+  seconds = 0; playing = true;
+  document.getElementById('win').style.display='none';
+  document.getElementById('level').textContent = level;
+  draw();
+  if(timer) clearInterval(timer);
+  timer = setInterval(()=>{ if(playing){ seconds++; document.getElementById('time').textContent = seconds; } }, 1000);
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle = '#6C4EF5'; ctx.lineWidth = 3; ctx.lineCap='round';
+  for(let y=0;y<rows;y++){
+    for(let x=0;x<cols;x++){
+      const cellData = maze[y][x];
+      const px=x*cell, py=y*cell;
+      ctx.beginPath();
+      if(cellData.N){ ctx.moveTo(px,py); ctx.lineTo(px+cell,py); }
+      if(cellData.S){ ctx.moveTo(px,py+cell); ctx.lineTo(px+cell,py+cell); }
+      if(cellData.W){ ctx.moveTo(px,py); ctx.lineTo(px,py+cell); }
+      if(cellData.E){ ctx.moveTo(px+cell,py); ctx.lineTo(px+cell,py+cell); }
+      ctx.stroke();
+    }
+  }
+  // goal
+  ctx.font = `${cell*0.7}px serif`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🏁', goal.x*cell+cell/2, goal.y*cell+cell/2);
+  // player
+  ctx.fillText('🐱', player.x*cell+cell/2, player.y*cell+cell/2);
+}
+
+function move(dx,dy){
+  if(!playing) return;
+  const c = maze[player.y][player.x];
+  if(dx===1 && !c.E) player.x++;
+  if(dx===-1 && !c.W) player.x--;
+  if(dy===1 && !c.S) player.y++;
+  if(dy===-1 && !c.N) player.y--;
+  draw();
+  if(player.x===goal.x && player.y===goal.y){
+    playing = false;
+    document.getElementById('win').style.display='flex';
+  }
+}
+
+document.getElementById('up').onclick = ()=>move(0,-1);
+document.getElementById('down').onclick = ()=>move(0,1);
+document.getElementById('left').onclick = ()=>move(-1,0);
+document.getElementById('right').onclick = ()=>move(1,0);
+document.getElementById('nextBtn').onclick = ()=>{ level++; setup(); };
+
+window.addEventListener('keydown', (e)=>{
+  if(e.key==='ArrowUp') move(0,-1);
+  if(e.key==='ArrowDown') move(0,1);
+  if(e.key==='ArrowLeft') move(-1,0);
+  if(e.key==='ArrowRight') move(1,0);
+});
+
+setup();
+</script>
+</body>
+</html>
