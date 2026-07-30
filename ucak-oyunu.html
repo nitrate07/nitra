@@ -3,19 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Uçak Motor Yarışı — Oyun Kutusu</title>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<title>Gece Uçuşu Turbo — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  canvas{background:linear-gradient(#7fc8f8,#cdeeff); border-radius:20px; box-shadow:0 10px 30px rgba(27,27,58,.25); touch-action:none;}
+  body{ background:radial-gradient(circle at 50% 0%, #142240, #060a18 70%); }
+  h1{ color:#fff; text-shadow:0 0 12px #7ce9ff; font-family:'Orbitron','Baloo 2',sans-serif; }
+  a.back{ color:#9be8ff; }
+  #hud span{ background:rgba(10,16,34,.85); color:#fff; box-shadow:0 0 0 1px rgba(124,233,255,.3), 0 3px 0 #000; }
+  canvas{background:#0a1024; border-radius:20px; box-shadow:0 0 0 2px rgba(124,233,255,.25), 0 14px 40px rgba(0,0,0,.6); touch-action:none;}
   #wrap{position:relative;}
-  p.hint{font-size:.85rem; opacity:.7; margin-top:10px; text-align:center; max-width:320px;}
+  #nitroBar{ width:100%; max-width:260px; height:12px; background:#0e1730; border-radius:999px; overflow:hidden; margin:0 auto 10px; box-shadow:inset 0 0 0 1px rgba(124,233,255,.3); }
+  #nitroFill{ height:100%; background:linear-gradient(90deg,#3dd6ff,#7bff6b); border-radius:999px; transition:width .1s linear; }
+  #overlay{ background:rgba(6,10,24,.95); }
+  #nitroBtn{ margin-top:12px; }
+  p.hint{ font-size:.82rem; opacity:.6; margin-top:8px; text-align:center; max-width:320px; color:#b9c6e6;}
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
-  <h1>✈️ Uçak Motor Yarışı</h1>
-  <div id="hud"><span>⭐ Puan: <span id="score">0</span></span><span>🏆 Rekor: <span id="best">0</span></span></div>
+  <h1>✈️ Gece Uçuşu Turbo</h1>
+  <div id="hud"><span>⭐ Puan: <span id="score">0</span></span><span>🏆 <span id="best">0</span></span></div>
+  <div id="nitroBar"><div id="nitroFill" style="width:100%"></div></div>
   <div id="wrap">
     <canvas id="c" width="360" height="440"></canvas>
     <div id="overlay">
@@ -26,7 +35,8 @@
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
-  <p class="hint">Fareyi/parmağını yukarı-aşağı hareket ettir, bulutlardan kaç, yıldızları topla!</p>
+  <button class="btn alt" id="nitroBtn">🔥 TURBO</button>
+  <p class="hint">Fareyi/parmağını yukarı-aşağı hareket ettir, bulutlardan kaç, ⚡ toplayıp TURBO ile puanı katla!</p>
 
 <script src="common.js"></script>
 <script>
@@ -34,89 +44,120 @@ const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 
-let bestScore = parseInt(localStorage.getItem('ok_ucak_best') || '0', 10);
+let bestScore = parseInt(localStorage.getItem('ok_ucak_best_v2') || '0', 10);
 document.getElementById('best').textContent = bestScore;
 
-let plane, obstacles, score, speed, running, spawnTimer, raf;
+function drawPlane(x,y,tilt,boost){
+  ctx.save();
+  ctx.translate(x,y); ctx.rotate(tilt);
+  if(boost){ ctx.shadowColor='#3dd6ff'; ctx.shadowBlur=18; }
+  ctx.fillStyle = '#e8eefc';
+  ctx.beginPath();
+  ctx.moveTo(22,0); ctx.lineTo(-10,-8); ctx.lineTo(-18,-3); ctx.lineTo(-18,3); ctx.lineTo(-10,8);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#3dd6ff';
+  ctx.beginPath(); ctx.moveTo(-2,-3); ctx.lineTo(-14,-16); ctx.lineTo(-9,-3); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-2,3); ctx.lineTo(-14,16); ctx.lineTo(-9,3); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+let plane, obstacles, particles, score, speed, running, spawnTimer, raf, nitro, nitroActive, stars;
+
+function makeStars(){
+  const arr = [];
+  for(let i=0;i<40;i++) arr.push({x:Math.random()*W, y:Math.random()*H, s:Math.random()*1.6+0.4});
+  return arr;
+}
 
 function startGame(){
-  plane = { x: 70, y: H/2, r: 22, vy: 0 };
-  obstacles = [];
-  score = 0; speed = 2.6; running = true; spawnTimer = 0;
+  plane = { x: 70, y: H/2, r: 20, vy: 0, tilt:0 };
+  obstacles = []; particles = [];
+  score = 0; speed = 2.8; running = true; spawnTimer = 0;
+  nitro = 100; nitroActive = false;
+  stars = makeStars();
   document.getElementById('score').textContent = 0;
   document.getElementById('overlay').style.display = 'none';
   loop();
 }
 
 function spawnObstacle(){
-  const isStar = Math.random() < 0.25;
+  const isStar = Math.random() < 0.22;
+  const isNitro = !isStar && Math.random() < 0.14;
   const y = 30 + Math.random()*(H-60);
   obstacles.push({
-    x: W+30, y, r: isStar ? 16 : 24,
-    emoji: isStar ? '⭐' : ['☁️','🐦','🎈'][Math.floor(Math.random()*3)],
-    isStar
+    x: W+30, y, r: (isStar||isNitro) ? 15 : 22,
+    emoji: isStar ? '⭐' : isNitro ? '⚡' : ['☁️','🐦','🎈'][Math.floor(Math.random()*3)],
+    isStar, isNitro
   });
 }
 
 function endGame(){
   running = false;
   const s = Math.floor(score);
-  if(s > bestScore){ bestScore = s; localStorage.setItem('ok_ucak_best', bestScore); }
+  if(s > bestScore){ bestScore = s; localStorage.setItem('ok_ucak_best_v2', bestScore); }
   document.getElementById('best').textContent = bestScore;
   document.getElementById('overMsg').textContent = `${s} puan topladın!`;
-  document.getElementById('stars').textContent = starRating(s, 400);
+  document.getElementById('stars').textContent = starRating(s, 500);
   document.getElementById('overlay').style.display = 'flex';
   playError();
 }
 
 function loop(){
   if(!running) return;
+  const boosting = nitroActive && nitro > 0;
+  if(boosting) nitro = Math.max(0, nitro-1.6); else { nitro = Math.min(100, nitro+0.25); nitroActive=false; }
+  document.getElementById('nitroFill').style.width = nitro+'%';
+
+  const curSpeed = speed + (boosting ? 4.5 : 0);
   ctx.clearRect(0,0,W,H);
 
-  // güncelle
-  speed = 2.6 + score*0.01;
-  score += 0.35;
+  ctx.fillStyle = '#080c1c'; ctx.fillRect(0,0,W,H);
+  stars.forEach(s=>{
+    s.x -= curSpeed*0.3; if(s.x<0){ s.x=W; s.y=Math.random()*H; }
+    ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.beginPath(); ctx.arc(s.x,s.y,s.s,0,Math.PI*2); ctx.fill();
+  });
+
+  speed = 2.8 + score*0.01;
+  score += 0.35 * (boosting ? 2 : 1);
   document.getElementById('score').textContent = Math.floor(score);
 
-  // uçağı hedefe doğru yumuşakça hareket ettir
   plane.vy += (targetY - plane.y) * 0.06;
   plane.vy *= 0.8;
   plane.y += plane.vy;
   plane.y = Math.max(20, Math.min(H-20, plane.y));
+  plane.tilt = Math.max(-0.3, Math.min(0.3, plane.vy*0.05));
 
-  spawnTimer -= 1;
-  if(spawnTimer <= 0){
-    spawnObstacle();
-    spawnTimer = Math.max(35, 70 - score*0.15);
+  if(boosting){
+    particles.push({x:plane.x-16, y:plane.y+(Math.random()-0.5)*8, vx:-4-Math.random()*2, vy:(Math.random()-0.5)*1, life:14, maxLife:14, size:4+Math.random()*3, color: Math.random()<0.5?'#3dd6ff':'#7bff6b'});
   }
 
-  ctx.font = '30px serif';
-  ctx.textAlign='center'; ctx.textBaseline='middle';
+  spawnTimer -= 1;
+  if(spawnTimer<=0){ spawnObstacle(); spawnTimer = Math.max(32, 68 - score*0.15); }
+
+  ctx.font = '28px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   for(let i=obstacles.length-1;i>=0;i--){
     const o = obstacles[i];
-    o.x -= speed + 1.5;
-    ctx.fillText(o.emoji, o.x, o.y);
-    const dist = Math.hypot(o.x - plane.x, o.y - plane.y);
+    o.x -= curSpeed + 1.5;
+    if(o.isNitro){ ctx.save(); ctx.shadowColor='#3dd6ff'; ctx.shadowBlur=10; ctx.fillText(o.emoji,o.x,o.y); ctx.restore(); }
+    else ctx.fillText(o.emoji, o.x, o.y);
+    const dist = Math.hypot(o.x-plane.x, o.y-plane.y);
     if(dist < o.r + plane.r - 6){
-      if(o.isStar){
-        score += 20;
-        playTone(750,0.1,'triangle',0.15);
-        obstacles.splice(i,1);
-        continue;
-      } else {
-        endGame();
-        return;
-      }
+      if(o.isStar){ score+=20; playTone(750,0.1,'triangle',0.15); obstacles.splice(i,1); continue; }
+      if(o.isNitro){ nitro=Math.min(100,nitro+45); playTone(850,0.15,'triangle',0.18); obstacles.splice(i,1); continue; }
+      endGame(); return;
     }
     if(o.x < -40) obstacles.splice(i,1);
   }
 
-  ctx.save();
-  ctx.translate(plane.x, plane.y);
-  ctx.rotate(Math.max(-0.3, Math.min(0.3, plane.vy*0.05)));
-  ctx.font = '40px serif';
-  ctx.fillText('✈️', 0, 0);
-  ctx.restore();
+  for(let i=particles.length-1;i>=0;i--){
+    const p = particles[i]; p.x+=p.vx; p.y+=p.vy; p.life--;
+    const a = Math.max(0,p.life/p.maxLife);
+    ctx.save(); ctx.globalAlpha=a; ctx.fillStyle=p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*a+1,0,Math.PI*2); ctx.fill(); ctx.restore();
+    if(p.life<=0) particles.splice(i,1);
+  }
+
+  drawPlane(plane.x, plane.y, plane.tilt, boosting);
 
   raf = requestAnimationFrame(loop);
 }
@@ -128,6 +169,15 @@ function setTargetY(clientY){
 }
 canvas.addEventListener('mousemove', e=>setTargetY(e.clientY));
 canvas.addEventListener('touchmove', e=>{ e.preventDefault(); setTargetY(e.touches[0].clientY); }, {passive:false});
+
+function setNitro(on){ if(!running) return; nitroActive = on && nitro>4; }
+const nitroBtn = document.getElementById('nitroBtn');
+nitroBtn.addEventListener('mousedown', ()=>setNitro(true));
+nitroBtn.addEventListener('mouseup', ()=>setNitro(false));
+nitroBtn.addEventListener('touchstart', e=>{ e.preventDefault(); setNitro(true); }, {passive:false});
+nitroBtn.addEventListener('touchend', e=>{ e.preventDefault(); setNitro(false); }, {passive:false});
+window.addEventListener('keydown', e=>{ if(e.key==='Shift') setNitro(true); });
+window.addEventListener('keyup', e=>{ if(e.key==='Shift') setNitro(false); });
 
 startGame();
 </script>

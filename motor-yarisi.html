@@ -3,23 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Motor Yarışı — Oyun Kutusu</title>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<title>Gece Motor Yarışı — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  canvas{background:#8a6a4a; border-radius:20px; box-shadow:0 10px 30px rgba(27,27,58,.3); touch-action:none;}
+  body{ background:radial-gradient(circle at 50% 0%, #3a2416, #140d08 70%); }
+  h1{ color:#fff; text-shadow:0 0 12px #ffb04d; font-family:'Orbitron','Baloo 2',sans-serif; }
+  a.back{ color:#ffcf9b; }
+  #hud span{ background:rgba(30,18,10,.85); color:#fff; box-shadow:0 0 0 1px rgba(255,176,77,.3), 0 3px 0 #000; }
+  canvas{background:#241608; border-radius:20px; box-shadow:0 0 0 2px rgba(255,176,77,.25), 0 14px 40px rgba(0,0,0,.6); touch-action:none;}
   #wrap{position:relative;}
-  .controls{display:flex; gap:14px; margin-top:14px;}
-  .ctl{width:70px; height:56px; border:none; border-radius:16px; background:var(--purple); color:#fff; font-size:1.5rem; box-shadow:0 4px 0 var(--purple-dark); cursor:pointer;}
-  .ctl:active{transform:translateY(3px); box-shadow:0 1px 0 var(--purple-dark);}
-  #jumpBtn{background:var(--coral); box-shadow:0 4px 0 var(--coral-dark);}
-  p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
+  .controls{display:flex; gap:12px; margin-top:14px;}
+  .ctl{width:64px; height:54px; border:none; border-radius:14px; background:#3a2a14; color:#ffcf9b; font-size:1.4rem;
+    box-shadow:0 0 0 1px rgba(255,176,77,.35), 0 4px 0 #000; cursor:pointer;}
+  .ctl:active{transform:translateY(3px);}
+  #jumpBtn{background:linear-gradient(180deg,#ff9f3d,#ff3d6e); color:#fff; font-weight:900; box-shadow:0 0 12px rgba(255,159,61,.6), 0 4px 0 #7a2a12;}
+  #nitroBar{ width:100%; max-width:260px; height:12px; background:#2a1c0e; border-radius:999px; overflow:hidden; margin:0 auto 10px; box-shadow:inset 0 0 0 1px rgba(255,176,77,.3); }
+  #nitroFill{ height:100%; background:linear-gradient(90deg,#ff9f3d,#ffd23f); border-radius:999px; transition:width .1s linear; }
+  #overlay{ background:rgba(20,13,8,.95); }
+  p.hint{ font-size:.82rem; opacity:.6; margin-top:8px; text-align:center; max-width:320px; color:#e0c7ae;}
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
-  <h1>🏍️ Motor Yarışı</h1>
-  <div id="hud"><span>🏍️ Mesafe: <span id="score">0</span> m</span><span>🏆 Rekor: <span id="best">0</span> m</span></div>
+  <h1>🏍️ Gece Motor Yarışı</h1>
+  <div id="hud"><span>📍 <span id="score">0</span> m</span><span>🏆 <span id="best">0</span> m</span></div>
+  <div id="nitroBar"><div id="nitroFill" style="width:100%"></div></div>
   <div id="wrap">
     <canvas id="c" width="320" height="480"></canvas>
     <div id="overlay">
@@ -31,11 +40,12 @@
     </div>
   </div>
   <div class="controls">
-    <button class="ctl" id="leftBtn">←</button>
-    <button class="ctl" id="jumpBtn">⬆️</button>
-    <button class="ctl" id="rightBtn">→</button>
+    <button class="ctl" id="leftBtn">◀</button>
+    <button class="ctl" id="jumpBtn">⬆</button>
+    <button class="ctl" id="rightBtn">▶</button>
   </div>
-  <p class="hint">Şerit değiştir, taşlara zıpla (yukarı ok / boşluk), yağ lekelerinden kaç!</p>
+  <button class="btn alt" id="nitroBtn" style="margin-top:10px;">🔥 NİTRO</button>
+  <p class="hint">Şerit değiştir, taşlara zıpla, yağdan kaç, ⚡ toplayıp NİTRO ile fırla!</p>
 
 <script src="common.js"></script>
 <script>
@@ -45,17 +55,40 @@ const W = canvas.width, H = canvas.height;
 const laneCount = 3;
 const laneW = W / laneCount;
 const laneX = i => laneW*i + laneW/2;
-const groundY = H - 90;
+const groundY = H - 100;
 
-let bestScore = parseInt(localStorage.getItem('ok_motor_best') || '0', 10);
+let bestScore = parseInt(localStorage.getItem('ok_motor_best_v2') || '0', 10);
 document.getElementById('best').textContent = bestScore;
 
-let player, obstacles, score, speed, running, spawnTimer, roadOffset, raf;
+function drawBike(x,y,tilt=0,boost=false){
+  ctx.save();
+  ctx.translate(x,y); ctx.rotate(tilt);
+  if(boost){ ctx.shadowColor='#ff9f3d'; ctx.shadowBlur=16; }
+  ctx.fillStyle = '#ffcf9b';
+  ctx.beginPath(); ctx.ellipse(0,4,7,14,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(-10,16,7,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(10,16,7,0,Math.PI*2); ctx.stroke();
+  ctx.fillStyle = '#ff3d6e';
+  ctx.fillRect(-4,-14,8,16);
+  ctx.restore();
+}
+
+let player, obstacles, particles, score, speed, running, spawnTimer, roadOffset, raf, nitro, nitroActive, shakeMag, torches;
+
+function makeTorches(){
+  const arr = [];
+  let y = -50;
+  while(y < H+100){ arr.push({y}); y += 70+Math.random()*40; }
+  return arr;
+}
 
 function startGame(){
-  player = { lane: 1, x: laneX(1), y: groundY, jumping: false, jumpV: 0 };
-  obstacles = [];
-  score = 0; speed = 3.4; running = true; roadOffset = 0; spawnTimer = 0;
+  player = { lane: 1, x: laneX(1), y: groundY, jumping: false, jumpV: 0, tilt:0, targetTilt:0 };
+  obstacles = []; particles = [];
+  score = 0; speed = 3.6; running = true; roadOffset = 0; spawnTimer = 0;
+  nitro = 100; nitroActive = false; shakeMag = 0;
+  torches = makeTorches();
   document.getElementById('score').textContent = 0;
   document.getElementById('overlay').style.display = 'none';
   loop();
@@ -63,107 +96,138 @@ function startGame(){
 
 function spawnObstacle(){
   const lane = Math.floor(Math.random()*laneCount);
-  const jumpable = Math.random() < 0.5;
-  obstacles.push({
-    lane, x: laneX(lane), y: -60,
-    emoji: jumpable ? '🪨' : '🛢️',
-    jumpable
-  });
+  const r = Math.random();
+  const type = r < 0.12 ? 'nitro' : (r < 0.4 ? 'rock' : 'oil');
+  obstacles.push({ lane, x: laneX(lane), y: -60, type });
 }
 
 function endGame(){
   running = false;
   const distance = Math.floor(score);
-  if(distance > bestScore){ bestScore = distance; localStorage.setItem('ok_motor_best', bestScore); }
+  if(distance > bestScore){ bestScore = distance; localStorage.setItem('ok_motor_best_v2', bestScore); }
   document.getElementById('best').textContent = bestScore;
   document.getElementById('overMsg').textContent = `${distance} metre gidebildin!`;
-  document.getElementById('stars').textContent = starRating(distance, 700);
+  document.getElementById('stars').textContent = starRating(distance, 900);
   document.getElementById('overlay').style.display = 'flex';
   playError();
 }
 
 function loop(){
   if(!running) return;
-  roadOffset = (roadOffset + speed) % 36;
+  const boosting = nitroActive && nitro > 0;
+  if(boosting) nitro = Math.max(0, nitro-1.4); else { nitro = Math.min(100, nitro+0.22); nitroActive=false; }
+  document.getElementById('nitroFill').style.width = nitro+'%';
+
+  const curSpeed = speed + (boosting ? 5 : 0);
+  speed = 3.6 + score*0.004;
+  score += curSpeed*0.08;
+  document.getElementById('score').textContent = Math.floor(score);
+
+  roadOffset = (roadOffset + curSpeed) % 36;
+  shakeMag *= 0.85;
+  const sx=(Math.random()-0.5)*shakeMag, sy=(Math.random()-0.5)*shakeMag;
+
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle = '#8a6a4a';
-  ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle = 'rgba(255,255,255,.35)';
-  ctx.lineWidth = 3;
-  ctx.setLineDash([16,16]);
+  ctx.save(); ctx.translate(sx,sy);
+
+  const sky = ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#3a2416'); sky.addColorStop(1,'#140d08');
+  ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+
+  torches.forEach(t=>{ t.y += curSpeed*0.5; if(t.y>H+30){ t.y=-30-Math.random()*60; } });
+  torches.forEach(t=>{
+    ctx.save(); ctx.shadowColor='#ffb04d'; ctx.shadowBlur=14;
+    ctx.fillStyle='#ffb04d'; ctx.beginPath(); ctx.arc(14,t.y,4,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(W-14,t.y,4,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+
+  ctx.fillStyle = '#2a1c10';
+  ctx.fillRect(24,0,W-48,H);
+  ctx.strokeStyle = 'rgba(255,176,77,.4)'; ctx.lineWidth=3; ctx.setLineDash([16,16]);
   for(let i=1;i<laneCount;i++){
-    ctx.beginPath();
-    ctx.moveTo(laneW*i, roadOffset - 36);
-    ctx.lineTo(laneW*i, H);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(24+((W-48)/laneCount)*i, roadOffset-36); ctx.lineTo(24+((W-48)/laneCount)*i, H); ctx.stroke();
   }
   ctx.setLineDash([]);
 
-  speed = 3.4 + score*0.004;
-  score += speed*0.08;
-  document.getElementById('score').textContent = Math.floor(score);
-
-  // zıplama fiziği
+  speed = 3.6 + score*0.004;
   let playerY = player.y;
   if(player.jumping){
-    player.jumpV -= 1.4;
-    playerY -= player.jumpV;
-    if(playerY >= groundY){
-      playerY = groundY;
-      player.jumping = false;
-      player.jumpV = 0;
-    }
+    player.jumpV -= 1.4; playerY -= player.jumpV;
+    if(playerY >= groundY){ playerY = groundY; player.jumping=false; player.jumpV=0; }
   }
   player.renderY = playerY;
+  player.tilt += (player.targetTilt - player.tilt)*0.2;
 
   spawnTimer -= 1;
-  if(spawnTimer <= 0){
-    spawnObstacle();
-    spawnTimer = Math.max(30, 58 - score*0.05);
+  if(spawnTimer<=0){ spawnObstacle(); spawnTimer = Math.max(28, 56 - score*0.05); }
+
+  if(boosting && Math.random()<0.7){
+    particles.push({x:player.x+(Math.random()-0.5)*10, y:playerY+16, vx:(Math.random()-0.5)*1, vy:3+Math.random()*2, life:16, maxLife:16, size:4+Math.random()*3, color: Math.random()<0.5?'#ff9f3d':'#ffd23f'});
   }
 
-  ctx.font = '36px serif';
-  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font = '32px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   for(let i=obstacles.length-1;i>=0;i--){
     const o = obstacles[i];
-    o.y += speed + 1.2;
-    ctx.fillText(o.emoji, o.x, o.y);
-    const closeEnough = Math.abs(o.x - player.x) < 30 && Math.abs(o.y - playerY) < 42;
-    const clearedByJump = o.jumpable && player.jumping && player.renderY < groundY - 30;
-    if(closeEnough && !clearedByJump){
-      endGame();
-      return;
+    o.y += curSpeed + 1.2;
+    if(o.type==='rock') ctx.fillText('🪨', o.x, o.y);
+    else if(o.type==='oil') ctx.fillText('🛢️', o.x, o.y);
+    else { ctx.save(); ctx.shadowColor='#3dd6ff'; ctx.shadowBlur=10; ctx.fillText('⚡', o.x, o.y); ctx.restore(); }
+
+    const closeEnough = Math.abs(o.x - player.x) < 26 && Math.abs(o.y - playerY) < 38;
+    const clearedByJump = o.type==='rock' && player.jumping && player.renderY < groundY - 28;
+    if(closeEnough){
+      if(o.type==='nitro'){ nitro=Math.min(100,nitro+40); playTone(850,0.15,'triangle',0.18); obstacles.splice(i,1); continue; }
+      if(!clearedByJump){ shakeMag=14; endGame(); ctx.restore(); return; }
     }
     if(o.y > H+50) obstacles.splice(i,1);
   }
 
-  ctx.font = '42px serif';
-  ctx.fillText('🏍️', player.x, playerY - (player.jumping ? 0 : 0));
+  for(let i=particles.length-1;i>=0;i--){
+    const p = particles[i]; p.x+=p.vx; p.y+=p.vy; p.life--;
+    const a = Math.max(0,p.life/p.maxLife);
+    ctx.save(); ctx.globalAlpha=a; ctx.fillStyle=p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.size*a+1,0,Math.PI*2); ctx.fill(); ctx.restore();
+    if(p.life<=0) particles.splice(i,1);
+  }
 
+  drawBike(player.x, playerY, player.tilt, boosting);
+
+  ctx.restore();
   raf = requestAnimationFrame(loop);
 }
 
 function moveLane(dir){
   if(!running) return;
-  player.lane = Math.max(0, Math.min(laneCount-1, player.lane + dir));
+  player.lane = Math.max(0, Math.min(laneCount-1, player.lane+dir));
   player.x = laneX(player.lane);
+  player.targetTilt = dir*0.3;
+  setTimeout(()=>{ player.targetTilt=0; }, 200);
   playClick(500);
 }
 function doJump(){
   if(!running || player.jumping) return;
-  player.jumping = true;
-  player.jumpV = 16;
+  player.jumping = true; player.jumpV = 16;
   playTone(600,0.12,'triangle',0.15);
 }
+function setNitro(on){ if(!running) return; nitroActive = on && nitro>4; if(on) shakeMag=Math.max(shakeMag,3); }
 
 document.getElementById('leftBtn').onclick = ()=>moveLane(-1);
 document.getElementById('rightBtn').onclick = ()=>moveLane(1);
 document.getElementById('jumpBtn').onclick = doJump;
+const nitroBtn = document.getElementById('nitroBtn');
+nitroBtn.addEventListener('mousedown', ()=>setNitro(true));
+nitroBtn.addEventListener('mouseup', ()=>setNitro(false));
+nitroBtn.addEventListener('touchstart', e=>{ e.preventDefault(); setNitro(true); }, {passive:false});
+nitroBtn.addEventListener('touchend', e=>{ e.preventDefault(); setNitro(false); }, {passive:false});
+
 window.addEventListener('keydown', e=>{
   if(e.key==='ArrowLeft') moveLane(-1);
   if(e.key==='ArrowRight') moveLane(1);
   if(e.key==='ArrowUp' || e.key===' ') doJump();
+  if(e.key==='Shift') setNitro(true);
 });
+window.addEventListener('keyup', e=>{ if(e.key==='Shift') setNitro(false); });
 
 startGame();
 </script>
