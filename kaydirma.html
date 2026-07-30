@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kaydırmalı Bulmaca — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  #grid{display:grid; gap:6px;}
+  .tile{background:linear-gradient(135deg,var(--purple),#8f7bff); color:#fff; box-shadow:0 4px 0 var(--purple-dark); font-size:1.8rem;}
+  .tile.empty{background:transparent; box-shadow:none; cursor:default;}
+  #refRow{display:flex; gap:4px; margin-bottom:10px; background:#F1EEFF; padding:8px 10px; border-radius:12px;}
+  #refRow span{font-size:1.1rem;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1 id="title">🧩 Kaydırmalı Bulmaca</h1>
+  <div id="hud"><span>👋 Hamle: <span id="moves">0</span></span></div>
+  <div id="refRow"><span>Hedef sıra:</span><span id="refIcons"></span></div>
+  <div class="panel">
+    <div id="grid"></div>
+    <div id="overlay">
+      <div class="big">🎉</div>
+      <div class="msg">Bulmacayı çözdün!</div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="init()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+
+<script src="common.js"></script>
+<script>
+const { theme, level } = getParams();
+setTitle('Kaydırmalı Bulmaca');
+document.getElementById('title').textContent = `🧩 ${theme.name} Kaydırmalı Bulmaca`;
+
+const size = [null,3,3,4,4][level];
+const total = size*size;
+const tileSize = size <= 3 ? 84 : 66;
+document.getElementById('grid').style.gridTemplateColumns = `repeat(${size}, ${tileSize}px)`;
+
+const icons = shuffle(theme.emojis).slice(0, total - 1); // boş kutu hariç
+document.getElementById('refIcons').textContent = icons.join(' ');
+const parMoves = total * 6;
+
+let tiles, emptyIndex, moves;
+
+function isSolvable(arr){
+  // basit kontrol: ters sıralama sayısını çift yapmak için gerekirse iki taşı takas et
+  let inv = 0;
+  const flat = arr.filter(v=>v!==null);
+  for(let i=0;i<flat.length;i++) for(let j=i+1;j<flat.length;j++) if(flat[i]>flat[j]) inv++;
+  return inv % 2 === 0;
+}
+
+function init(){
+  let arr = [...Array(total-1).keys(), null];
+  arr = shuffle(arr);
+  if(!isSolvable(arr)){
+    // ilk iki taşı takas et (null olmayan)
+    const i0 = arr.findIndex(v=>v!==null);
+    let i1 = arr.findIndex((v,i)=>v!==null && i!==i0);
+    [arr[i0], arr[i1]] = [arr[i1], arr[i0]];
+  }
+  tiles = arr;
+  emptyIndex = tiles.indexOf(null);
+  moves = 0;
+  document.getElementById('moves').textContent = 0;
+  document.getElementById('overlay').style.display = 'none';
+  render();
+}
+
+function render(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  tiles.forEach((val, idx)=>{
+    const div = document.createElement('div');
+    div.className = 'cell tile' + (val===null ? ' empty' : '');
+    div.style.width = tileSize+'px';
+    div.style.height = tileSize+'px';
+    div.textContent = val===null ? '' : icons[val];
+    div.onclick = ()=>tryMove(idx);
+    grid.appendChild(div);
+  });
+}
+
+function tryMove(idx){
+  const r1 = Math.floor(idx/size), c1 = idx%size;
+  const r2 = Math.floor(emptyIndex/size), c2 = emptyIndex%size;
+  const adjacent = (Math.abs(r1-r2)+Math.abs(c1-c2)) === 1;
+  if(!adjacent) return;
+  [tiles[idx], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[idx]];
+  emptyIndex = idx;
+  moves++;
+  document.getElementById('moves').textContent = moves;
+  playClick(480);
+  render();
+  const solved = tiles.every((v,i)=> i===total-1 ? v===null : v===i);
+  if(solved){
+    playSuccess();
+    const score = Math.max(0, total*3 - Math.max(0, moves - parMoves));
+    document.getElementById('stars').textContent = starRating(score, total*3);
+    document.getElementById('overlay').style.display = 'flex';
+    fireConfetti(document.querySelector('.panel'));
+  }
+}
+
+init();
+</script>
+</body>
+</html>

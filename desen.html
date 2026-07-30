@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desen Tamamlama — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  #sequence{display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; justify-content:center; max-width:340px;}
+  .seq-item{width:52px; height:52px; background:#fff; border-radius:12px; box-shadow:0 3px 0 #ddd; display:flex; align-items:center; justify-content:center; font-size:1.6rem;}
+  .seq-item.blank{background:#F1EEFF; border:3px dashed var(--purple); font-size:1.4rem; color:var(--purple); font-weight:900;}
+  #choices{display:grid; grid-template-columns:repeat(2, 90px); gap:10px;}
+  .choice{width:90px; height:70px; background:#fff; border:3px solid #E4DDFF; border-radius:14px; font-size:1.8rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .12s;}
+  .choice:active{transform:scale(.94);}
+  .choice.correct{background:var(--teal); border-color:var(--teal-dark);}
+  .choice.wrong{background:var(--coral); border-color:var(--coral-dark);}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1 id="title">🔮 Desen Tamamlama</h1>
+  <div id="hud"><span>🏆 Tur: <span id="round">0</span></span><span>📣 <span id="status">Örüntüyü bul!</span></span></div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="panel">
+    <div id="sequence"></div>
+    <div id="choices"></div>
+    <div id="overlay">
+      <div class="big">😿</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+
+<script src="common.js"></script>
+<script>
+const { theme, level } = getParams();
+setTitle('Desen Tamamlama');
+document.getElementById('title').textContent = `🔮 ${theme.name} Desen Tamamlama`;
+
+const goalRounds = 5 + level * 2;
+let round = 0, cycleLen, palette, cycle, seqLen, correctAnswer, answered;
+
+function updateProgress(){
+  document.getElementById('progressFill').style.width = Math.min(100, Math.round((round/goalRounds)*100)) + '%';
+}
+
+function startGame(){
+  round = 0;
+  document.getElementById('round').textContent = 0;
+  document.getElementById('overlay').style.display = 'none';
+  updateProgress();
+  nextRound();
+}
+
+function nextRound(){
+  round++;
+  document.getElementById('round').textContent = round;
+  updateProgress();
+  answered = false;
+  cycleLen = Math.min(theme.emojis.length, 2 + Math.min(level, 3) + (round > goalRounds/2 ? 1 : 0));
+  cycleLen = Math.max(2, Math.min(cycleLen, 5));
+  palette = shuffle(theme.emojis).slice(0, Math.max(cycleLen + 2, 5));
+  cycle = palette.slice(0, cycleLen);
+  seqLen = cycleLen * 2 + Math.min(2, level);
+  correctAnswer = cycle[seqLen % cycleLen];
+
+  const seqEl = document.getElementById('sequence');
+  seqEl.innerHTML = '';
+  for(let i=0;i<seqLen;i++){
+    const div = document.createElement('div');
+    div.className = 'seq-item pop';
+    div.style.animationDelay = (i*0.04)+'s';
+    div.textContent = cycle[i % cycleLen];
+    seqEl.appendChild(div);
+  }
+  const blank = document.createElement('div');
+  blank.className = 'seq-item blank pop';
+  blank.textContent = '?';
+  seqEl.appendChild(blank);
+
+  const distractors = shuffle(palette.filter(e=>e!==correctAnswer)).slice(0,3);
+  const options = shuffle([correctAnswer, ...distractors]);
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  options.forEach(opt=>{
+    const btn = document.createElement('div');
+    btn.className = 'choice pop';
+    btn.textContent = opt;
+    btn.onclick = ()=>handleAnswer(opt, btn);
+    choicesEl.appendChild(btn);
+  });
+  document.getElementById('status').textContent = 'Sırada ne gelir?';
+}
+
+function handleAnswer(opt, btn){
+  if(answered) return;
+  answered = true;
+  const isCorrect = opt === correctAnswer;
+  document.querySelectorAll('.choice').forEach(c=>{
+    if(c.textContent === correctAnswer) c.classList.add('correct');
+    else if(c === btn) c.classList.add('wrong');
+  });
+  if(isCorrect){
+    playSuccess();
+    document.getElementById('status').textContent = 'Doğru!';
+    setTimeout(nextRound, 700);
+  } else {
+    playError();
+    const finalRound = round - 1;
+    document.getElementById('overMsg').textContent = `${finalRound}. tura kadar doğru bildin!`;
+    document.getElementById('stars').textContent = starRating(finalRound, goalRounds);
+    setTimeout(()=>{ document.getElementById('overlay').style.display = 'flex'; }, 500);
+  }
+}
+
+startGame();
+</script>
+</body>
+</html>
