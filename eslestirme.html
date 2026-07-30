@@ -8,9 +8,10 @@
 <link rel="stylesheet" href="common.css">
 <style>
   #grid{display:grid; gap:10px;}
-  .card{width:70px; height:70px; background:var(--purple); box-shadow:0 4px 0 var(--purple-dark);}
-  .card.flipped, .card.matched{background:#fff; box-shadow:0 4px 0 #ddd;}
-  .card.matched{background:var(--teal); box-shadow:0 4px 0 var(--teal-dark);}
+  .flip-outer{width:70px; height:70px;}
+  .flip-front{background:linear-gradient(135deg,var(--purple),#8f7bff); box-shadow:0 4px 0 var(--purple-dark); color:#fff;}
+  .flip-back{background:#fff; box-shadow:0 4px 0 #ddd;}
+  .flip-outer.matched .flip-back{background:var(--teal); box-shadow:0 4px 0 var(--teal-dark);}
 </style>
 </head>
 <body>
@@ -22,6 +23,7 @@
     <div id="overlay">
       <div class="big">🎉</div>
       <div class="msg">Tüm çiftleri buldun!</div>
+      <div class="stars" id="stars"></div>
       <button class="btn" onclick="init()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
@@ -37,6 +39,7 @@ const pairsCount = Math.min(theme.emojis.length, 3 + level * 2);
 const cols = pairsCount <= 6 ? 4 : 5;
 document.getElementById('grid').style.gridTemplateColumns = `repeat(${cols}, 70px)`;
 document.getElementById('total').textContent = pairsCount;
+const parMoves = Math.round(pairsCount * 1.6);
 
 let deck, flipped, matched, moves, lock;
 
@@ -47,19 +50,32 @@ function init(){
   document.getElementById('moves').textContent = 0;
   document.getElementById('found').textContent = 0;
   document.getElementById('overlay').style.display = 'none';
-  render();
+  render(true);
 }
 
-function render(){
+function render(rebuild){
   const grid = document.getElementById('grid');
-  grid.innerHTML = '';
-  deck.forEach(card=>{
-    const div = document.createElement('div');
-    div.className = 'cell card' + (card.flipped||card.matched ? (card.matched ? ' matched':' flipped') : '');
-    div.textContent = (card.flipped||card.matched) ? card.emoji : '❓';
-    div.onclick = ()=>flip(card.id);
-    grid.appendChild(div);
-  });
+  if(rebuild){
+    grid.innerHTML = '';
+    deck.forEach(card=>{
+      const outer = document.createElement('div');
+      outer.className = 'cell flip-outer pop';
+      outer.id = 'card-' + card.id;
+      outer.innerHTML = `
+        <div class="flip-inner">
+          <div class="flip-front">❓</div>
+          <div class="flip-back">${card.emoji}</div>
+        </div>`;
+      outer.onclick = ()=>flip(card.id);
+      grid.appendChild(outer);
+    });
+  } else {
+    deck.forEach(card=>{
+      const outer = document.getElementById('card-' + card.id);
+      outer.classList.toggle('is-flipped', card.flipped || card.matched);
+      outer.classList.toggle('matched', card.matched);
+    });
+  }
 }
 
 function flip(id){
@@ -68,7 +84,8 @@ function flip(id){
   if(card.flipped || card.matched) return;
   card.flipped = true;
   flipped.push(card);
-  render();
+  playClick(500);
+  render(false);
   if(flipped.length===2){
     moves++;
     document.getElementById('moves').textContent = moves;
@@ -78,15 +95,28 @@ function flip(id){
       if(a.emoji===b.emoji){
         a.matched = true; b.matched = true; matched++;
         document.getElementById('found').textContent = matched;
+        playSuccess();
+        document.getElementById('card-'+a.id).classList.add('glow');
+        document.getElementById('card-'+b.id).classList.add('glow');
         if(matched===pairsCount){
+          const score = Math.max(0, pairsCount * 3 - Math.max(0, moves - parMoves));
+          document.getElementById('stars').textContent = starRating(score, pairsCount * 3);
           document.getElementById('overlay').style.display = 'flex';
+          fireConfetti(document.querySelector('.panel'));
         }
       } else {
         a.flipped = false; b.flipped = false;
+        playError();
+        document.getElementById('card-'+a.id).classList.add('shake');
+        document.getElementById('card-'+b.id).classList.add('shake');
+        setTimeout(()=>{
+          document.getElementById('card-'+a.id)?.classList.remove('shake');
+          document.getElementById('card-'+b.id)?.classList.remove('shake');
+        }, 350);
       }
       flipped = [];
       lock = false;
-      render();
+      render(false);
     }, 700);
   }
 }

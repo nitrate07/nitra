@@ -8,8 +8,8 @@
 <link rel="stylesheet" href="common.css">
 <style>
   #grid{display:grid; gap:8px;}
-  .pcell{background:#EDE9FF; width:58px; height:58px;}
-  .pcell.lit{background:var(--purple);}
+  .pcell{background:#EDE9FF; width:58px; height:58px; transition:background .15s, transform .1s;}
+  .pcell.lit{background:var(--purple); transform:scale(1.06); box-shadow:0 0 18px 3px rgba(108,78,245,.6);}
   .pcell.done{background:var(--teal);}
   .pcell.wrong{background:var(--coral);}
 </style>
@@ -18,11 +18,13 @@
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1 id="title">🐾 Yol Hafızası</h1>
   <div id="hud"><span>🏆 Tur: <span id="round">0</span></span><span>📣 <span id="status">Başlat'a bas</span></span></div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
   <div class="panel">
     <div id="grid"></div>
     <div id="overlay">
       <div class="big">😿</div>
       <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
@@ -38,6 +40,7 @@ document.getElementById('title').textContent = `🐾 ${theme.name} Yol Hafızas�
 const size = [null,3,4,4,5][level];
 const totalCells = size*size;
 const speed = [null,650,520,420,340][level];
+const goalRounds = 6 + level * 2;
 
 document.getElementById('grid').style.gridTemplateColumns = `repeat(${size}, 58px)`;
 
@@ -58,18 +61,25 @@ function buildGrid(){
 
 let path = [], userStep = 0, round = 0, accepting = false;
 
+function updateProgress(){
+  const pct = Math.min(100, Math.round((round / goalRounds) * 100));
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
 function startGame(){
   buildGrid();
   path = []; round = 0; userStep = 0;
   document.getElementById('round').textContent = round;
   document.getElementById('overlay').style.display = 'none';
   document.getElementById('startBtn').style.display = 'none';
+  updateProgress();
   nextRound();
 }
 
 function nextRound(){
   round++;
   document.getElementById('round').textContent = round;
+  updateProgress();
   let next;
   do { next = Math.floor(Math.random()*totalCells); } while(next === path[path.length-1]);
   path.push(next);
@@ -83,6 +93,7 @@ async function playPath(){
   await new Promise(r=>setTimeout(r,400));
   for(const idx of path){
     cells[idx].classList.add('lit');
+    playTone(380 + (idx*20), 0.18, 'sine', 0.13);
     await new Promise(r=>setTimeout(r,speed*0.65));
     cells[idx].classList.remove('lit');
     await new Promise(r=>setTimeout(r,speed*0.35));
@@ -95,6 +106,7 @@ function handleClick(i){
   if(!accepting) return;
   if(i === path[userStep]){
     cells[i].classList.add('done');
+    playTone(380 + (i*20), 0.12, 'sine', 0.13);
     userStep++;
     if(userStep === path.length){
       accepting = false;
@@ -106,8 +118,11 @@ function handleClick(i){
     }
   } else {
     accepting = false;
-    cells[i].classList.add('wrong');
-    document.getElementById('overMsg').textContent = `${round-1}. tura kadar hatırladın!`;
+    playError();
+    cells[i].classList.add('wrong','shake');
+    const finalRound = round - 1;
+    document.getElementById('overMsg').textContent = `${finalRound}. tura kadar hatırladın!`;
+    document.getElementById('stars').textContent = starRating(finalRound, goalRounds);
     document.getElementById('overlay').style.display = 'flex';
   }
 }
