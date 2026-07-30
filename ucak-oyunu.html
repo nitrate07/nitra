@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uçak Motor Yarışı — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  canvas{background:linear-gradient(#7fc8f8,#cdeeff); border-radius:20px; box-shadow:0 10px 30px rgba(27,27,58,.25); touch-action:none;}
+  #wrap{position:relative;}
+  p.hint{font-size:.85rem; opacity:.7; margin-top:10px; text-align:center; max-width:320px;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>✈️ Uçak Motor Yarışı</h1>
+  <div id="hud"><span>⭐ Puan: <span id="score">0</span></span><span>🏆 Rekor: <span id="best">0</span></span></div>
+  <div id="wrap">
+    <canvas id="c" width="360" height="440"></canvas>
+    <div id="overlay">
+      <div class="big">💥</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <p class="hint">Fareyi/parmağını yukarı-aşağı hareket ettir, bulutlardan kaç, yıldızları topla!</p>
+
+<script src="common.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+let bestScore = parseInt(localStorage.getItem('ok_ucak_best') || '0', 10);
+document.getElementById('best').textContent = bestScore;
+
+let plane, obstacles, score, speed, running, spawnTimer, raf;
+
+function startGame(){
+  plane = { x: 70, y: H/2, r: 22, vy: 0 };
+  obstacles = [];
+  score = 0; speed = 2.6; running = true; spawnTimer = 0;
+  document.getElementById('score').textContent = 0;
+  document.getElementById('overlay').style.display = 'none';
+  loop();
+}
+
+function spawnObstacle(){
+  const isStar = Math.random() < 0.25;
+  const y = 30 + Math.random()*(H-60);
+  obstacles.push({
+    x: W+30, y, r: isStar ? 16 : 24,
+    emoji: isStar ? '⭐' : ['☁️','🐦','🎈'][Math.floor(Math.random()*3)],
+    isStar
+  });
+}
+
+function endGame(){
+  running = false;
+  const s = Math.floor(score);
+  if(s > bestScore){ bestScore = s; localStorage.setItem('ok_ucak_best', bestScore); }
+  document.getElementById('best').textContent = bestScore;
+  document.getElementById('overMsg').textContent = `${s} puan topladın!`;
+  document.getElementById('stars').textContent = starRating(s, 400);
+  document.getElementById('overlay').style.display = 'flex';
+  playError();
+}
+
+function loop(){
+  if(!running) return;
+  ctx.clearRect(0,0,W,H);
+
+  // güncelle
+  speed = 2.6 + score*0.01;
+  score += 0.35;
+  document.getElementById('score').textContent = Math.floor(score);
+
+  // uçağı hedefe doğru yumuşakça hareket ettir
+  plane.vy += (targetY - plane.y) * 0.06;
+  plane.vy *= 0.8;
+  plane.y += plane.vy;
+  plane.y = Math.max(20, Math.min(H-20, plane.y));
+
+  spawnTimer -= 1;
+  if(spawnTimer <= 0){
+    spawnObstacle();
+    spawnTimer = Math.max(35, 70 - score*0.15);
+  }
+
+  ctx.font = '30px serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=obstacles.length-1;i>=0;i--){
+    const o = obstacles[i];
+    o.x -= speed + 1.5;
+    ctx.fillText(o.emoji, o.x, o.y);
+    const dist = Math.hypot(o.x - plane.x, o.y - plane.y);
+    if(dist < o.r + plane.r - 6){
+      if(o.isStar){
+        score += 20;
+        playTone(750,0.1,'triangle',0.15);
+        obstacles.splice(i,1);
+        continue;
+      } else {
+        endGame();
+        return;
+      }
+    }
+    if(o.x < -40) obstacles.splice(i,1);
+  }
+
+  ctx.save();
+  ctx.translate(plane.x, plane.y);
+  ctx.rotate(Math.max(-0.3, Math.min(0.3, plane.vy*0.05)));
+  ctx.font = '40px serif';
+  ctx.fillText('✈️', 0, 0);
+  ctx.restore();
+
+  raf = requestAnimationFrame(loop);
+}
+
+let targetY = H/2;
+function setTargetY(clientY){
+  const rect = canvas.getBoundingClientRect();
+  targetY = (clientY - rect.top) * (H/rect.height);
+}
+canvas.addEventListener('mousemove', e=>setTargetY(e.clientY));
+canvas.addEventListener('touchmove', e=>{ e.preventDefault(); setTargetY(e.touches[0].clientY); }, {passive:false});
+
+startGame();
+</script>
+</body>
+</html>

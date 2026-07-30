@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motor Yarışı — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  canvas{background:#8a6a4a; border-radius:20px; box-shadow:0 10px 30px rgba(27,27,58,.3); touch-action:none;}
+  #wrap{position:relative;}
+  .controls{display:flex; gap:14px; margin-top:14px;}
+  .ctl{width:70px; height:56px; border:none; border-radius:16px; background:var(--purple); color:#fff; font-size:1.5rem; box-shadow:0 4px 0 var(--purple-dark); cursor:pointer;}
+  .ctl:active{transform:translateY(3px); box-shadow:0 1px 0 var(--purple-dark);}
+  #jumpBtn{background:var(--coral); box-shadow:0 4px 0 var(--coral-dark);}
+  p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>🏍️ Motor Yarışı</h1>
+  <div id="hud"><span>🏍️ Mesafe: <span id="score">0</span> m</span><span>🏆 Rekor: <span id="best">0</span> m</span></div>
+  <div id="wrap">
+    <canvas id="c" width="320" height="480"></canvas>
+    <div id="overlay">
+      <div class="big">💥</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <div class="controls">
+    <button class="ctl" id="leftBtn">←</button>
+    <button class="ctl" id="jumpBtn">⬆️</button>
+    <button class="ctl" id="rightBtn">→</button>
+  </div>
+  <p class="hint">Şerit değiştir, taşlara zıpla (yukarı ok / boşluk), yağ lekelerinden kaç!</p>
+
+<script src="common.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const laneCount = 3;
+const laneW = W / laneCount;
+const laneX = i => laneW*i + laneW/2;
+const groundY = H - 90;
+
+let bestScore = parseInt(localStorage.getItem('ok_motor_best') || '0', 10);
+document.getElementById('best').textContent = bestScore;
+
+let player, obstacles, score, speed, running, spawnTimer, roadOffset, raf;
+
+function startGame(){
+  player = { lane: 1, x: laneX(1), y: groundY, jumping: false, jumpV: 0 };
+  obstacles = [];
+  score = 0; speed = 3.4; running = true; roadOffset = 0; spawnTimer = 0;
+  document.getElementById('score').textContent = 0;
+  document.getElementById('overlay').style.display = 'none';
+  loop();
+}
+
+function spawnObstacle(){
+  const lane = Math.floor(Math.random()*laneCount);
+  const jumpable = Math.random() < 0.5;
+  obstacles.push({
+    lane, x: laneX(lane), y: -60,
+    emoji: jumpable ? '🪨' : '🛢️',
+    jumpable
+  });
+}
+
+function endGame(){
+  running = false;
+  const distance = Math.floor(score);
+  if(distance > bestScore){ bestScore = distance; localStorage.setItem('ok_motor_best', bestScore); }
+  document.getElementById('best').textContent = bestScore;
+  document.getElementById('overMsg').textContent = `${distance} metre gidebildin!`;
+  document.getElementById('stars').textContent = starRating(distance, 700);
+  document.getElementById('overlay').style.display = 'flex';
+  playError();
+}
+
+function loop(){
+  if(!running) return;
+  roadOffset = (roadOffset + speed) % 36;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#8a6a4a';
+  ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = 'rgba(255,255,255,.35)';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([16,16]);
+  for(let i=1;i<laneCount;i++){
+    ctx.beginPath();
+    ctx.moveTo(laneW*i, roadOffset - 36);
+    ctx.lineTo(laneW*i, H);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  speed = 3.4 + score*0.004;
+  score += speed*0.08;
+  document.getElementById('score').textContent = Math.floor(score);
+
+  // zıplama fiziği
+  let playerY = player.y;
+  if(player.jumping){
+    player.jumpV -= 1.4;
+    playerY -= player.jumpV;
+    if(playerY >= groundY){
+      playerY = groundY;
+      player.jumping = false;
+      player.jumpV = 0;
+    }
+  }
+  player.renderY = playerY;
+
+  spawnTimer -= 1;
+  if(spawnTimer <= 0){
+    spawnObstacle();
+    spawnTimer = Math.max(30, 58 - score*0.05);
+  }
+
+  ctx.font = '36px serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=obstacles.length-1;i>=0;i--){
+    const o = obstacles[i];
+    o.y += speed + 1.2;
+    ctx.fillText(o.emoji, o.x, o.y);
+    const closeEnough = Math.abs(o.x - player.x) < 30 && Math.abs(o.y - playerY) < 42;
+    const clearedByJump = o.jumpable && player.jumping && player.renderY < groundY - 30;
+    if(closeEnough && !clearedByJump){
+      endGame();
+      return;
+    }
+    if(o.y > H+50) obstacles.splice(i,1);
+  }
+
+  ctx.font = '42px serif';
+  ctx.fillText('🏍️', player.x, playerY - (player.jumping ? 0 : 0));
+
+  raf = requestAnimationFrame(loop);
+}
+
+function moveLane(dir){
+  if(!running) return;
+  player.lane = Math.max(0, Math.min(laneCount-1, player.lane + dir));
+  player.x = laneX(player.lane);
+  playClick(500);
+}
+function doJump(){
+  if(!running || player.jumping) return;
+  player.jumping = true;
+  player.jumpV = 16;
+  playTone(600,0.12,'triangle',0.15);
+}
+
+document.getElementById('leftBtn').onclick = ()=>moveLane(-1);
+document.getElementById('rightBtn').onclick = ()=>moveLane(1);
+document.getElementById('jumpBtn').onclick = doJump;
+window.addEventListener('keydown', e=>{
+  if(e.key==='ArrowLeft') moveLane(-1);
+  if(e.key==='ArrowRight') moveLane(1);
+  if(e.key==='ArrowUp' || e.key===' ') doJump();
+});
+
+startGame();
+</script>
+</body>
+</html>
