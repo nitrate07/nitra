@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Görsel Hafıza — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  #grid{display:grid; gap:8px;}
+  .gcell{background:#EDE9FF; width:64px; height:64px;}
+  .gcell.show{background:#fff; box-shadow:0 3px 0 #ddd;}
+  .gcell.picked{outline:3px solid var(--purple);}
+  .gcell.correct{background:var(--teal); color:#fff;}
+  .gcell.wrong{background:var(--coral); color:#fff;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1 id="title">👁️ Görsel Hafıza</h1>
+  <div id="hud"><span>📣 <span id="status">Hazırlan...</span></span></div>
+  <div class="panel">
+    <div id="grid"></div>
+    <button class="btn" id="confirmBtn" style="margin-top:14px; display:none;">Onayla</button>
+    <div id="overlay">
+      <div class="big" id="overIcon">🎉</div>
+      <div class="msg" id="overMsg"></div>
+      <button class="btn" onclick="location.reload()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+
+<script src="common.js"></script>
+<script>
+const { theme, level } = getParams();
+setTitle('Görsel Hafıza');
+document.getElementById('title').textContent = `👁️ ${theme.name} Görsel Hafıza`;
+
+const gridSize = 2 + level; // 3..6 -> use 3,4,5,6? cap sensible: level1=3(9cells) level4=6(36) too big, tune
+const size = [null,3,4,4,5][level]; // cols/rows
+const totalCells = size*size;
+const itemCount = Math.min(theme.emojis.length, Math.round(totalCells * 0.35) + level);
+const studyTime = 2500 + level*400;
+
+document.getElementById('grid').style.gridTemplateColumns = `repeat(${size}, 64px)`;
+
+const itemIcons = shuffle(theme.emojis).slice(0, itemCount);
+const positions = shuffle([...Array(totalCells).keys()]).slice(0, itemCount);
+const answerSet = new Set(positions);
+
+const cells = [];
+const gridEl = document.getElementById('grid');
+for(let i=0;i<totalCells;i++){
+  const div = document.createElement('div');
+  div.className = 'cell gcell';
+  gridEl.appendChild(div);
+  cells.push(div);
+}
+positions.forEach((pos, idx)=>{
+  cells[pos].textContent = itemIcons[idx];
+  cells[pos].classList.add('show');
+});
+document.getElementById('status').textContent = `Ezberle! (${Math.round(studyTime/1000)} sn)`;
+
+let picked = new Set();
+let answered = false;
+
+setTimeout(()=>{
+  cells.forEach(c=>{ c.textContent=''; c.classList.remove('show'); });
+  document.getElementById('status').textContent = `Simge olan ${itemCount} kutuyu seç`;
+  document.getElementById('confirmBtn').style.display = 'inline-block';
+  cells.forEach((c,i)=>{
+    c.onclick = ()=>{
+      if(answered) return;
+      if(picked.has(i)){ picked.delete(i); c.classList.remove('picked'); }
+      else { picked.add(i); c.classList.add('picked'); }
+    };
+  });
+}, studyTime);
+
+document.getElementById('confirmBtn').onclick = ()=>{
+  if(answered) return;
+  answered = true;
+  let correct = 0;
+  cells.forEach((c,i)=>{
+    const shouldPick = answerSet.has(i);
+    const wasPicked = picked.has(i);
+    if(shouldPick && wasPicked){ c.classList.add('correct'); c.textContent='✓'; correct++; }
+    else if(!shouldPick && wasPicked){ c.classList.add('wrong'); c.textContent='✗'; }
+    else if(shouldPick && !wasPicked){ c.classList.add('wrong'); c.textContent='?'; }
+  });
+  setTimeout(()=>{
+    const success = correct === itemCount;
+    document.getElementById('overIcon').textContent = success ? '🎉' : '💪';
+    document.getElementById('overMsg').textContent = `${itemCount} kutudan ${correct} tanesini doğru buldun!`;
+    document.getElementById('overlay').style.display = 'flex';
+  }, 900);
+};
+</script>
+</body>
+</html>

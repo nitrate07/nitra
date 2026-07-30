@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oyun Kutusu — Ücretsiz Çocuk Oyunları</title>
+<meta name="description" content="Çocuklar için ücretsiz, güvenli, tarayıcıda oynanan online oyunlar. İndirme yok, kayıt yok, sadece eğlence!">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F7F5FF;
+    --ink:#1B1B3A;
+    --purple:#6C4EF5;
+    --purple-dark:#4a34c9;
+    --coral:#FF6B6B;
+    --coral-dark:#c94b4b;
+    --yellow:#FFD23F;
+    --teal:#2EC4B6;
+    --teal-dark:#1c9c90;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Nunito', system-ui, sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+  }
+  h1,h2,h3,.logo,.cta{ font-family:'Baloo 2', 'Nunito', system-ui, sans-serif; }
+
+  /* decorative blobs */
+  .blob{ position:fixed; border-radius:50%; filter:blur(0px); opacity:.5; z-index:0; pointer-events:none;}
+  .blob1{ width:280px; height:280px; background:#FFE8A3; top:-80px; left:-100px;}
+  .blob2{ width:220px; height:220px; background:#CFF3F0; bottom:-60px; right:-80px;}
+
+  header{
+    position:sticky; top:0; z-index:50;
+    background:rgba(247,245,255,.9); backdrop-filter:blur(8px);
+    border-bottom:3px solid #fff;
+  }
+  .nav{
+    max-width:1100px; margin:0 auto; padding:14px 20px;
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  }
+  .logo{ font-size:1.5rem; font-weight:800; color:var(--purple); display:flex; align-items:center; gap:6px; margin-right:auto;}
+  .logo span{ display:inline-block; transform:rotate(-8deg); }
+  nav.links{ display:flex; gap:6px; }
+  nav.links a{
+    text-decoration:none; color:var(--ink); font-weight:800; font-size:.95rem;
+    padding:8px 14px; border-radius:999px; transition:background .15s;
+  }
+  nav.links a:hover, nav.links a.active{ background:#fff; box-shadow:0 3px 0 #e4e0f7; }
+  .search-box{
+    display:flex; align-items:center; background:#fff; border-radius:999px; padding:8px 16px;
+    box-shadow:0 3px 0 #e4e0f7; min-width:200px; flex:1; max-width:320px;
+  }
+  .search-box input{ border:none; outline:none; font-family:inherit; font-size:.95rem; flex:1; background:transparent;}
+
+  /* hero */
+  .hero{
+    max-width:1100px; margin:0 auto; padding:48px 20px 30px; position:relative; z-index:1;
+    display:flex; align-items:center; gap:30px; flex-wrap:wrap;
+  }
+  .hero-text{ flex:1; min-width:260px; }
+  .hero-text h1{ font-size:2.6rem; line-height:1.15; color:var(--ink); margin-bottom:14px;}
+  .hero-text h1 em{ font-style:normal; color:var(--purple); text-decoration:underline wavy var(--yellow) 3px; text-underline-offset:6px;}
+  .hero-text p{ font-size:1.05rem; opacity:.75; margin-bottom:20px; max-width:440px;}
+  .badges{ display:flex; gap:10px; flex-wrap:wrap; }
+  .badge{ background:#fff; padding:8px 14px; border-radius:999px; font-weight:800; font-size:.85rem; box-shadow:0 3px 0 #e4e0f7; }
+  .hero-art{
+    flex:1; min-width:240px; display:flex; justify-content:center; align-items:center;
+    font-size:7rem; position:relative;
+  }
+  .hero-art .float{ position:absolute; font-size:2.2rem; animation:float 4s ease-in-out infinite; }
+  .hero-art .f1{ top:-10px; left:10px; animation-delay:0s;}
+  .hero-art .f2{ bottom:0; right:0; animation-delay:1s;}
+  .hero-art .f3{ top:50%; right:-10px; animation-delay:2s;}
+  @keyframes float{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-14px);} }
+  @media (prefers-reduced-motion: reduce){ .hero-art .float{ animation:none; } }
+
+  /* categories */
+  .cats{ max-width:1100px; margin:10px auto 0; padding:0 20px; display:flex; gap:10px; overflow-x:auto; position:relative; z-index:1;}
+  .cat-pill{
+    flex:0 0 auto; background:#fff; border:none; padding:10px 18px; border-radius:999px; font-weight:800; font-family:inherit;
+    font-size:.9rem; cursor:pointer; box-shadow:0 3px 0 #e4e0f7; color:var(--ink); white-space:nowrap;
+  }
+  .cat-pill.active{ background:var(--purple); color:#fff; box-shadow:0 3px 0 var(--purple-dark); }
+
+  /* grid */
+  main{ max-width:1100px; margin:0 auto; padding:30px 20px 60px; position:relative; z-index:1;}
+  main h2{ font-size:1.3rem; margin-bottom:16px; }
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:16px; margin-bottom:36px;
+  }
+  .game-card{
+    background:var(--card); border-radius:18px; padding:14px; text-align:center; text-decoration:none; color:var(--ink);
+    box-shadow:0 4px 0 #e4e0f7; transition:transform .15s, box-shadow .15s; position:relative; overflow:hidden;
+  }
+  .game-card:hover{ transform:translateY(-4px) scale(1.02); box-shadow:0 8px 0 #e4e0f7, 0 14px 20px rgba(108,78,245,.15); }
+  .thumb{
+    width:100%; aspect-ratio:1/1; border-radius:14px; display:flex; align-items:center; justify-content:center;
+    font-size:3rem; margin-bottom:10px;
+  }
+  .t1{ background:linear-gradient(135deg,#E4DDFF,#C9BBFF); }
+  .t2{ background:linear-gradient(135deg,#FFEBB0,#FFD23F); }
+  .t3{ background:linear-gradient(135deg,#CFF3F0,#8FE4DB); }
+  .t4{ background:linear-gradient(135deg,#FFD9D9,#FFB3B3); }
+  .game-card h3{ font-size:.95rem; font-weight:800; margin-bottom:4px; }
+  .game-card .tag{ font-size:.72rem; opacity:.6; font-weight:700; }
+  .badge-new{
+    position:absolute; top:8px; left:8px; background:var(--coral); color:#fff; font-size:.65rem; font-weight:800;
+    padding:3px 8px; border-radius:999px;
+  }
+  .badge-soon{
+    position:absolute; inset:0; background:rgba(255,255,255,.85); display:flex; align-items:center; justify-content:center;
+    font-weight:800; color:var(--purple); font-size:.85rem; border-radius:18px;
+  }
+  .soon-card{ cursor:default; }
+
+  footer{
+    background:#fff; border-top:3px solid var(--bg); padding:30px 20px; text-align:center;
+    font-size:.85rem; opacity:.7; position:relative; z-index:1;
+  }
+  footer .links{ display:flex; gap:16px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
+  footer a{ color:var(--purple); text-decoration:none; font-weight:800; }
+
+  @media (max-width:600px){
+    .hero-text h1{ font-size:2rem; }
+    .hero-art{ font-size:5rem; }
+    nav.links{ display:none; }
+  }
+</style>
+</head>
+<body>
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+
+  <header>
+    <div class="nav">
+      <div class="logo"><span>🐱</span> Oyun Kutusu</div>
+      <nav class="links">
+        <a href="#" class="active">Ana Sayfa</a>
+        <a href="#oyunlar">Tüm Oyunlar</a>
+        <a href="#ebeveyn">Ebeveynler İçin</a>
+      </nav>
+      <div class="search-box">
+        <span>🔍</span>
+        <input id="searchInput" type="text" placeholder="Oyun ara...">
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-text">
+      <h1>Tarayıcında <em>ücretsiz</em><br>oyna, indirme yok!</h1>
+      <p>Çocuklar için özenle seçilmiş, reklam takibi olmayan, güvenli ve eğlenceli online oyunlar. Kayıt olmadan, tek tıkla oyna!</p>
+      <div class="badges">
+        <span class="badge">🎮 100% Ücretsiz</span>
+        <span class="badge">🚫 İndirme Gerektirmez</span>
+        <span class="badge">🛡️ Çocuk Dostu</span>
+      </div>
+    </div>
+    <div class="hero-art">
+      🐱
+      <span class="float f1">🐟</span>
+      <span class="float f2">🧩</span>
+      <span class="float f3">⭐</span>
+    </div>
+  </section>
+
+  <div class="cats" id="cats">
+    <button class="cat-pill active" data-cat="all">Hepsi</button>
+    <button class="cat-pill" data-cat="hafiza">🧠 Hafıza Geliştirici</button>
+    <button class="cat-pill" data-cat="macera">🗺️ Macera</button>
+    <button class="cat-pill" data-cat="hareket">🏃 Hareket</button>
+  </div>
+
+  <main id="oyunlar">
+    <h2>Öne Çıkan Oyunlar</h2>
+    <div class="grid" id="gameGrid">
+      <a class="game-card" href="labirent.html" data-cat="hafiza macera" data-name="labirent macerası">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb t1">🌀</div>
+        <h3>Labirent Macerası</h3>
+        <div class="tag">Beceri · Macera</div>
+      </a>
+      <a class="game-card" href="yakalama.html" data-cat="hareket" data-name="balık yakalama">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb t3">🐟</div>
+        <h3>Balık Yakalama</h3>
+        <div class="tag">Hareket</div>
+      </a>
+      <div class="game-card soon-card" data-cat="hareket" data-name="yapboz atolyesi">
+        <div class="thumb t4">🧩</div>
+        <h3>Yapboz Atölyesi</h3>
+        <div class="tag">Beceri</div>
+        <div class="badge-soon">Yakında</div>
+      </div>
+      <div class="game-card soon-card" data-cat="macera" data-name="renk boyama">
+        <div class="thumb t1">🎨</div>
+        <h3>Renk Boyama</h3>
+        <div class="tag">Yaratıcılık</div>
+        <div class="badge-soon">Yakında</div>
+      </div>
+      <div class="game-card soon-card" data-cat="hareket" data-name="zipla zipla">
+        <div class="thumb t2">🐸</div>
+        <h3>Zıpla Zıpla</h3>
+        <div class="tag">Hareket</div>
+        <div class="badge-soon">Yakında</div>
+      </div>
+    </div>
+
+    <h2>🧠 Hafıza Geliştirici Oyunlar <span style="font-size:.8rem; opacity:.6; font-weight:700;">(100 oyun)</span></h2>
+    <div class="grid" id="hafizaGrid"></div>
+  </main>
+
+  <footer id="ebeveyn">
+    <div><strong>Ebeveynler için:</strong> Sitemizde reklam takibi ve kişisel veri toplama yapılmaz, üyelik gerekmez.</div>
+    <div class="links">
+      <a href="#">Gizlilik Politikası</a>
+      <a href="#">İletişim</a>
+    </div>
+    <div style="margin-top:10px;">© 2026 Oyun Kutusu</div>
+  </footer>
+
+<script src="common.js"></script>
+<script>
+  // 5 oyun motoru x 5 tema x 4 seviye = 100 hafıza geliştirici oyun kartı
+  const ENGINES = [
+    { file: 'eslestirme.html', name: 'Eşleştirme', icon: '🧠', thumb: 't2' },
+    { file: 'simon.html',      name: 'Sıra Takibi', icon: '🔁', thumb: 't1' },
+    { file: 'kelime.html',     name: 'Kelime Hafızası', icon: '📝', thumb: 't3' },
+    { file: 'gorsel.html',     name: 'Görsel Hafıza', icon: '👁️', thumb: 't4' },
+    { file: 'yol.html',        name: 'Yol Hafızası', icon: '🐾', thumb: 't2' }
+  ];
+  const themeKeys = Object.keys(THEMES);
+
+  const hafizaGrid = document.getElementById('hafizaGrid');
+  const frag = document.createDocumentFragment();
+  ENGINES.forEach(engine=>{
+    themeKeys.forEach(themeKey=>{
+      const theme = THEMES[themeKey];
+      [1,2,3,4].forEach(level=>{
+        const a = document.createElement('a');
+        a.className = 'game-card';
+        a.href = `${engine.file}?theme=${themeKey}&level=${level}`;
+        a.dataset.cat = 'hafiza';
+        const title = `${theme.name} ${engine.name}`;
+        a.dataset.name = title.toLowerCase();
+        a.innerHTML = `
+          <div class="thumb ${engine.thumb}">${engine.icon}</div>
+          <h3>${title}</h3>
+          <div class="tag">${LEVEL_NAMES[level]}</div>`;
+        frag.appendChild(a);
+      });
+    });
+  });
+  hafizaGrid.appendChild(frag);
+
+  const search = document.getElementById('searchInput');
+  const cats = document.querySelectorAll('.cat-pill');
+  let activeCat = 'all';
+
+  function applyFilter(){
+    const q = search.value.trim().toLowerCase();
+    const cards = document.querySelectorAll('.game-card');
+    cards.forEach(card=>{
+      const name = card.dataset.name || '';
+      const catList = (card.dataset.cat || '').split(' ');
+      const matchesCat = activeCat === 'all' || catList.includes(activeCat);
+      const matchesSearch = name.includes(q);
+      card.style.display = (matchesCat && matchesSearch) ? '' : 'none';
+    });
+  }
+
+  search.addEventListener('input', applyFilter);
+  cats.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      cats.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      activeCat = btn.dataset.cat;
+      applyFilter();
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yol Hafızası — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  #grid{display:grid; gap:8px;}
+  .pcell{background:#EDE9FF; width:58px; height:58px;}
+  .pcell.lit{background:var(--purple);}
+  .pcell.done{background:var(--teal);}
+  .pcell.wrong{background:var(--coral);}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1 id="title">🐾 Yol Hafızası</h1>
+  <div id="hud"><span>🏆 Tur: <span id="round">0</span></span><span>📣 <span id="status">Başlat'a bas</span></span></div>
+  <div class="panel">
+    <div id="grid"></div>
+    <div id="overlay">
+      <div class="big">😿</div>
+      <div class="msg" id="overMsg"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <button class="btn alt" id="startBtn" style="margin-top:16px;">Başlat</button>
+
+<script src="common.js"></script>
+<script>
+const { theme, level } = getParams();
+setTitle('Yol Hafızası');
+document.getElementById('title').textContent = `🐾 ${theme.name} Yol Hafızası`;
+
+const size = [null,3,4,4,5][level];
+const totalCells = size*size;
+const speed = [null,650,520,420,340][level];
+
+document.getElementById('grid').style.gridTemplateColumns = `repeat(${size}, 58px)`;
+
+let cells = [];
+const gridEl = document.getElementById('grid');
+function buildGrid(){
+  gridEl.innerHTML = '';
+  cells = [];
+  for(let i=0;i<totalCells;i++){
+    const div = document.createElement('div');
+    div.className = 'cell pcell';
+    div.dataset.i = i;
+    div.onclick = ()=>handleClick(i);
+    gridEl.appendChild(div);
+    cells.push(div);
+  }
+}
+
+let path = [], userStep = 0, round = 0, accepting = false;
+
+function startGame(){
+  buildGrid();
+  path = []; round = 0; userStep = 0;
+  document.getElementById('round').textContent = round;
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('startBtn').style.display = 'none';
+  nextRound();
+}
+
+function nextRound(){
+  round++;
+  document.getElementById('round').textContent = round;
+  let next;
+  do { next = Math.floor(Math.random()*totalCells); } while(next === path[path.length-1]);
+  path.push(next);
+  userStep = 0;
+  playPath();
+}
+
+async function playPath(){
+  accepting = false;
+  document.getElementById('status').textContent = 'İzle...';
+  await new Promise(r=>setTimeout(r,400));
+  for(const idx of path){
+    cells[idx].classList.add('lit');
+    await new Promise(r=>setTimeout(r,speed*0.65));
+    cells[idx].classList.remove('lit');
+    await new Promise(r=>setTimeout(r,speed*0.35));
+  }
+  accepting = true;
+  document.getElementById('status').textContent = 'Sıra sende!';
+}
+
+function handleClick(i){
+  if(!accepting) return;
+  if(i === path[userStep]){
+    cells[i].classList.add('done');
+    userStep++;
+    if(userStep === path.length){
+      accepting = false;
+      document.getElementById('status').textContent = 'Harika!';
+      setTimeout(()=>{
+        cells.forEach(c=>c.classList.remove('done'));
+        nextRound();
+      }, 700);
+    }
+  } else {
+    accepting = false;
+    cells[i].classList.add('wrong');
+    document.getElementById('overMsg').textContent = `${round-1}. tura kadar hatırladın!`;
+    document.getElementById('overlay').style.display = 'flex';
+  }
+}
+
+document.getElementById('startBtn').onclick = startGame;
+buildGrid();
+</script>
+</body>
+</html>

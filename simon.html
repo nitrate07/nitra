@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sıra Takibi — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  #pad{display:grid; grid-template-columns:repeat(2, 100px); grid-template-rows:repeat(2, 100px); gap:10px;}
+  .pad-btn{
+    width:100px; height:100px; border-radius:20px; font-size:2.2rem; opacity:.55;
+    box-shadow:0 5px 0 rgba(0,0,0,.15);
+  }
+  .pad-btn.lit{opacity:1; transform:scale(1.05);}
+  .pad-btn:nth-child(1){background:#FFD9D9;}
+  .pad-btn:nth-child(2){background:#D9F0FF;}
+  .pad-btn:nth-child(3){background:#FFF3D6;}
+  .pad-btn:nth-child(4){background:#DFF8F0;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1 id="title">🔁 Sıra Takibi</h1>
+  <div id="hud"><span>🏆 Tur: <span id="round">0</span></span><span>📣 Durum: <span id="status">Başla</span></span></div>
+  <div class="panel">
+    <div id="pad"></div>
+    <div id="overlay">
+      <div class="big">😿</div>
+      <div class="msg" id="overMsg"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <button class="btn alt" id="startBtn" style="margin-top:16px;">Başlat</button>
+
+<script src="common.js"></script>
+<script>
+const { theme, level } = getParams();
+setTitle('Sıra Takibi');
+document.getElementById('title').textContent = `🔁 ${theme.name} Sıra Takibi`;
+
+const padEmojis = theme.emojis.slice(0,4);
+const speed = [null, 700, 550, 420, 320][level]; // faster on higher level
+let sequence = [], userStep = 0, round = 0, accepting = false;
+
+const padEl = document.getElementById('pad');
+padEmojis.forEach((e,i)=>{
+  const b = document.createElement('div');
+  b.className = 'cell pad-btn';
+  b.textContent = e;
+  b.dataset.i = i;
+  b.onclick = ()=>handleClick(i);
+  padEl.appendChild(b);
+});
+const buttons = Array.from(document.querySelectorAll('.pad-btn'));
+
+function startGame(){
+  sequence = []; round = 0; userStep = 0;
+  document.getElementById('round').textContent = round;
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('startBtn').style.display = 'none';
+  nextRound();
+}
+
+function nextRound(){
+  round++;
+  document.getElementById('round').textContent = round;
+  sequence.push(Math.floor(Math.random()*4));
+  userStep = 0;
+  playSequence();
+}
+
+async function playSequence(){
+  accepting = false;
+  document.getElementById('status').textContent = 'İzle...';
+  await new Promise(r=>setTimeout(r,400));
+  for(const idx of sequence){
+    buttons[idx].classList.add('lit');
+    await new Promise(r=>setTimeout(r,speed*0.6));
+    buttons[idx].classList.remove('lit');
+    await new Promise(r=>setTimeout(r,speed*0.4));
+  }
+  accepting = true;
+  document.getElementById('status').textContent = 'Sıra sende!';
+}
+
+function handleClick(i){
+  if(!accepting) return;
+  buttons[i].classList.add('lit');
+  setTimeout(()=>buttons[i].classList.remove('lit'), 200);
+  if(i === sequence[userStep]){
+    userStep++;
+    if(userStep === sequence.length){
+      accepting = false;
+      document.getElementById('status').textContent = 'Harika!';
+      setTimeout(nextRound, 700);
+    }
+  } else {
+    accepting = false;
+    document.getElementById('overMsg').textContent = `${round-1}. tura kadar hatırladın!`;
+    document.getElementById('overlay').style.display = 'flex';
+  }
+}
+
+document.getElementById('startBtn').onclick = startGame;
+document.getElementById('status').textContent = 'Başlat\'a bas';
+</script>
+</body>
+</html>

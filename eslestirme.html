@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eşleştirme — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  #grid{display:grid; gap:10px;}
+  .card{width:70px; height:70px; background:var(--purple); box-shadow:0 4px 0 var(--purple-dark);}
+  .card.flipped, .card.matched{background:#fff; box-shadow:0 4px 0 #ddd;}
+  .card.matched{background:var(--teal); box-shadow:0 4px 0 var(--teal-dark);}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1 id="title">🧠 Eşleştirme</h1>
+  <div id="hud"><span>👀 Hamle: <span id="moves">0</span></span><span>✅ Eşleşen: <span id="found">0</span>/<span id="total">0</span></span></div>
+  <div class="panel">
+    <div id="grid"></div>
+    <div id="overlay">
+      <div class="big">🎉</div>
+      <div class="msg">Tüm çiftleri buldun!</div>
+      <button class="btn" onclick="init()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+
+<script src="common.js"></script>
+<script>
+const { theme, level } = getParams();
+setTitle('Eşleştirme');
+document.getElementById('title').textContent = `🧠 ${theme.name} Eşleştirme`;
+
+const pairsCount = Math.min(theme.emojis.length, 3 + level * 2);
+const cols = pairsCount <= 6 ? 4 : 5;
+document.getElementById('grid').style.gridTemplateColumns = `repeat(${cols}, 70px)`;
+document.getElementById('total').textContent = pairsCount;
+
+let deck, flipped, matched, moves, lock;
+
+function init(){
+  const chosen = shuffle(theme.emojis).slice(0, pairsCount);
+  deck = shuffle([...chosen, ...chosen]).map((e,i)=>({id:i, emoji:e, flipped:false, matched:false}));
+  flipped = []; matched = 0; moves = 0; lock = false;
+  document.getElementById('moves').textContent = 0;
+  document.getElementById('found').textContent = 0;
+  document.getElementById('overlay').style.display = 'none';
+  render();
+}
+
+function render(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  deck.forEach(card=>{
+    const div = document.createElement('div');
+    div.className = 'cell card' + (card.flipped||card.matched ? (card.matched ? ' matched':' flipped') : '');
+    div.textContent = (card.flipped||card.matched) ? card.emoji : '❓';
+    div.onclick = ()=>flip(card.id);
+    grid.appendChild(div);
+  });
+}
+
+function flip(id){
+  if(lock) return;
+  const card = deck.find(c=>c.id===id);
+  if(card.flipped || card.matched) return;
+  card.flipped = true;
+  flipped.push(card);
+  render();
+  if(flipped.length===2){
+    moves++;
+    document.getElementById('moves').textContent = moves;
+    lock = true;
+    setTimeout(()=>{
+      const [a,b] = flipped;
+      if(a.emoji===b.emoji){
+        a.matched = true; b.matched = true; matched++;
+        document.getElementById('found').textContent = matched;
+        if(matched===pairsCount){
+          document.getElementById('overlay').style.display = 'flex';
+        }
+      } else {
+        a.flipped = false; b.flipped = false;
+      }
+      flipped = [];
+      lock = false;
+      render();
+    }, 700);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
