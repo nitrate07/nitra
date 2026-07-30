@@ -32,9 +32,12 @@
   h1,h2,h3,.logo,.cta{ font-family:'Baloo 2', 'Nunito', system-ui, sans-serif; }
 
   /* decorative blobs */
-  .blob{ position:fixed; border-radius:50%; filter:blur(0px); opacity:.5; z-index:0; pointer-events:none;}
-  .blob1{ width:280px; height:280px; background:#FFE8A3; top:-80px; left:-100px;}
-  .blob2{ width:220px; height:220px; background:#CFF3F0; bottom:-60px; right:-80px;}
+  .blob{ position:fixed; border-radius:50%; filter:blur(0px); opacity:.55; z-index:0; pointer-events:none;}
+  .blob1{ width:300px; height:300px; background:#FFE08A; top:-90px; left:-110px;}
+  .blob2{ width:240px; height:240px; background:#9CF0E6; bottom:-70px; right:-90px;}
+  .blob3{ width:180px; height:180px; background:#FFB8DE; top:40%; left:-100px; opacity:.35;}
+  .sparkle{ position:fixed; font-size:1.4rem; z-index:0; pointer-events:none; opacity:.7; animation:twinkle 2.6s ease-in-out infinite; }
+  @keyframes twinkle{ 0%,100%{ opacity:.25; transform:scale(.8) rotate(0deg);} 50%{ opacity:.9; transform:scale(1.15) rotate(15deg);} }
 
   header{
     position:sticky; top:0; z-index:50;
@@ -65,21 +68,25 @@
     display:flex; align-items:center; gap:30px; flex-wrap:wrap;
   }
   .hero-text{ flex:1; min-width:260px; }
-  .hero-text h1{ font-size:2.6rem; line-height:1.15; color:var(--ink); margin-bottom:14px;}
+  .hero-text h1{ font-size:2.8rem; line-height:1.15; color:var(--ink); margin-bottom:14px;}
   .hero-text h1 em{ font-style:normal; color:var(--purple); text-decoration:underline wavy var(--yellow) 3px; text-underline-offset:6px;}
-  .hero-text p{ font-size:1.05rem; opacity:.75; margin-bottom:20px; max-width:440px;}
+  .hero-text h1 .rainbow{ background:linear-gradient(90deg,#FF6B6B,#FFD23F,#2EC4B6,#6C4EF5); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hero-text p{ font-size:1.08rem; opacity:.75; margin-bottom:20px; max-width:440px;}
   .badges{ display:flex; gap:10px; flex-wrap:wrap; }
   .badge{ background:#fff; padding:8px 14px; border-radius:999px; font-weight:800; font-size:.85rem; box-shadow:0 3px 0 #e4e0f7; }
   .hero-art{
     flex:1; min-width:240px; display:flex; justify-content:center; align-items:center;
-    font-size:7rem; position:relative;
+    font-size:7.5rem; position:relative;
   }
-  .hero-art .float{ position:absolute; font-size:2.2rem; animation:float 4s ease-in-out infinite; }
-  .hero-art .f1{ top:-10px; left:10px; animation-delay:0s;}
-  .hero-art .f2{ bottom:0; right:0; animation-delay:1s;}
-  .hero-art .f3{ top:50%; right:-10px; animation-delay:2s;}
-  @keyframes float{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-14px);} }
-  @media (prefers-reduced-motion: reduce){ .hero-art .float{ animation:none; } }
+  .hero-art .mascot{ display:inline-block; animation:bounce 1.8s ease-in-out infinite; filter:drop-shadow(0 10px 14px rgba(108,78,245,.35)); }
+  @keyframes bounce{ 0%,100%{ transform:translateY(0) rotate(-4deg);} 50%{ transform:translateY(-16px) rotate(4deg);} }
+  .hero-art .float{ position:absolute; font-size:2.3rem; animation:float 4s ease-in-out infinite; filter:drop-shadow(0 4px 6px rgba(0,0,0,.12)); }
+  .hero-art .f1{ top:-10px; left:0; animation-delay:0s;}
+  .hero-art .f2{ bottom:-6px; right:6px; animation-delay:1s;}
+  .hero-art .f3{ top:45%; right:-14px; animation-delay:2s;}
+  .hero-art .f4{ top:10%; right:20%; animation-delay:.6s; font-size:1.6rem;}
+  @keyframes float{ 0%,100%{ transform:translateY(0) rotate(0deg);} 50%{ transform:translateY(-14px) rotate(12deg);} }
+  @media (prefers-reduced-motion: reduce){ .hero-art .float, .hero-art .mascot{ animation:none; } }
 
   /* categories */
   .cats{ max-width:1100px; margin:10px auto 0; padding:0 20px; display:flex; gap:10px; overflow-x:auto; position:relative; z-index:1;}
@@ -92,6 +99,15 @@
   /* grid */
   main{ max-width:1100px; margin:0 auto; padding:30px 20px 60px; position:relative; z-index:1;}
   main h2{ font-size:1.3rem; margin-bottom:16px; }
+  .section-band{
+    display:flex; align-items:center; gap:10px; padding:12px 20px; border-radius:999px; margin-bottom:18px;
+    color:#fff; font-family:'Baloo 2','Nunito',sans-serif; font-weight:800; font-size:1.15rem;
+    box-shadow:0 4px 0 rgba(0,0,0,.08);
+  }
+  .section-band .count{ font-size:.78rem; font-weight:700; background:rgba(255,255,255,.25); padding:3px 12px; border-radius:999px; margin-left:auto; }
+  .band-featured{ background:linear-gradient(90deg,#FFB03D,#FF6B6B); }
+  .band-hafiza{ background:linear-gradient(90deg,#6C4EF5,#9C7BFF); }
+  .band-bulmaca{ background:linear-gradient(90deg,#FF6B9E,#FF9F6B); }
   .grid{
     display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:16px; margin-bottom:36px;
   }
@@ -102,8 +118,30 @@
   .game-card:hover{ transform:translateY(-4px) scale(1.02); box-shadow:0 8px 0 #e4e0f7, 0 14px 20px rgba(108,78,245,.15); }
   .thumb{
     width:100%; aspect-ratio:1/1; border-radius:14px; display:flex; align-items:center; justify-content:center;
-    font-size:3rem; margin-bottom:10px;
+    font-size:3rem; margin-bottom:10px; position:relative; overflow:hidden;
   }
+  .thumb span.ic{ position:relative; z-index:2; filter:drop-shadow(0 2px 3px rgba(0,0,0,.18)); }
+  .thumb::after{ content:''; position:absolute; inset:0; z-index:1; border-radius:inherit; }
+  /* tema renkleri */
+  .th-hayvanlar{ background:linear-gradient(135deg,#FFE8C2,#FF9F5A); }
+  .th-meyveler{ background:linear-gradient(135deg,#FFD1DC,#FF5C86); }
+  .th-uzay{ background:linear-gradient(135deg,#CBBBFF,#6C4EF5); }
+  .th-deniz{ background:linear-gradient(135deg,#BDEFFF,#22B8AA); }
+  .th-tatli{ background:linear-gradient(135deg,#FFE0F3,#FF7FC2); }
+  .th-default{ background:linear-gradient(135deg,#E4DDFF,#C9BBFF); }
+  /* mekanik şekil/desen grupları */
+  .shape-match{ border-radius:16px; }
+  .shape-match::after{ background-image:
+    linear-gradient(rgba(255,255,255,.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.35) 1px, transparent 1px);
+    background-size:33% 33%; }
+  .shape-order{ border-radius:50%; margin-left:auto; margin-right:auto; width:88%; aspect-ratio:1/1; }
+  .shape-order::after{ background-image: repeating-conic-gradient(rgba(255,255,255,.28) 0deg 8deg, transparent 8deg 40deg); }
+  .shape-recall{ border-radius:32% 68% 68% 32% / 32% 32% 68% 68%; }
+  .shape-recall::after{ background-image: radial-gradient(circle, rgba(255,255,255,.4) 18%, transparent 19%);
+    background-size:24px 24px; }
+  .thumb-svg{ width:100%; aspect-ratio:1/1; border-radius:16px; overflow:hidden; margin-bottom:10px; display:block; }
+  .thumb-svg svg{ width:100%; height:100%; display:block; }
   .t1{ background:linear-gradient(135deg,#E4DDFF,#C9BBFF); }
   .t2{ background:linear-gradient(135deg,#FFEBB0,#FFD23F); }
   .t3{ background:linear-gradient(135deg,#CFF3F0,#8FE4DB); }
@@ -137,6 +175,11 @@
 <body>
   <div class="blob blob1"></div>
   <div class="blob blob2"></div>
+  <div class="blob blob3"></div>
+  <div class="sparkle" style="top:12%; left:8%;">✨</div>
+  <div class="sparkle" style="top:22%; right:10%; animation-delay:.8s;">🌟</div>
+  <div class="sparkle" style="top:65%; left:4%; animation-delay:1.4s;">✨</div>
+  <div class="sparkle" style="top:78%; right:6%; animation-delay:.4s;">💫</div>
 
   <header>
     <div class="nav">
@@ -155,7 +198,7 @@
 
   <section class="hero">
     <div class="hero-text">
-      <h1>Tarayıcında <em>ücretsiz</em><br>oyna, indirme yok!</h1>
+      <h1>Tarayıcında <span class="rainbow">ücretsiz</span><br>oyna, indirme yok!</h1>
       <p>Çocuklar için özenle seçilmiş, reklam takibi olmayan, güvenli ve eğlenceli online oyunlar. Kayıt olmadan, tek tıkla oyna!</p>
       <div class="badges">
         <span class="badge">🎮 100% Ücretsiz</span>
@@ -164,15 +207,16 @@
       </div>
     </div>
     <div class="hero-art">
-      🐱
+      <span class="mascot">🐱</span>
       <span class="float f1">🐟</span>
       <span class="float f2">🧩</span>
       <span class="float f3">⭐</span>
+      <span class="float f4">🎈</span>
     </div>
   </section>
 
   <div class="cats" id="cats">
-    <button class="cat-pill active" data-cat="all">Hepsi</button>
+    <button class="cat-pill active" data-cat="all">✨ Hepsi</button>
     <button class="cat-pill" data-cat="hafiza">🧠 Hafıza Geliştirici</button>
     <button class="cat-pill" data-cat="bulmaca">🧩 Bulmaca</button>
     <button class="cat-pill" data-cat="yaris">🏎️ Yarış</button>
@@ -181,43 +225,86 @@
   </div>
 
   <main id="oyunlar">
-    <h2>Öne Çıkan Oyunlar</h2>
+    <div class="section-band band-featured">🌟 Öne Çıkan Oyunlar</div>
     <div class="grid" id="gameGrid">
       <a class="game-card" href="labirent.html" data-cat="hafiza macera" data-name="labirent macerası">
         <span class="badge-new">Yeni</span>
-        <div class="thumb t1">🌀</div>
+        <div class="thumb-svg"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="gMaze" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c8bff"/><stop offset="1" stop-color="#4a34c9"/></linearGradient></defs>
+          <rect width="100" height="100" fill="url(#gMaze)"/>
+          <g stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".5" fill="none">
+            <path d="M14 18 H48 M48 18 V46 M48 46 H84 M84 46 V78 M18 32 H62 M18 32 V60 M62 60 H36 M70 20 V36"/>
+          </g>
+          <text x="52" y="62" font-size="32" text-anchor="middle">🐱</text>
+          <text x="82" y="82" font-size="18" text-anchor="middle">🏁</text>
+        </svg></div>
         <h3>Labirent Macerası</h3>
         <div class="tag">Beceri · Macera</div>
       </a>
       <a class="game-card" href="yakalama.html" data-cat="hareket" data-name="balık yakalama">
-        <div class="thumb t3">🐟</div>
+        <div class="thumb-svg"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="gFish" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bdefff"/><stop offset="1" stop-color="#1fb3a6"/></linearGradient></defs>
+          <rect width="100" height="100" fill="url(#gFish)"/>
+          <g fill="#fff" opacity=".35">
+            <path d="M0 62 Q15 55 30 62 T60 62 T90 62 T100 60 V100 H0 Z"/>
+            <path d="M0 78 Q20 72 40 78 T80 78 T100 76 V100 H0 Z"/>
+          </g>
+          <text x="76" y="26" font-size="18" text-anchor="middle">🐟</text>
+          <text x="24" y="40" font-size="16" text-anchor="middle">🐟</text>
+          <text x="50" y="62" font-size="34" text-anchor="middle">🐱</text>
+        </svg></div>
         <h3>Balık Yakalama</h3>
         <div class="tag">Hareket</div>
       </a>
       <a class="game-card" href="araba-yarisi.html" data-cat="yaris hareket" data-name="araba yarışı">
         <span class="badge-new">Yeni</span>
-        <div class="thumb t4">🏎️</div>
+        <div class="thumb-svg"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="gCar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2456"/><stop offset="1" stop-color="#0c0a1a"/></linearGradient></defs>
+          <rect width="100" height="100" fill="url(#gCar)"/>
+          <rect x="26" y="0" width="48" height="100" fill="#171233"/>
+          <line x1="50" y1="0" x2="50" y2="100" stroke="#fff" stroke-width="3" stroke-dasharray="10 10" opacity=".4"/>
+          <rect x="4" y="14" width="8" height="20" rx="2" fill="#3dd6ff" opacity=".85"/>
+          <rect x="88" y="50" width="8" height="26" rx="2" fill="#ff3d6e" opacity=".85"/>
+          <text x="50" y="72" font-size="30" text-anchor="middle">🏎️</text>
+        </svg></div>
         <h3>Araba Yarışı</h3>
         <div class="tag">Yarış</div>
       </a>
       <a class="game-card" href="ucak-oyunu.html" data-cat="yaris hareket" data-name="uçak motor yarışı">
         <span class="badge-new">Yeni</span>
-        <div class="thumb t1">✈️</div>
+        <div class="thumb-svg"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="gPlane" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#203163"/><stop offset="1" stop-color="#060a18"/></linearGradient></defs>
+          <rect width="100" height="100" fill="url(#gPlane)"/>
+          <g fill="#fff">
+            <circle cx="18" cy="18" r="1.6" opacity=".8"/><circle cx="70" cy="14" r="1.2" opacity=".6"/>
+            <circle cx="86" cy="34" r="1.6" opacity=".7"/><circle cx="38" cy="10" r="1.2" opacity=".5"/>
+            <circle cx="62" cy="72" r="1.2" opacity=".5"/><circle cx="14" cy="60" r="1.4" opacity=".6"/>
+          </g>
+          <text x="54" y="56" font-size="30" text-anchor="middle">✈️</text>
+        </svg></div>
         <h3>Uçak Motor Yarışı</h3>
         <div class="tag">Yarış</div>
       </a>
       <a class="game-card" href="motor-yarisi.html" data-cat="yaris hareket" data-name="motor yarışı">
         <span class="badge-new">Yeni</span>
-        <div class="thumb t2">🏍️</div>
+        <div class="thumb-svg"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="gMoto" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a2f18"/><stop offset="1" stop-color="#140d08"/></linearGradient></defs>
+          <rect width="100" height="100" fill="url(#gMoto)"/>
+          <rect x="26" y="0" width="48" height="100" fill="#2a1c10"/>
+          <line x1="50" y1="0" x2="50" y2="100" stroke="#ffb04d" stroke-width="3" stroke-dasharray="8 10" opacity=".5"/>
+          <circle cx="12" cy="28" r="3" fill="#ffb04d" opacity=".85"/>
+          <circle cx="88" cy="58" r="3" fill="#ffb04d" opacity=".85"/>
+          <text x="50" y="70" font-size="30" text-anchor="middle">🏍️</text>
+        </svg></div>
         <h3>Motor Yarışı</h3>
         <div class="tag">Yarış</div>
       </a>
     </div>
 
-    <h2>🧠 Hafıza Geliştirici Oyunlar <span style="font-size:.8rem; opacity:.6; font-weight:700;">(100 oyun)</span></h2>
+    <div class="section-band band-hafiza">🧠 Hafıza Geliştirici Oyunlar <span class="count" id="hafizaCount">100 oyun</span></div>
     <div class="grid" id="hafizaGrid"></div>
 
-    <h2>🧩 Bulmaca Oyunları <span style="font-size:.8rem; opacity:.6; font-weight:700;">(60 oyun)</span></h2>
+    <div class="section-band band-bulmaca">🧩 Bulmaca Oyunları <span class="count" id="bulmacaCount">80 oyun</span></div>
     <div class="grid" id="bulmacaGrid"></div>
   </main>
 
@@ -234,11 +321,11 @@
 <script>
   // 5 oyun motoru x 5 tema x 4 seviye = 100 hafıza geliştirici oyun kartı
   const ENGINES = [
-    { file: 'eslestirme.html', name: 'Eşleştirme', icon: '🧠', thumb: 't2' },
-    { file: 'simon.html',      name: 'Sıra Takibi', icon: '🔁', thumb: 't1' },
-    { file: 'kelime.html',     name: 'Kelime Hafızası', icon: '📝', thumb: 't3' },
-    { file: 'gorsel.html',     name: 'Görsel Hafıza', icon: '👁️', thumb: 't4' },
-    { file: 'yol.html',        name: 'Yol Hafızası', icon: '🐾', thumb: 't2' }
+    { file: 'eslestirme.html', name: 'Eşleştirme', icon: '🧠', shape: 'match' },
+    { file: 'simon.html',      name: 'Sıra Takibi', icon: '🔁', shape: 'order' },
+    { file: 'kelime.html',     name: 'Kelime Hafızası', icon: '📝', shape: 'recall' },
+    { file: 'gorsel.html',     name: 'Görsel Hafıza', icon: '👁️', shape: 'recall' },
+    { file: 'yol.html',        name: 'Yol Hafızası', icon: '🐾', shape: 'order' }
   ];
   const themeKeys = Object.keys(THEMES);
 
@@ -255,7 +342,7 @@
         const title = `${theme.name} ${engine.name}`;
         a.dataset.name = title.toLowerCase();
         a.innerHTML = `
-          <div class="thumb ${engine.thumb}">${engine.icon}</div>
+          <div class="thumb th-${themeKey} shape-${engine.shape}"><span class="ic">${engine.icon}</span></div>
           <h3>${title}</h3>
           <div class="tag">${LEVEL_NAMES[level]}</div>`;
         frag.appendChild(a);
@@ -264,11 +351,12 @@
   });
   hafizaGrid.appendChild(frag);
 
-  // Bulmaca kataloğu: 3 motor x 5 tema x 4 seviye = 60 kart
+  // Bulmaca kataloğu: 4 motor x 5 tema x 4 seviye = 80 kart
   const PUZZLE_ENGINES = [
-    { file: 'kaydirma.html', name: 'Kaydırmalı Bulmaca', icon: '🧩', thumb: 't1' },
-    { file: 'parca.html',    name: 'Parça Değiştirme', icon: '🔀', thumb: 't3' },
-    { file: 'desen.html',    name: 'Desen Tamamlama', icon: '🔮', thumb: 't4' }
+    { file: 'kaydirma.html', name: 'Kaydırmalı Bulmaca', icon: '🧩', shape: 'match' },
+    { file: 'parca.html',    name: 'Parça Değiştirme', icon: '🔀', shape: 'match' },
+    { file: 'desen.html',    name: 'Desen Tamamlama', icon: '🔮', shape: 'order' },
+    { file: 'yapboz.html',   name: 'Yapboz', icon: '🖼️', shape: 'recall' }
   ];
   const bulmacaGrid = document.getElementById('bulmacaGrid');
   const puzzleFrag = document.createDocumentFragment();
@@ -283,7 +371,7 @@
         const title = `${theme.name} ${engine.name}`;
         a.dataset.name = title.toLowerCase();
         a.innerHTML = `
-          <div class="thumb ${engine.thumb}">${engine.icon}</div>
+          <div class="thumb th-${themeKey} shape-${engine.shape}"><span class="ic">${engine.icon}</span></div>
           <h3>${title}</h3>
           <div class="tag">${LEVEL_NAMES[level]}</div>`;
         puzzleFrag.appendChild(a);

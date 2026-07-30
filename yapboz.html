@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yapboz — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  #previewWrap{ display:flex; align-items:center; gap:10px; margin-bottom:12px; background:#F1EEFF; padding:8px 14px; border-radius:14px; }
+  #previewWrap span{ font-size:.8rem; font-weight:800; color:var(--purple); }
+  #preview{ border-radius:8px; box-shadow:0 2px 0 #ddd; }
+  #grid{ display:grid; gap:4px; }
+  .piece{ cursor:pointer; border-radius:6px; box-shadow:0 3px 0 #ddd; transition:transform .12s; }
+  .piece.selected{ outline:3px solid var(--purple); transform:scale(1.04); }
+  .piece.correct{ box-shadow:0 3px 0 var(--teal-dark); outline:2px solid var(--teal); }
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1 id="title">🖼️ Yapboz</h1>
+  <div id="hud"><span>🔁 Takas: <span id="swaps">0</span></span><span>✅ Doğru: <span id="correctCount">0</span>/<span id="total">0</span></span></div>
+  <div id="previewWrap"><span>Hedef görsel:</span><canvas id="preview" width="70" height="70"></canvas></div>
+  <div class="panel">
+    <div id="grid"></div>
+    <div id="overlay">
+      <div class="big">🎉</div>
+      <div class="msg">Yapbozu tamamladın!</div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="init()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <p style="font-size:.85rem; opacity:.7; margin-top:10px; text-align:center;">İki parçaya sırayla tıkla, yerlerini değiştirerek resmi tamamla!</p>
+
+<script src="common.js"></script>
+<script>
+const { theme, themeKey, level } = getParams();
+setTitle('Yapboz');
+document.getElementById('title').textContent = `🖼️ ${theme.name} Yapboz`;
+
+const SRC = 240;
+const size = [null,2,3,3,4][level];
+const total = size*size;
+const tileSize = SRC/size;
+const dispTile = size<=2 ? 110 : (size===3 ? 78 : 58);
+document.getElementById('grid').style.gridTemplateColumns = `repeat(${size}, ${dispTile}px)`;
+document.getElementById('total').textContent = total;
+
+// ---- Sahne çizim fonksiyonları (temaya göre) ----
+function drawScene(c){
+  const g = c.getContext('2d');
+  g.clearRect(0,0,SRC,SRC);
+  const themes = {
+    hayvanlar(){
+      const sky = g.createLinearGradient(0,0,0,SRC); sky.addColorStop(0,'#bdeaff'); sky.addColorStop(1,'#eafcff');
+      g.fillStyle = sky; g.fillRect(0,0,SRC,SRC);
+      g.fillStyle = '#8fe07a'; g.fillRect(0,SRC*0.75,SRC,SRC*0.25);
+      g.fillStyle = '#ffe27a'; g.beginPath(); g.arc(SRC*0.82,SRC*0.18,26,0,Math.PI*2); g.fill();
+      // kedi yüzü
+      g.fillStyle = '#ff9f5a';
+      g.beginPath(); g.arc(SRC/2, SRC*0.52, 66, 0, Math.PI*2); g.fill();
+      g.beginPath(); g.moveTo(SRC/2-58,SRC*0.52-40); g.lineTo(SRC/2-30,SRC*0.52-80); g.lineTo(SRC/2-10,SRC*0.52-38); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(SRC/2+58,SRC*0.52-40); g.lineTo(SRC/2+30,SRC*0.52-80); g.lineTo(SRC/2+10,SRC*0.52-38); g.closePath(); g.fill();
+      g.fillStyle = '#1b1b3a';
+      g.beginPath(); g.arc(SRC/2-22,SRC*0.52-6,7,0,Math.PI*2); g.fill();
+      g.beginPath(); g.arc(SRC/2+22,SRC*0.52-6,7,0,Math.PI*2); g.fill();
+      g.fillStyle = '#ff6b8b'; g.beginPath(); g.moveTo(SRC/2-7,SRC*0.52+14); g.lineTo(SRC/2+7,SRC*0.52+14); g.lineTo(SRC/2,SRC*0.52+24); g.closePath(); g.fill();
+    },
+    meyveler(){
+      g.fillStyle = '#fff3d6'; g.fillRect(0,0,SRC,SRC);
+      g.fillStyle = '#e8b06a'; g.fillRect(20,SRC*0.68,SRC-40,14);
+      g.strokeStyle = '#c98a3f'; g.lineWidth=6;
+      g.beginPath(); g.arc(SRC/2, SRC*0.7, 70, Math.PI, 0); g.stroke();
+      g.fillStyle = '#ff5c5c'; g.beginPath(); g.arc(SRC/2-30, SRC*0.55, 34, 0, Math.PI*2); g.fill();
+      g.fillStyle = '#ffb03d'; g.beginPath(); g.arc(SRC/2+34, SRC*0.58, 28, 0, Math.PI*2); g.fill();
+      g.fillStyle = '#7bc94a'; g.fillRect(SRC/2-33,SRC*0.55-40,4,14);
+      g.fillStyle = '#7bc94a'; g.fillRect(SRC/2+31,SRC*0.58-34,4,12);
+    },
+    uzay(){
+      const sky = g.createLinearGradient(0,0,0,SRC); sky.addColorStop(0,'#241a4d'); sky.addColorStop(1,'#0c0a1a');
+      g.fillStyle = sky; g.fillRect(0,0,SRC,SRC);
+      g.fillStyle = '#fff';
+      for(let i=0;i<26;i++){ g.beginPath(); g.arc(Math.random()*SRC, Math.random()*SRC, Math.random()*1.6+0.5, 0, Math.PI*2); g.fill(); }
+      g.fillStyle = '#e8eefc'; g.beginPath(); g.arc(SRC*0.78,SRC*0.22,22,0,Math.PI*2); g.fill();
+      g.save(); g.translate(SRC/2, SRC*0.55); g.rotate(-0.5);
+      g.fillStyle = '#ff6b6b'; g.beginPath(); g.moveTo(0,-70); g.lineTo(22,10); g.lineTo(-22,10); g.closePath(); g.fill();
+      g.fillStyle = '#e8eefc'; g.beginPath(); g.arc(0,-30,12,0,Math.PI*2); g.fill();
+      g.fillStyle = '#ffb03d'; g.beginPath(); g.moveTo(-14,10); g.lineTo(14,10); g.lineTo(0,40); g.closePath(); g.fill();
+      g.restore();
+    },
+    deniz(){
+      const sea = g.createLinearGradient(0,0,0,SRC); sea.addColorStop(0,'#bdefff'); sea.addColorStop(1,'#1fb3a6');
+      g.fillStyle = sea; g.fillRect(0,0,SRC,SRC);
+      g.fillStyle = '#ffe27a'; g.beginPath(); g.arc(SRC*0.2,SRC*0.18,20,0,Math.PI*2); g.fill();
+      g.save(); g.translate(SRC/2,SRC*0.55);
+      g.fillStyle = '#ff9f5a';
+      g.beginPath(); g.ellipse(0,0,60,36,0,0,Math.PI*2); g.fill();
+      g.beginPath(); g.moveTo(56,0); g.lineTo(86,-24); g.lineTo(86,24); g.closePath(); g.fill();
+      g.fillStyle='#fff'; g.beginPath(); g.arc(-24,-8,7,0,Math.PI*2); g.fill();
+      g.fillStyle='#1b1b3a'; g.beginPath(); g.arc(-24,-8,3,0,Math.PI*2); g.fill();
+      g.restore();
+      g.fillStyle = 'rgba(255,255,255,.55)';
+      [[40,180,6],[70,150,4],[190,200,5]].forEach(([x,y,r])=>{ g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill(); });
+    },
+    tatli(){
+      g.fillStyle = '#fff0f8'; g.fillRect(0,0,SRC,SRC);
+      g.save(); g.translate(SRC/2, SRC*0.58);
+      g.fillStyle = '#ffcf9b';
+      g.beginPath(); g.moveTo(-46,50); g.lineTo(-34,-4); g.lineTo(34,-4); g.lineTo(46,50); g.closePath(); g.fill();
+      g.fillStyle = '#ff8fc2';
+      g.beginPath(); g.moveTo(-40,-4); g.quadraticCurveTo(-40,-40,0,-40); g.quadraticCurveTo(40,-40,40,-4);
+      g.quadraticCurveTo(20,-20,0,-4); g.quadraticCurveTo(-20,-20,-40,-4); g.closePath(); g.fill();
+      g.fillStyle = '#ff5c5c'; g.beginPath(); g.arc(0,-42,9,0,Math.PI*2); g.fill();
+      g.restore();
+    }
+  };
+  (themes[themeKey] || themes.hayvanlar)();
+}
+
+const source = document.createElement('canvas');
+source.width = SRC; source.height = SRC;
+drawScene(source);
+
+// önizleme
+const pctx = document.getElementById('preview').getContext('2d');
+pctx.drawImage(source, 0, 0, 70, 70);
+
+let current, selected, swaps;
+
+function makeTileCanvas(originalIndex){
+  const c = document.createElement('canvas');
+  c.width = dispTile; c.height = dispTile;
+  c.className = 'cell piece';
+  const gx = (originalIndex % size) * tileSize;
+  const gy = Math.floor(originalIndex / size) * tileSize;
+  const g = c.getContext('2d');
+  g.drawImage(source, gx, gy, tileSize, tileSize, 0, 0, dispTile, dispTile);
+  return c;
+}
+
+function init(){
+  let order = [...Array(total).keys()];
+  order = shuffle(order);
+  while(order.every((v,i)=>v===i)) order = shuffle(order);
+  current = order;
+  selected = null; swaps = 0;
+  document.getElementById('swaps').textContent = 0;
+  document.getElementById('overlay').style.display = 'none';
+  render();
+}
+
+function render(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  let correctCount = 0;
+  current.forEach((origIdx, slot)=>{
+    const canvasEl = makeTileCanvas(origIdx);
+    const isCorrect = origIdx === slot;
+    if(isCorrect) correctCount++;
+    canvasEl.classList.toggle('correct', isCorrect);
+    canvasEl.classList.toggle('selected', selected === slot);
+    canvasEl.onclick = ()=>handleClick(slot);
+    grid.appendChild(canvasEl);
+  });
+  document.getElementById('correctCount').textContent = correctCount;
+  if(correctCount === total){
+    playSuccess();
+    const score = Math.max(0, total*3 - Math.max(0, swaps - total));
+    document.getElementById('stars').textContent = starRating(score, total*3);
+    document.getElementById('overlay').style.display = 'flex';
+    fireConfetti(document.querySelector('.panel'));
+  }
+}
+
+function handleClick(slot){
+  if(selected === null){ selected = slot; playClick(430); render(); return; }
+  if(selected === slot){ selected = null; render(); return; }
+  [current[selected], current[slot]] = [current[slot], current[selected]];
+  swaps++;
+  document.getElementById('swaps').textContent = swaps;
+  playClick(520);
+  selected = null;
+  render();
+}
+
+init();
+</script>
+</body>
+</html>

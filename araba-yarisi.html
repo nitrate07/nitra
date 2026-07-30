@@ -58,8 +58,10 @@ const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 const laneCount = 3;
-const laneW = W / laneCount;
-const laneX = i => laneW*i + laneW/2;
+const ROAD_MARGIN = 30;
+const roadWidth = W - ROAD_MARGIN*2;
+const laneW = roadWidth / laneCount;
+const laneX = i => ROAD_MARGIN + laneW*i + laneW/2;
 
 let bestScore = parseInt(localStorage.getItem('ok_araba_best_v2') || '0', 10);
 document.getElementById('best').textContent = bestScore;
