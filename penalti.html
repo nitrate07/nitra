@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Penaltı Vuruşu — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  canvas{background:linear-gradient(#8fd88f,#6bc46b); border-radius:20px; box-shadow:0 10px 30px rgba(46,120,46,.25); touch-action:none; cursor:crosshair;}
+  #wrap{position:relative;}
+  #resultText{position:absolute; top:14px; left:50%; transform:translateX(-50%); font-weight:900; font-size:1.4rem; color:#fff;
+    text-shadow:0 2px 4px rgba(0,0,0,.4); opacity:0; transition:opacity .2s; pointer-events:none;}
+  p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>⚽ Penaltı Vuruşu</h1>
+  <div id="hud"><span>⚽ Gol: <span id="score">0</span></span><span>❌ Kaçan: <span id="misses">0</span>/3</span><span>🏆 Rekor: <span id="best">0</span></span></div>
+  <div id="wrap">
+    <canvas id="c" width="320" height="380"></canvas>
+    <div id="resultText"></div>
+    <div id="overlay">
+      <div class="big">⚽</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <p class="hint">Kaleyi bir yere tıkla, topu oraya vur! Kaleci nereye atlayacağını tahmin et.</p>
+
+<script src="common.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const goal = { x: 30, y: 30, w: W-60, h: 150 };
+
+let bestScore = parseInt(localStorage.getItem('ok_penalti_best') || '0', 10);
+document.getElementById('best').textContent = bestScore;
+
+let score, misses, round, running, animating, ballPos, keeperZone, keeperPos;
+
+function zoneCenter(zi, zj){
+  return {
+    x: goal.x + (zi+0.5) * (goal.w/3),
+    y: goal.y + (zj+0.5) * (goal.h/3)
+  };
+}
+
+function startGame(){
+  score = 0; misses = 0; round = 0; running = true; animating = false;
+  ballPos = { x: W/2, y: H-40 };
+  keeperPos = zoneCenter(1,1);
+  document.getElementById('score').textContent = 0;
+  document.getElementById('misses').textContent = 0;
+  document.getElementById('overlay').style.display = 'none';
+  draw();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#6bc46b'; ctx.fillRect(0,0,W,H);
+  // kale çizgileri
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 5;
+  ctx.strokeRect(goal.x, goal.y, goal.w, goal.h);
+  ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(255,255,255,.5)';
+  for(let i=1;i<8;i++){
+    ctx.beginPath(); ctx.moveTo(goal.x+goal.w*i/8, goal.y); ctx.lineTo(goal.x+goal.w*i/8, goal.y+goal.h); ctx.stroke();
+  }
+  for(let j=1;j<4;j++){
+    ctx.beginPath(); ctx.moveTo(goal.x, goal.y+goal.h*j/4); ctx.lineTo(goal.x+goal.w, goal.y+goal.h*j/4); ctx.stroke();
+  }
+  // ceza sahası çizgisi
+  ctx.strokeStyle = '#fff'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(0,H-70); ctx.lineTo(W,H-70); ctx.stroke();
+
+  // kaleci
+  ctx.font = '40px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🧤', keeperPos.x, keeperPos.y);
+  // top
+  ctx.font = '28px serif';
+  ctx.fillText('⚽', ballPos.x, ballPos.y);
+}
+
+function showResult(text, color){
+  const el = document.getElementById('resultText');
+  el.textContent = text;
+  el.style.color = color;
+  el.style.opacity = 1;
+  setTimeout(()=>{ el.style.opacity = 0; }, 900);
+}
+
+function endGame(){
+  running = false;
+  if(score > bestScore){ bestScore = score; localStorage.setItem('ok_penalti_best', bestScore); }
+  document.getElementById('best').textContent = bestScore;
+  document.getElementById('overMsg').textContent = `${score} gol attın!`;
+  document.getElementById('stars').textContent = starRating(score, 10);
+  document.getElementById('overlay').style.display = 'flex';
+}
+
+function handleShot(clickX, clickY){
+  if(!running || animating) return;
+  if(clickY > goal.y+goal.h+20) return; // kale dışına tıklama
+  animating = true;
+  round++;
+  const zi = Math.max(0, Math.min(2, Math.floor((clickX-goal.x)/(goal.w/3))));
+  const zj = Math.max(0, Math.min(2, Math.floor((clickY-goal.y)/(goal.h/3))));
+  const targetPos = zoneCenter(zi, zj);
+
+  // kaleci zorluk arttıkça daha isabetli tahmin ediyor
+  const accuracy = Math.min(0.75, 0.15 + round*0.06);
+  let diveZi, diveZj;
+  if(Math.random() < accuracy){ diveZi = zi; diveZj = zj; }
+  else { diveZi = Math.floor(Math.random()*3); diveZj = Math.floor(Math.random()*3); }
+  const divePos = zoneCenter(diveZi, diveZj);
+
+  const startBall = { x: ballPos.x, y: ballPos.y };
+  const startKeeper = { x: keeperPos.x, y: keeperPos.y };
+  const duration = 420;
+  const t0 = Date.now();
+
+  function anim(){
+    const t = Math.min(1, (Date.now()-t0)/duration);
+    ballPos.x = startBall.x + (targetPos.x-startBall.x)*t;
+    ballPos.y = startBall.y + (targetPos.y-startBall.y)*t;
+    keeperPos.x = startKeeper.x + (divePos.x-startKeeper.x)*Math.min(1,t*1.3);
+    keeperPos.y = startKeeper.y + (divePos.y-startKeeper.y)*Math.min(1,t*1.3);
+    draw();
+    if(t < 1){ requestAnimationFrame(anim); }
+    else {
+      const saved = (diveZi===zi && diveZj===zj);
+      if(saved){
+        misses++;
+        document.getElementById('misses').textContent = misses;
+        showResult('KURTARDI! 🧤', '#ff6b6b');
+        playError();
+      } else {
+        score++;
+        document.getElementById('score').textContent = score;
+        showResult('GOOOL! ⚽', '#ffd23f');
+        playSuccess();
+      }
+      setTimeout(()=>{
+        ballPos = { x: W/2, y: H-40 };
+        keeperPos = zoneCenter(1,1);
+        animating = false;
+        draw();
+        if(misses >= 3) endGame();
+      }, 700);
+    }
+  }
+  anim();
+}
+
+canvas.addEventListener('click', e=>{
+  const rect = canvas.getBoundingClientRect();
+  handleShot((e.clientX-rect.left)*(W/rect.width), (e.clientY-rect.top)*(H/rect.height));
+});
+canvas.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const t = e.touches[0];
+  handleShot((t.clientX-rect.left)*(W/rect.width), (t.clientY-rect.top)*(H/rect.height));
+}, {passive:false});
+
+startGame();
+</script>
+</body>
+</html>

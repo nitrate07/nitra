@@ -108,6 +108,8 @@
   .band-featured{ background:linear-gradient(90deg,#FFB03D,#FF6B6B); }
   .band-hafiza{ background:linear-gradient(90deg,#6C4EF5,#9C7BFF); }
   .band-bulmaca{ background:linear-gradient(90deg,#FF6B9E,#FF9F6B); }
+  .band-yaratici{ background:linear-gradient(90deg,#FF9F5A,#FFD23F); color:#1B1B3A; }
+  .band-zeka{ background:linear-gradient(90deg,#2EC4B6,#3DD6FF); }
   .grid{
     display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:16px; margin-bottom:36px;
   }
@@ -220,6 +222,9 @@
     <button class="cat-pill" data-cat="hafiza">🧠 Hafıza Geliştirici</button>
     <button class="cat-pill" data-cat="bulmaca">🧩 Bulmaca</button>
     <button class="cat-pill" data-cat="yaris">🏎️ Yarış</button>
+    <button class="cat-pill" data-cat="spor">🏀 Spor</button>
+    <button class="cat-pill" data-cat="yaratici">🎨 Yaratıcılık</button>
+    <button class="cat-pill" data-cat="zeka">🔢 Zeka</button>
     <button class="cat-pill" data-cat="macera">🗺️ Macera</button>
     <button class="cat-pill" data-cat="hareket">🏃 Hareket</button>
   </div>
@@ -299,6 +304,43 @@
         <h3>Motor Yarışı</h3>
         <div class="tag">Yarış</div>
       </a>
+      <a class="game-card" href="zipla.html" data-cat="hareket" data-name="zıpla zıpla">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb-svg"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="gJump" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bdefff"/><stop offset="1" stop-color="#eafcff"/></linearGradient></defs>
+          <rect width="100" height="100" fill="url(#gJump)"/>
+          <rect x="20" y="30" width="26" height="9" rx="4" fill="#7bc94a"/>
+          <rect x="55" y="58" width="26" height="9" rx="4" fill="#ffd23f"/>
+          <rect x="14" y="80" width="26" height="9" rx="4" fill="#7bc94a"/>
+          <text x="52" y="55" font-size="30" text-anchor="middle">🐸</text>
+        </svg></div>
+        <h3>Zıpla Zıpla</h3>
+        <div class="tag">Hareket</div>
+      </a>
+      <a class="game-card" href="penalti.html" data-cat="spor" data-name="penaltı vuruşu">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb-svg"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="gPenalti" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd88f"/><stop offset="1" stop-color="#5fb85f"/></linearGradient></defs>
+          <rect width="100" height="100" fill="url(#gPenalti)"/>
+          <rect x="14" y="14" width="72" height="42" fill="none" stroke="#fff" stroke-width="4"/>
+          <text x="50" y="34" font-size="26" text-anchor="middle">🧤</text>
+          <text x="50" y="76" font-size="24" text-anchor="middle">⚽</text>
+        </svg></div>
+        <h3>Penaltı Vuruşu</h3>
+        <div class="tag">Spor</div>
+      </a>
+      <a class="game-card" href="basketbol.html" data-cat="spor" data-name="basketbol atışı">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb-svg"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="gBasket" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd9a0"/><stop offset="1" stop-color="#ffb85c"/></linearGradient></defs>
+          <rect width="100" height="100" fill="url(#gBasket)"/>
+          <line x1="30" y1="24" x2="30" y2="50" stroke="#fff" stroke-width="4"/>
+          <ellipse cx="50" cy="50" rx="20" ry="6" fill="none" stroke="#fff" stroke-width="4"/>
+          <text x="52" y="78" font-size="28" text-anchor="middle">🏀</text>
+        </svg></div>
+        <h3>Basketbol Atışı</h3>
+        <div class="tag">Spor</div>
+      </a>
     </div>
 
     <div class="section-band band-hafiza">🧠 Hafıza Geliştirici Oyunlar <span class="count" id="hafizaCount">100 oyun</span></div>
@@ -306,6 +348,12 @@
 
     <div class="section-band band-bulmaca">🧩 Bulmaca Oyunları <span class="count" id="bulmacaCount">80 oyun</span></div>
     <div class="grid" id="bulmacaGrid"></div>
+
+    <div class="section-band band-yaratici">🎨 Yaratıcılık Oyunları <span class="count">5 oyun</span></div>
+    <div class="grid" id="yaraticiGrid"></div>
+
+    <div class="section-band band-zeka">🔢 Zeka Oyunları <span class="count">20 oyun</span></div>
+    <div class="grid" id="zekaGrid"></div>
   </main>
 
   <footer id="ebeveyn">
@@ -379,6 +427,46 @@
     });
   });
   bulmacaGrid.appendChild(puzzleFrag);
+
+  // Yaratıcılık kataloğu: 1 motor x 5 tema = 5 kart (seviye yok, sadece tema)
+  const yaraticiGrid = document.getElementById('yaraticiGrid');
+  const yaraticiFrag = document.createDocumentFragment();
+  themeKeys.forEach(themeKey=>{
+    const theme = THEMES[themeKey];
+    const a = document.createElement('a');
+    a.className = 'game-card';
+    a.href = `boyama.html?theme=${themeKey}`;
+    a.dataset.cat = 'yaratici';
+    const title = `${theme.name} Boyama Kitabı`;
+    a.dataset.name = title.toLowerCase();
+    a.innerHTML = `
+      <div class="thumb th-${themeKey} shape-recall"><span class="ic">🎨</span></div>
+      <h3>${title}</h3>
+      <div class="tag">Yaratıcılık</div>`;
+    yaraticiFrag.appendChild(a);
+  });
+  yaraticiGrid.appendChild(yaraticiFrag);
+
+  // Zeka kataloğu: 1 motor x 5 tema x 4 seviye = 20 kart
+  const zekaGrid = document.getElementById('zekaGrid');
+  const zekaFrag = document.createDocumentFragment();
+  themeKeys.forEach(themeKey=>{
+    const theme = THEMES[themeKey];
+    [1,2,3,4].forEach(level=>{
+      const a = document.createElement('a');
+      a.className = 'game-card';
+      a.href = `matematik.html?theme=${themeKey}&level=${level}`;
+      a.dataset.cat = 'zeka';
+      const title = `${theme.name} Matematik Yarışı`;
+      a.dataset.name = title.toLowerCase();
+      a.innerHTML = `
+        <div class="thumb th-${themeKey} shape-order"><span class="ic">🔢</span></div>
+        <h3>${title}</h3>
+        <div class="tag">${LEVEL_NAMES[level]}</div>`;
+      zekaFrag.appendChild(a);
+    });
+  });
+  zekaGrid.appendChild(zekaFrag);
 
   const search = document.getElementById('searchInput');
   const cats = document.querySelectorAll('.cat-pill');

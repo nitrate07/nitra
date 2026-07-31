@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Basketbol Atışı — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  canvas{background:linear-gradient(#ffd9a0,#ffb85c); border-radius:20px; box-shadow:0 10px 30px rgba(200,120,20,.25); touch-action:none;}
+  #wrap{position:relative;}
+  p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>🏀 Basketbol Atışı</h1>
+  <div id="hud"><span>🏀 Sayı: <span id="score">0</span></span><span>⏱️ <span id="time">45</span> sn</span><span>🏆 <span id="best">0</span></span></div>
+  <div id="wrap">
+    <canvas id="c" width="320" height="440"></canvas>
+    <div id="overlay">
+      <div class="big">🏀</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <p class="hint">Topu geri çek ve bırak — sapan gibi fırlat, potaya sok!</p>
+
+<script src="common.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const GRAVITY = 0.42;
+const START = { x: W/2, y: H-50 };
+
+let bestScore = parseInt(localStorage.getItem('ok_basketbol_best') || '0', 10);
+document.getElementById('best').textContent = bestScore;
+
+let ball, hoop, score, timeLeft, running, dragging, dragStart, timerInt, raf, scored, netFlash;
+
+function newHoop(){
+  return { x: 60 + Math.random()*(W-120), y: 70 + Math.random()*40, w: 60 };
+}
+
+function resetBall(){
+  ball = { x: START.x, y: START.y, vx:0, vy:0, r:14, flying:false };
+}
+
+function startGame(){
+  score = 0; timeLeft = 45; running = true; dragging = false; scored=false; netFlash=0;
+  resetBall();
+  hoop = newHoop();
+  document.getElementById('score').textContent = 0;
+  document.getElementById('time').textContent = timeLeft;
+  document.getElementById('overlay').style.display = 'none';
+  if(timerInt) clearInterval(timerInt);
+  timerInt = setInterval(()=>{
+    timeLeft--;
+    document.getElementById('time').textContent = timeLeft;
+    if(timeLeft<=0) endGame();
+  }, 1000);
+  loop();
+}
+
+function endGame(){
+  running = false;
+  clearInterval(timerInt);
+  cancelAnimationFrame(raf);
+  if(score > bestScore){ bestScore = score; localStorage.setItem('ok_basketbol_best', bestScore); }
+  document.getElementById('best').textContent = bestScore;
+  document.getElementById('overMsg').textContent = `${score} sayı yaptın!`;
+  document.getElementById('stars').textContent = starRating(score, 12);
+  document.getElementById('overlay').style.display = 'flex';
+}
+
+function drawHoop(){
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(hoop.x-hoop.w/2-6, hoop.y-30); ctx.lineTo(hoop.x-hoop.w/2-6, hoop.y+30); ctx.stroke();
+  ctx.strokeStyle = netFlash>0 ? '#ffd23f' : '#fff';
+  ctx.lineWidth = netFlash>0 ? 6 : 4;
+  ctx.beginPath(); ctx.ellipse(hoop.x, hoop.y, hoop.w/2, 7, 0, 0, Math.PI*2); ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=2;
+  for(let i=-2;i<=2;i++){
+    ctx.beginPath(); ctx.moveTo(hoop.x+i*(hoop.w/6), hoop.y+4); ctx.lineTo(hoop.x+i*(hoop.w/8), hoop.y+26); ctx.stroke();
+  }
+  if(netFlash>0) netFlash--;
+}
+
+function loop(){
+  if(!running) return;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = 'rgba(255,255,255,.15)';
+  ctx.beginPath(); ctx.arc(60,60,50,0,Math.PI*2); ctx.fill();
+
+  drawHoop();
+
+  if(ball.flying){
+    ball.vy += GRAVITY;
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    // pota kontrolü
+    if(!scored && ball.vy > 0 && Math.abs(ball.x-hoop.x) < hoop.w/2-6 && ball.y > hoop.y-6 && ball.y < hoop.y+10){
+      scored = true;
+      score++;
+      document.getElementById('score').textContent = score;
+      playSuccess();
+      netFlash = 14;
+      hoop = newHoop();
+    }
+    if(ball.y > H+40 || ball.x < -40 || ball.x > W+40){
+      resetBall(); scored=false;
+    }
+  } else if(!dragging){
+    ball.x = START.x; ball.y = START.y;
+  }
+
+  ctx.font = '30px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🏀', ball.x, ball.y);
+
+  if(dragging){
+    ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth=3; ctx.setLineDash([6,6]);
+    ctx.beginPath(); ctx.moveTo(START.x, START.y); ctx.lineTo(ball.x, ball.y); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  raf = requestAnimationFrame(loop);
+}
+
+function pointerPos(e){
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.touches ? e.touches[0].clientX : e.clientX);
+  const cy = (e.touches ? e.touches[0].clientY : e.clientY);
+  return { x: (cx-rect.left)*(W/rect.width), y: (cy-rect.top)*(H/rect.height) };
+}
+
+canvas.addEventListener('mousedown', e=>{ if(!ball.flying){ dragging=true; } });
+canvas.addEventListener('touchstart', e=>{ e.preventDefault(); if(!ball.flying){ dragging=true; } }, {passive:false});
+
+canvas.addEventListener('mousemove', e=>{
+  if(!dragging) return;
+  const p = pointerPos(e);
+  const dx = p.x-START.x, dy = p.y-START.y;
+  const dist = Math.min(70, Math.hypot(dx,dy));
+  const ang = Math.atan2(dy,dx);
+  ball.x = START.x + Math.cos(ang)*dist;
+  ball.y = START.y + Math.sin(ang)*dist;
+});
+canvas.addEventListener('touchmove', e=>{
+  if(!dragging) return;
+  e.preventDefault();
+  const p = pointerPos(e);
+  const dx = p.x-START.x, dy = p.y-START.y;
+  const dist = Math.min(70, Math.hypot(dx,dy));
+  const ang = Math.atan2(dy,dx);
+  ball.x = START.x + Math.cos(ang)*dist;
+  ball.y = START.y + Math.sin(ang)*dist;
+}, {passive:false});
+
+function release(){
+  if(!dragging) return;
+  dragging = false;
+  const dx = START.x-ball.x, dy = START.y-ball.y;
+  if(Math.hypot(dx,dy) < 8){ ball.x=START.x; ball.y=START.y; return; }
+  ball.vx = dx * 0.16;
+  ball.vy = dy * 0.16;
+  ball.flying = true;
+  playClick(500);
+}
+canvas.addEventListener('mouseup', release);
+canvas.addEventListener('touchend', e=>{ e.preventDefault(); release(); }, {passive:false});
+
+startGame();
+</script>
+</body>
+</html>

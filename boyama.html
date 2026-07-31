@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boyama Kitabı — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  #sceneWrap{ background:#fff; border-radius:20px; padding:10px; box-shadow:0 8px 20px rgba(0,0,0,.1); }
+  #scene{ width:280px; height:280px; }
+  #scene path, #scene circle, #scene ellipse, #scene rect, #scene polygon{ cursor:pointer; transition:filter .1s; stroke:#2b2b40; stroke-width:3; }
+  #scene .zone:hover{ filter:brightness(1.08); }
+  #palette{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; max-width:300px; margin:16px 0 10px; }
+  .swatch{ width:34px; height:34px; border-radius:50%; border:3px solid #fff; box-shadow:0 0 0 2px #ddd; cursor:pointer; }
+  .swatch.active{ box-shadow:0 0 0 3px var(--purple); transform:scale(1.12); }
+  .actions{ display:flex; gap:10px; margin-top:6px; }
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1 id="title">🎨 Boyama Kitabı</h1>
+  <div id="sceneWrap">
+    <svg id="scene" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <rect class="zone" id="z-sky" x="0" y="0" width="200" height="140" fill="#ffffff"/>
+      <rect class="zone" id="z-ground" x="0" y="140" width="200" height="60" fill="#ffffff"/>
+      <circle class="zone" id="z-sun" cx="164" cy="34" r="20" fill="#ffffff"/>
+      <ellipse class="zone" id="z-cloud1" cx="34" cy="32" rx="20" ry="11" fill="#ffffff"/>
+      <ellipse class="zone" id="z-cloud2" cx="55" cy="26" rx="14" ry="9" fill="#ffffff"/>
+      <polygon class="zone" id="z-earL" points="66,90 50,44 82,78" fill="#ffffff"/>
+      <polygon class="zone" id="z-earR" points="134,90 150,44 118,78" fill="#ffffff"/>
+      <circle class="zone" id="z-head" cx="100" cy="118" r="58" fill="#ffffff"/>
+      <circle class="zone" id="z-cheekL" cx="72" cy="130" r="10" fill="#ffffff"/>
+      <circle class="zone" id="z-cheekR" cx="128" cy="130" r="10" fill="#ffffff"/>
+      <circle cx="80" cy="106" r="6" fill="#1b1b3a" stroke="none"/>
+      <circle cx="120" cy="106" r="6" fill="#1b1b3a" stroke="none"/>
+      <polygon class="zone" id="z-nose" points="94,122 106,122 100,132" fill="#ffffff"/>
+      <path d="M92 138 Q100 146 108 138" stroke="#1b1b3a" stroke-width="3" fill="none"/>
+      <polygon class="zone" id="z-bow" points="100,168 84,158 84,178" fill="#ffffff"/>
+      <polygon class="zone" id="z-bow2" points="100,168 116,158 116,178" fill="#ffffff"/>
+      <circle class="zone" id="z-bowKnot" cx="100" cy="168" r="6" fill="#ffffff"/>
+    </svg>
+  </div>
+  <div id="palette"></div>
+  <div class="actions">
+    <button class="btn alt" id="clearBtn">🔄 Temizle</button>
+    <button class="btn" id="doneBtn">✅ Tamamla!</button>
+  </div>
+  <div id="overlay" style="position:fixed;">
+    <div class="big">🎉</div>
+    <div class="msg">Ne güzel bir resim oldu!</div>
+    <button class="btn" onclick="document.getElementById('overlay').style.display='none'">Devam Et</button>
+    <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+  </div>
+
+<script src="common.js"></script>
+<script>
+const { theme } = getParams();
+document.title = `${theme.name} Boyama Kitabı — Oyun Kutusu`;
+document.getElementById('title').textContent = `🎨 ${theme.name} Boyama Kitabı`;
+
+const PALETTES = {
+  hayvanlar: ['#FF9F5A','#FFD23F','#8B5E3C','#FF6B6B','#2EC4B6','#6C4EF5','#FFFFFF','#1B1B3A'],
+  meyveler:  ['#FF5C5C','#FFB03D','#7BC94A','#FFD23F','#C46BFF','#FF6B9E','#FFFFFF','#1B1B3A'],
+  uzay:      ['#6C4EF5','#3DD6FF','#FF6B6B','#FFD23F','#9C7BFF','#E8EEFC','#FFFFFF','#1B1B3A'],
+  deniz:     ['#22B8AA','#3DD6FF','#FF9F5A','#FFD23F','#6C4EF5','#FF6B9E','#FFFFFF','#1B1B3A'],
+  tatli:     ['#FF8FC2','#FFCF9B','#FF5C5C','#FFD23F','#C46BFF','#7BC94A','#FFFFFF','#1B1B3A']
+};
+const palette = PALETTES[getParams().themeKey] || PALETTES.hayvanlar;
+
+let activeColor = palette[0];
+const paletteEl = document.getElementById('palette');
+palette.forEach((color, i)=>{
+  const sw = document.createElement('div');
+  sw.className = 'swatch' + (i===0 ? ' active' : '');
+  sw.style.background = color;
+  sw.onclick = ()=>{
+    document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
+    sw.classList.add('active');
+    activeColor = color;
+    playClick(400);
+  };
+  paletteEl.appendChild(sw);
+});
+
+document.querySelectorAll('#scene .zone').forEach(zone=>{
+  zone.addEventListener('click', ()=>{
+    zone.setAttribute('fill', activeColor);
+    playClick(500);
+  });
+});
+
+document.getElementById('clearBtn').onclick = ()=>{
+  document.querySelectorAll('#scene .zone').forEach(z=>z.setAttribute('fill', '#ffffff'));
+  playTone(300,0.1,'triangle',0.12);
+};
+
+document.getElementById('doneBtn').onclick = ()=>{
+  playSuccess();
+  document.getElementById('overlay').style.display = 'flex';
+  fireConfetti(document.body);
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matematik Yarışı — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  #banner{ font-size:2.4rem; margin-bottom:6px; }
+  #problem{ font-size:2.6rem; font-weight:900; color:var(--ink); background:#fff; padding:16px 28px; border-radius:18px;
+    box-shadow:0 4px 0 #ddd; margin-bottom:16px; letter-spacing:2px; }
+  #timerBar{ width:100%; max-width:260px; height:10px; background:#EDE9FF; border-radius:999px; overflow:hidden; margin-bottom:16px; }
+  #timerFill{ height:100%; background:linear-gradient(90deg,var(--coral),var(--yellow)); border-radius:999px; transition:width .1s linear; }
+  #choices{ display:grid; grid-template-columns:repeat(2, 110px); gap:12px; }
+  .choice{ background:#fff; border:3px solid #E4DDFF; border-radius:14px; padding:16px; font-size:1.4rem; font-weight:900;
+    text-align:center; cursor:pointer; transition:transform .12s; }
+  .choice:active{ transform:scale(.94); }
+  .choice.correct{ background:var(--teal); color:#fff; border-color:var(--teal-dark); }
+  .choice.wrong{ background:var(--coral); color:#fff; border-color:var(--coral-dark); }
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1 id="title">🔢 Matematik Yarışı</h1>
+  <div id="hud"><span>🏆 Skor: <span id="score">0</span></span><span>❌ Yanlış: <span id="wrong">0</span>/3</span></div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="panel">
+    <div id="banner"></div>
+    <div id="problem">?</div>
+    <div id="timerBar"><div id="timerFill" style="width:100%"></div></div>
+    <div id="choices"></div>
+    <div id="overlay">
+      <div class="big">😿</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+
+<script src="common.js"></script>
+<script>
+const { theme, level } = getParams();
+setTitle('Matematik Yarışı');
+document.getElementById('title').textContent = `🔢 ${theme.name} Matematik Yarışı`;
+document.getElementById('banner').textContent = theme.emojis[0];
+
+const goalRounds = 8 + level * 2;
+const timePerQ = [null, 10, 8, 7, 6][level]; // saniye
+let score = 0, wrong = 0, round = 0, running = true, timeLeft, timerInterval, correctAnswer, answered;
+
+function genProblem(){
+  let a, b, op, answer;
+  if(level === 1){ // toplama, 1-10
+    a = 1+Math.floor(Math.random()*10); b = 1+Math.floor(Math.random()*10);
+    op = '+'; answer = a+b;
+  } else if(level === 2){ // toplama/çıkarma, 1-20
+    a = 1+Math.floor(Math.random()*20); b = 1+Math.floor(Math.random()*a);
+    op = Math.random()<0.5 ? '+' : '-';
+    if(op==='+'){ b = 1+Math.floor(Math.random()*(20-a>0?20-a:5)); answer = a+b; }
+    else { answer = a-b; }
+  } else if(level === 3){ // çarpım tablosu 1-10
+    a = 1+Math.floor(Math.random()*10); b = 1+Math.floor(Math.random()*10);
+    op = '×'; answer = a*b;
+  } else { // karışık, büyük sayılar + çarpım/bölüm
+    const r = Math.random();
+    if(r < 0.4){ a=10+Math.floor(Math.random()*40); b=10+Math.floor(Math.random()*40); op='+'; answer=a+b; }
+    else if(r < 0.7){ a=1+Math.floor(Math.random()*12); b=1+Math.floor(Math.random()*12); op='×'; answer=a*b; }
+    else { b=1+Math.floor(Math.random()*10); answer=1+Math.floor(Math.random()*10); a=b*answer; op='÷'; }
+  }
+  return { text: `${a} ${op} ${b} = ?`, answer };
+}
+
+function updateProgress(){
+  document.getElementById('progressFill').style.width = Math.min(100, Math.round((round/goalRounds)*100)) + '%';
+}
+
+function startGame(){
+  score = 0; wrong = 0; round = 0; running = true;
+  document.getElementById('score').textContent = 0;
+  document.getElementById('wrong').textContent = 0;
+  document.getElementById('overlay').style.display = 'none';
+  updateProgress();
+  nextRound();
+}
+
+function nextRound(){
+  round++;
+  updateProgress();
+  answered = false;
+  const p = genProblem();
+  correctAnswer = p.answer;
+  document.getElementById('problem').textContent = p.text;
+
+  const distractors = new Set();
+  while(distractors.size < 3){
+    const delta = Math.floor(Math.random()*8)-4;
+    const d = correctAnswer + (delta===0 ? 5 : delta);
+    if(d !== correctAnswer && d >= 0) distractors.add(d);
+  }
+  const options = shuffle([correctAnswer, ...distractors]);
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  options.forEach(opt=>{
+    const div = document.createElement('div');
+    div.className = 'choice pop';
+    div.textContent = opt;
+    div.onclick = ()=>handleAnswer(opt, div);
+    choicesEl.appendChild(div);
+  });
+
+  timeLeft = timePerQ;
+  document.getElementById('timerFill').style.width = '100%';
+  if(timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{
+    timeLeft -= 0.1;
+    document.getElementById('timerFill').style.width = Math.max(0,(timeLeft/timePerQ)*100) + '%';
+    if(timeLeft <= 0){
+      clearInterval(timerInterval);
+      if(!answered) handleAnswer(null, null);
+    }
+  }, 100);
+}
+
+function handleAnswer(opt, btn){
+  if(answered) return;
+  answered = true;
+  clearInterval(timerInterval);
+  const isCorrect = opt === correctAnswer;
+  document.querySelectorAll('.choice').forEach(c=>{
+    if(parseInt(c.textContent,10) === correctAnswer) c.classList.add('correct');
+    else if(c === btn) c.classList.add('wrong');
+  });
+  if(isCorrect){
+    score++;
+    document.getElementById('score').textContent = score;
+    playSuccess();
+    setTimeout(nextRound, 600);
+  } else {
+    wrong++;
+    document.getElementById('wrong').textContent = wrong;
+    playError();
+    if(wrong >= 3){
+      setTimeout(()=>{
+        document.getElementById('overMsg').textContent = `${score} soruyu doğru bildin!`;
+        document.getElementById('stars').textContent = starRating(score, goalRounds);
+        document.getElementById('overlay').style.display = 'flex';
+      }, 700);
+    } else {
+      setTimeout(nextRound, 900);
+    }
+  }
+}
+
+startGame();
+</script>
+</body>
+</html>
