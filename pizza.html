@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pizza Fırını — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  canvas{background:linear-gradient(#3a2416,#1c1208); border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,.3); touch-action:none; cursor:pointer;}
+  #wrap{position:relative;}
+  #stageText{ font-weight:800; margin-bottom:8px; font-size:1.1rem; color:var(--ink); }
+  p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>🍕 Pizza Fırını</h1>
+  <div id="hud"><span>🍕 Skor: <span id="score">0</span></span><span>🏆 Mükemmel: <span id="perfect">0</span></span></div>
+  <div id="stageText">Hazırlanıyor...</div>
+  <div id="wrap">
+    <canvas id="c" width="300" height="120"></canvas>
+    <div id="overlay">
+      <div class="big">🍕</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <p class="hint">İbre yeşil bölgeye gelince tıkla! Sos, peynir ve pişirme aşamalarını doğru zamanla.</p>
+
+<script src="common.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+const STAGES = [
+  { name: 'Sos sür 🍅', emoji: '🍅' },
+  { name: 'Peynir serp 🧀', emoji: '🧀' },
+  { name: 'Fırında pişir 🔥', emoji: '🔥' }
+];
+
+let score = 0, perfect = 0, pizzaCount = 0, stageIdx = 0, needleX, dir, zoneStart, zoneW, running, raf;
+
+function newZone(){
+  zoneW = Math.max(30, 70 - pizzaCount*3);
+  zoneStart = 20 + Math.random()*(W-40-zoneW);
+}
+
+function startGame(){
+  score = 0; perfect = 0; pizzaCount = 0; stageIdx = 0; running = true;
+  document.getElementById('score').textContent = 0;
+  document.getElementById('perfect').textContent = 0;
+  document.getElementById('overlay').style.display = 'none';
+  startStage();
+  loop();
+}
+
+function startStage(){
+  needleX = 10; dir = 1;
+  newZone();
+  document.getElementById('stageText').textContent = `Pizza ${pizzaCount+1} — ${STAGES[stageIdx].name}`;
+}
+
+function endGame(){
+  running = false;
+  cancelAnimationFrame(raf);
+  document.getElementById('overMsg').textContent = `${score} puan, ${perfect} mükemmel pizza!`;
+  document.getElementById('stars').textContent = starRating(perfect, 8);
+  document.getElementById('overlay').style.display = 'flex';
+}
+
+function loop(){
+  if(!running) return;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#241608'; ctx.fillRect(0,0,W,H);
+
+  const barY = H/2;
+  ctx.fillStyle = '#4a3220'; ctx.fillRect(10, barY-10, W-20, 20);
+  ctx.fillStyle = '#4caf50'; ctx.fillRect(zoneStart, barY-10, zoneW, 20);
+
+  needleX += dir * (2.2 + pizzaCount*0.15);
+  if(needleX > W-10){ needleX = W-10; dir = -1; }
+  if(needleX < 10){ needleX = 10; dir = 1; }
+
+  ctx.fillStyle = '#ffd23f';
+  ctx.fillRect(needleX-2, barY-18, 4, 36);
+
+  ctx.font = '22px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(STAGES[stageIdx].emoji, W/2, 24);
+
+  raf = requestAnimationFrame(loop);
+}
+
+function handleTap(){
+  if(!running) return;
+  const inZone = needleX >= zoneStart && needleX <= zoneStart+zoneW;
+  const centerDist = Math.abs(needleX - (zoneStart+zoneW/2));
+  if(inZone){
+    const isPerfect = centerDist < zoneW*0.25;
+    score += isPerfect ? 15 : 8;
+    if(isPerfect) playTone(750,0.12,'triangle',0.15); else playTone(600,0.1,'triangle',0.13);
+  } else {
+    playError();
+  }
+  document.getElementById('score').textContent = score;
+
+  stageIdx++;
+  if(stageIdx >= STAGES.length){
+    pizzaCount++;
+    const allGood = true; // basitleştirilmiş: her pizza tamamlanır
+    if(inZone) perfect++;
+    document.getElementById('perfect').textContent = perfect;
+    playSuccess();
+    stageIdx = 0;
+    if(pizzaCount >= 8){ endGame(); return; }
+  }
+  startStage();
+}
+
+canvas.addEventListener('click', handleTap);
+canvas.addEventListener('touchstart', e=>{ e.preventDefault(); handleTap(); }, {passive:false});
+
+startGame();
+</script>
+</body>
+</html>

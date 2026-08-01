@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sandviç Ustası — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  #recipeCard{ background:#fff3d6; border-radius:16px; padding:10px 16px; margin-bottom:14px; display:flex; gap:6px; align-items:center; box-shadow:0 3px 0 #e0c48a; }
+  #recipeCard span{ font-size:.8rem; font-weight:800; color:#8a6a2a; }
+  #recipeIcons{ display:flex; gap:4px; font-size:1.3rem; }
+  #stackArea{ width:120px; min-height:200px; display:flex; flex-direction:column-reverse; align-items:center; justify-content:flex-start;
+    background:#fdf6ea; border-radius:16px; padding:8px; box-shadow:inset 0 0 0 3px #f0e0b8; margin-bottom:16px; }
+  .stack-item{ font-size:2rem; margin:-6px 0; }
+  #tray{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:300px; }
+  .ing{ width:58px; height:58px; background:#fff; border-radius:14px; box-shadow:0 3px 0 #ddd; font-size:1.8rem;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform .12s; }
+  .ing:active{ transform:scale(.9); }
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>🥪 Sandviç Ustası</h1>
+  <div id="hud"><span>🏆 Sipariş: <span id="round">0</span></span><span>❌ Hata: <span id="wrong">0</span>/3</span></div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div id="recipeCard"><span>Sipariş:</span><div id="recipeIcons"></div></div>
+  <div class="panel" style="display:flex; flex-direction:column; align-items:center;">
+    <div id="stackArea"></div>
+    <div id="tray"></div>
+    <div id="overlay">
+      <div class="big">😿</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <p style="font-size:.85rem; opacity:.7; margin-top:10px; text-align:center;">Sipariş kartındaki sırayla malzemeleri tepsiden tıkla, sandviçi doğru sırayla inşa et!</p>
+
+<script src="common.js"></script>
+<script>
+const ALL_INGREDIENTS = ['🍞','🧀','🥬','🍅','🥓','🍳','🥒','🧅','🍔','🥕'];
+const goalRounds = 8;
+let round = 0, wrong = 0, recipe = [], built = [], running = true;
+
+function updateProgress(){
+  document.getElementById('progressFill').style.width = Math.min(100, Math.round((round/goalRounds)*100)) + '%';
+}
+
+function startGame(){
+  round = 0; wrong = 0; running = true;
+  document.getElementById('wrong').textContent = 0;
+  document.getElementById('overlay').style.display = 'none';
+  updateProgress();
+  nextRound();
+}
+
+function nextRound(){
+  round++;
+  document.getElementById('round').textContent = round;
+  updateProgress();
+  const len = Math.min(6, 3 + Math.floor(round/2));
+  recipe = ['🍞'];
+  const middle = shuffle(ALL_INGREDIENTS.filter(i=>i!=='🍞')).slice(0, len-2);
+  recipe.push(...middle);
+  recipe.push('🍞');
+  built = [];
+
+  document.getElementById('recipeIcons').innerHTML = recipe.map(i=>`<span>${i}</span>`).join('');
+  document.getElementById('stackArea').innerHTML = '';
+
+  const distractors = shuffle(ALL_INGREDIENTS.filter(i=>!recipe.includes(i))).slice(0,3);
+  const trayItems = shuffle([...new Set(recipe), ...distractors]);
+  const tray = document.getElementById('tray');
+  tray.innerHTML = '';
+  trayItems.forEach(ic=>{
+    const div = document.createElement('div');
+    div.className = 'ing pop';
+    div.textContent = ic;
+    div.onclick = ()=>handlePick(ic);
+    tray.appendChild(div);
+  });
+}
+
+function handlePick(ic){
+  if(!running) return;
+  const expected = recipe[built.length];
+  if(ic === expected){
+    built.push(ic);
+    playClick(500);
+    const el = document.createElement('div');
+    el.className = 'stack-item pop';
+    el.textContent = ic;
+    document.getElementById('stackArea').appendChild(el);
+    if(built.length === recipe.length){
+      playSuccess();
+      fireConfetti(document.querySelector('.panel'));
+      setTimeout(nextRound, 900);
+    }
+  } else {
+    wrong++;
+    document.getElementById('wrong').textContent = wrong;
+    playError();
+    document.querySelector('.panel').classList.add('shake');
+    setTimeout(()=>document.querySelector('.panel').classList.remove('shake'), 350);
+    if(wrong >= 3){
+      running = false;
+      document.getElementById('overMsg').textContent = `${round-1} sipariş tamamladın!`;
+      document.getElementById('stars').textContent = starRating(round-1, goalRounds);
+      document.getElementById('overlay').style.display = 'flex';
+    }
+  }
+}
+
+startGame();
+</script>
+</body>
+</html>
