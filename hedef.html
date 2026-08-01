@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hedef Vurma — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  canvas{background:linear-gradient(#fff3d6,#ffe0a3); touch-action:none; cursor:crosshair;}
+  p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>🎯 Hedef Vurma</h1>
+  <div id="hud"><span>🎯 Skor: <span id="score">0</span></span><span>⏱️ <span id="time">30</span> sn</span><span>🏆 <span id="best">0</span></span></div>
+  <div id="wrap">
+    <canvas id="c" width="320" height="380"></canvas>
+    <div id="overlay">
+      <div class="big">🎯</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <p class="hint">Sağa sola kayan hedeflere dokun, dostane 🐰 tavşana dokunma!</p>
+
+<script src="common.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const ROWS = 3;
+
+let bestScore = parseInt(localStorage.getItem('ok_hedef_best') || '0', 10);
+document.getElementById('best').textContent = bestScore;
+
+let targets, score, timeLeft, running, timerInt, raf;
+
+function makeRow(row){
+  const y = 60 + row*90;
+  const dir = row % 2 === 0 ? 1 : -1;
+  const isFriend = Math.random() < 0.2;
+  return {
+    row, y, dir, x: dir>0 ? -30 : W+30,
+    speed: 1.6 + Math.random()*1.2 + row*0.3,
+    r: 20,
+    emoji: isFriend ? '🐰' : ['🎯','🥎','🍩','⭐'][Math.floor(Math.random()*4)],
+    friend: isFriend, hit:false, hitT:0
+  };
+}
+
+function startGame(){
+  targets = [];
+  for(let r=0;r<ROWS;r++) targets.push(makeRow(r));
+  score = 0; timeLeft = 30; running = true;
+  document.getElementById('score').textContent = 0;
+  document.getElementById('time').textContent = timeLeft;
+  document.getElementById('overlay').style.display = 'none';
+  if(timerInt) clearInterval(timerInt);
+  timerInt = setInterval(()=>{
+    timeLeft--;
+    document.getElementById('time').textContent = timeLeft;
+    if(timeLeft<=0) endGame();
+  }, 1000);
+  loop();
+}
+
+function endGame(){
+  running = false;
+  clearInterval(timerInt);
+  cancelAnimationFrame(raf);
+  if(score > bestScore){ bestScore = score; localStorage.setItem('ok_hedef_best', bestScore); }
+  document.getElementById('best').textContent = bestScore;
+  document.getElementById('overMsg').textContent = `${score} puan topladın!`;
+  document.getElementById('stars').textContent = starRating(score, 350);
+  document.getElementById('overlay').style.display = 'flex';
+}
+
+function loop(){
+  if(!running) return;
+  ctx.clearRect(0,0,W,H);
+  ctx.font = '32px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+
+  targets.forEach((t, idx)=>{
+    if(t.hit){
+      t.hitT += 1;
+      ctx.save(); ctx.globalAlpha = Math.max(0,1-t.hitT/12); ctx.font = `${32+t.hitT*3}px serif`;
+      ctx.fillText('✨', t.x, t.y); ctx.restore();
+      if(t.hitT > 12) targets[idx] = makeRow(t.row);
+      return;
+    }
+    t.x += t.dir * t.speed;
+    if(t.dir>0 && t.x > W+30) targets[idx] = makeRow(t.row);
+    if(t.dir<0 && t.x < -30) targets[idx] = makeRow(t.row);
+    ctx.fillText(t.emoji, t.x, t.y);
+  });
+
+  raf = requestAnimationFrame(loop);
+}
+
+function handleTap(cx, cy){
+  if(!running) return;
+  for(const t of targets){
+    if(t.hit) continue;
+    if(Math.hypot(cx-t.x, cy-t.y) < t.r+10){
+      if(t.friend){
+        playError();
+        score = Math.max(0, score-15);
+      } else {
+        playTone(650+Math.random()*250,0.1,'triangle',0.15);
+        score += 10;
+      }
+      document.getElementById('score').textContent = score;
+      t.hit = true; t.hitT = 0;
+      break;
+    }
+  }
+}
+
+canvas.addEventListener('click', e=>{
+  const rect = canvas.getBoundingClientRect();
+  handleTap((e.clientX-rect.left)*(W/rect.width), (e.clientY-rect.top)*(H/rect.height));
+});
+canvas.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const t = e.touches[0];
+  handleTap((t.clientX-rect.left)*(W/rect.width), (t.clientY-rect.top)*(H/rect.height));
+}, {passive:false});
+
+startGame();
+</script>
+</body>
+</html>

@@ -8,7 +8,6 @@
 <link rel="stylesheet" href="common.css">
 <style>
   canvas{background:linear-gradient(#ffd9a0,#ffb85c); border-radius:20px; box-shadow:0 10px 30px rgba(200,120,20,.25); touch-action:none;}
-  #wrap{position:relative;}
   p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
 </style>
 </head>
@@ -26,31 +25,34 @@
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
-  <p class="hint">Topu geri çek ve bırak — sapan gibi fırlat, potaya sok!</p>
+  <p class="hint">Ekrana bas ve yukarı doğru sürükle — gücü ve açıyı ayarla, bırakınca oyuncumuz potaya atsın!</p>
 
 <script src="common.js"></script>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
-const GRAVITY = 0.42;
-const START = { x: W/2, y: H-50 };
+const GRAVITY = 0.45;
+const PLAYER_X = W/2;
+const PLAYER_FEET_Y = H - 34;
+const HAND_OFFSET = { x: 14, y: -68 }; // oyuncunun elinin gövdeye göre konumu
 
-let bestScore = parseInt(localStorage.getItem('ok_basketbol_best') || '0', 10);
+let bestScore = parseInt(localStorage.getItem('ok_basketbol_best2') || '0', 10);
 document.getElementById('best').textContent = bestScore;
 
-let ball, hoop, score, timeLeft, running, dragging, dragStart, timerInt, raf, scored, netFlash;
+let ball, hoop, score, timeLeft, running, dragging, dragCur, timerInt, raf, scored, netFlash, armSwing, shotsCount;
 
 function newHoop(){
-  return { x: 60 + Math.random()*(W-120), y: 70 + Math.random()*40, w: 60 };
+  return { x: 70 + Math.random()*(W-140), y: 74 + Math.random()*36, w: 58 };
 }
-
+function handPos(){ return { x: PLAYER_X + HAND_OFFSET.x, y: PLAYER_FEET_Y + HAND_OFFSET.y }; }
 function resetBall(){
-  ball = { x: START.x, y: START.y, vx:0, vy:0, r:14, flying:false };
+  const h = handPos();
+  ball = { x: h.x, y: h.y, vx:0, vy:0, r:13, flying:false };
 }
 
 function startGame(){
-  score = 0; timeLeft = 45; running = true; dragging = false; scored=false; netFlash=0;
+  score = 0; timeLeft = 45; running = true; dragging = false; scored=false; netFlash=0; armSwing=0; shotsCount=0;
   resetBall();
   hoop = newHoop();
   document.getElementById('score').textContent = 0;
@@ -69,7 +71,7 @@ function endGame(){
   running = false;
   clearInterval(timerInt);
   cancelAnimationFrame(raf);
-  if(score > bestScore){ bestScore = score; localStorage.setItem('ok_basketbol_best', bestScore); }
+  if(score > bestScore){ bestScore = score; localStorage.setItem('ok_basketbol_best2', bestScore); }
   document.getElementById('best').textContent = bestScore;
   document.getElementById('overMsg').textContent = `${score} sayı yaptın!`;
   document.getElementById('stars').textContent = starRating(score, 12);
@@ -89,11 +91,45 @@ function drawHoop(){
   if(netFlash>0) netFlash--;
 }
 
+// basit ama tanınabilir bir oyuncu figürü çiz (kollar atış açısına göre hareket eder)
+function drawPlayer(){
+  const feetY = PLAYER_FEET_Y;
+  ctx.save();
+  ctx.translate(PLAYER_X, 0);
+  // bacaklar
+  ctx.strokeStyle = '#2b2b40'; ctx.lineWidth = 7; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-6, feetY-40); ctx.lineTo(-10, feetY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(6, feetY-40); ctx.lineTo(10, feetY); ctx.stroke();
+  // gövde (forma)
+  ctx.fillStyle = '#ff6b6b';
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-14, feetY-88, 28, 50, 8) : ctx.rect(-14, feetY-88, 28, 50); ctx.fill();
+  // kafa
+  ctx.fillStyle = '#ffcf9b';
+  ctx.beginPath(); ctx.arc(0, feetY-98, 12, 0, Math.PI*2); ctx.fill();
+  // arka kol (sabit)
+  ctx.strokeStyle = '#ffcf9b'; ctx.lineWidth = 7;
+  ctx.beginPath(); ctx.moveTo(-12, feetY-80); ctx.lineTo(-20, feetY-56); ctx.stroke();
+  // atış kolu (armSwing'e göre yukarı kalkar)
+  const swingAng = -0.3 - armSwing*1.3; // negatif = yukarı
+  const shoulderX = 12, shoulderY = feetY-80;
+  const armLen = 34;
+  const elbowX = shoulderX + Math.cos(swingAng)*armLen*0.55;
+  const elbowY = shoulderY + Math.sin(swingAng)*armLen*0.55;
+  const handX = shoulderX + Math.cos(swingAng)*armLen;
+  const handY = shoulderY + Math.sin(swingAng)*armLen;
+  ctx.beginPath(); ctx.moveTo(shoulderX, shoulderY); ctx.lineTo(elbowX, elbowY); ctx.lineTo(handX, handY); ctx.stroke();
+  if(armSwing>0) armSwing = Math.max(0, armSwing-0.05);
+  ctx.restore();
+}
+
 function loop(){
   if(!running) return;
   ctx.clearRect(0,0,W,H);
   ctx.fillStyle = 'rgba(255,255,255,.15)';
   ctx.beginPath(); ctx.arc(60,60,50,0,Math.PI*2); ctx.fill();
+  // zemin çizgisi
+  ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(0,PLAYER_FEET_Y+2); ctx.lineTo(W,PLAYER_FEET_Y+2); ctx.stroke();
 
   drawHoop();
 
@@ -102,7 +138,6 @@ function loop(){
     ball.x += ball.vx;
     ball.y += ball.vy;
 
-    // pota kontrolü
     if(!scored && ball.vy > 0 && Math.abs(ball.x-hoop.x) < hoop.w/2-6 && ball.y > hoop.y-6 && ball.y < hoop.y+10){
       scored = true;
       score++;
@@ -115,15 +150,19 @@ function loop(){
       resetBall(); scored=false;
     }
   } else if(!dragging){
-    ball.x = START.x; ball.y = START.y;
+    const h = handPos();
+    ball.x = h.x; ball.y = h.y;
   }
 
-  ctx.font = '30px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  drawPlayer();
+
+  ctx.font = '28px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText('🏀', ball.x, ball.y);
 
   if(dragging){
+    const h = handPos();
     ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth=3; ctx.setLineDash([6,6]);
-    ctx.beginPath(); ctx.moveTo(START.x, START.y); ctx.lineTo(ball.x, ball.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(h.x, h.y); ctx.lineTo(ball.x, ball.y); ctx.stroke();
     ctx.setLineDash([]);
   }
 
@@ -137,40 +176,37 @@ function pointerPos(e){
   return { x: (cx-rect.left)*(W/rect.width), y: (cy-rect.top)*(H/rect.height) };
 }
 
-canvas.addEventListener('mousedown', e=>{ if(!ball.flying){ dragging=true; } });
-canvas.addEventListener('touchstart', e=>{ e.preventDefault(); if(!ball.flying){ dragging=true; } }, {passive:false});
+function beginDrag(){ if(!ball.flying){ dragging=true; } }
+canvas.addEventListener('mousedown', beginDrag);
+canvas.addEventListener('touchstart', e=>{ e.preventDefault(); beginDrag(); }, {passive:false});
 
-canvas.addEventListener('mousemove', e=>{
+function moveDrag(e){
   if(!dragging) return;
+  const h = handPos();
   const p = pointerPos(e);
-  const dx = p.x-START.x, dy = p.y-START.y;
-  const dist = Math.min(70, Math.hypot(dx,dy));
+  const dx = p.x-h.x, dy = p.y-h.y;
+  const dist = Math.min(80, Math.hypot(dx,dy));
   const ang = Math.atan2(dy,dx);
-  ball.x = START.x + Math.cos(ang)*dist;
-  ball.y = START.y + Math.sin(ang)*dist;
-});
-canvas.addEventListener('touchmove', e=>{
-  if(!dragging) return;
-  e.preventDefault();
-  const p = pointerPos(e);
-  const dx = p.x-START.x, dy = p.y-START.y;
-  const dist = Math.min(70, Math.hypot(dx,dy));
-  const ang = Math.atan2(dy,dx);
-  ball.x = START.x + Math.cos(ang)*dist;
-  ball.y = START.y + Math.sin(ang)*dist;
-}, {passive:false});
+  ball.x = h.x + Math.cos(ang)*dist;
+  ball.y = h.y + Math.sin(ang)*dist;
+}
+canvas.addEventListener('mousemove', moveDrag);
+canvas.addEventListener('touchmove', e=>{ e.preventDefault(); moveDrag(e); }, {passive:false});
 
 function release(){
   if(!dragging) return;
   dragging = false;
-  const dx = START.x-ball.x, dy = START.y-ball.y;
-  if(Math.hypot(dx,dy) < 8){ ball.x=START.x; ball.y=START.y; return; }
-  ball.vx = dx * 0.16;
-  ball.vy = dy * 0.16;
+  const h = handPos();
+  const dx = h.x-ball.x, dy = h.y-ball.y;
+  if(Math.hypot(dx,dy) < 8){ ball.x=h.x; ball.y=h.y; return; }
+  ball.vx = dx * 0.17;
+  ball.vy = dy * 0.17;
   ball.flying = true;
+  armSwing = 1;
   playClick(500);
 }
 canvas.addEventListener('mouseup', release);
+canvas.addEventListener('mouseleave', release);
 canvas.addEventListener('touchend', e=>{ e.preventDefault(); release(); }, {passive:false});
 
 startGame();

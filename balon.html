@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balon Patlatma — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  canvas{background:linear-gradient(#bfe9ff,#eafcff); touch-action:none; cursor:pointer;}
+  p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>🎈 Balon Patlatma</h1>
+  <div id="hud"><span>🎈 Skor: <span id="score">0</span></span><span>⏱️ <span id="time">30</span> sn</span><span>🏆 <span id="best">0</span></span></div>
+  <div id="wrap">
+    <canvas id="c" width="320" height="440"></canvas>
+    <div id="overlay">
+      <div class="big">🎈</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <p class="hint">Yükselen renkli balonlara dokun, ama 💣 bombaya dokunma!</p>
+
+<script src="common.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const COLORS = ['🎈','🔴','🟡','🟢','🔵','🟣'];
+
+let bestScore = parseInt(localStorage.getItem('ok_balon_best') || '0', 10);
+document.getElementById('best').textContent = bestScore;
+
+let balloons, score, timeLeft, running, spawnTimer, timerInt, raf;
+
+function spawnBalloon(){
+  const isBomb = Math.random() < 0.16;
+  balloons.push({
+    x: 30 + Math.random()*(W-60), y: H+30,
+    r: 22 + Math.random()*8,
+    speed: 1.4 + Math.random()*1.6 + (30-timeLeft)*0.02,
+    emoji: isBomb ? '💣' : COLORS[Math.floor(Math.random()*COLORS.length)],
+    bomb: isBomb, popped: false, popT: 0
+  });
+}
+
+function startGame(){
+  balloons = []; score = 0; timeLeft = 30; running = true; spawnTimer = 0;
+  document.getElementById('score').textContent = 0;
+  document.getElementById('time').textContent = timeLeft;
+  document.getElementById('overlay').style.display = 'none';
+  if(timerInt) clearInterval(timerInt);
+  timerInt = setInterval(()=>{
+    timeLeft--;
+    document.getElementById('time').textContent = timeLeft;
+    if(timeLeft<=0) endGame();
+  }, 1000);
+  loop();
+}
+
+function endGame(){
+  running = false;
+  clearInterval(timerInt);
+  cancelAnimationFrame(raf);
+  if(score > bestScore){ bestScore = score; localStorage.setItem('ok_balon_best', bestScore); }
+  document.getElementById('best').textContent = bestScore;
+  document.getElementById('overMsg').textContent = `${score} puan topladın!`;
+  document.getElementById('stars').textContent = starRating(score, 400);
+  document.getElementById('overlay').style.display = 'flex';
+}
+
+function loop(){
+  if(!running) return;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = 'rgba(255,255,255,.4)';
+  [[50,60],[240,140],[150,300]].forEach(([cx,cy])=>{
+    ctx.beginPath(); ctx.ellipse(cx,cy,22,11,0,0,Math.PI*2); ctx.fill();
+  });
+
+  spawnTimer -= 1;
+  if(spawnTimer <= 0){ spawnBalloon(); spawnTimer = Math.max(16, 34 - (30-timeLeft)); }
+
+  ctx.font = '34px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=balloons.length-1;i>=0;i--){
+    const b = balloons[i];
+    if(b.popped){
+      b.popT += 1;
+      ctx.save(); ctx.globalAlpha = Math.max(0,1-b.popT/12); ctx.font = `${34+b.popT*3}px serif`;
+      ctx.fillText('✨', b.x, b.y); ctx.restore();
+      if(b.popT > 12) balloons.splice(i,1);
+      continue;
+    }
+    b.y -= b.speed;
+    ctx.fillText(b.emoji, b.x, b.y);
+    if(b.y < -40) balloons.splice(i,1);
+  }
+
+  raf = requestAnimationFrame(loop);
+}
+
+function handleTap(cx, cy){
+  if(!running) return;
+  for(let i=balloons.length-1;i>=0;i--){
+    const b = balloons[i];
+    if(b.popped) continue;
+    if(Math.hypot(cx-b.x, cy-b.y) < b.r+8){
+      if(b.bomb){
+        playError();
+        score = Math.max(0, score-15);
+      } else {
+        playTone(600+Math.random()*300,0.1,'triangle',0.15);
+        score += 10;
+      }
+      document.getElementById('score').textContent = score;
+      b.popped = true; b.popT = 0;
+      break;
+    }
+  }
+}
+
+canvas.addEventListener('click', e=>{
+  const rect = canvas.getBoundingClientRect();
+  handleTap((e.clientX-rect.left)*(W/rect.width), (e.clientY-rect.top)*(H/rect.height));
+});
+canvas.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const t = e.touches[0];
+  handleTap((t.clientX-rect.left)*(W/rect.width), (t.clientY-rect.top)*(H/rect.height));
+}, {passive:false});
+
+startGame();
+</script>
+</body>
+</html>

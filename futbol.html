@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Futbol Maçı — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  canvas{background:#4fa84f; touch-action:none; cursor:pointer;}
+  #stageLabel{ font-weight:800; margin-bottom:8px; text-align:center; }
+  p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>⚽ Futbol Maçı</h1>
+  <div id="hud"><span>⚽ Sen: <span id="myScore">0</span></span><span>🆚 Rakip: <span id="oppScore">0</span></span><span>🏃 Hücum: <span id="attackNum">1</span>/5</span></div>
+  <div id="stageLabel">Topu sürerek rakip yarı sahaya geç!</div>
+  <div id="wrap">
+    <canvas id="c" width="320" height="440"></canvas>
+    <div id="overlay">
+      <div class="big">🏆</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <p class="hint">Şerit değiştirerek rakip oyunculardan kaç, kaleye yaklaşınca kaleyi tıklayarak şutunu çek!</p>
+
+<script src="common.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const laneCount = 3;
+const ROAD_MARGIN = 20;
+const fieldWidth = W - ROAD_MARGIN*2;
+const laneW = fieldWidth / laneCount;
+const laneX = i => ROAD_MARGIN + laneW*i + laneW/2;
+const RUN_Y = H - 70;
+
+let phase, player, defenders, score, oppScore, attackNum, running, spawnTimer, fieldOffset, raf;
+let shotGoal, shotKeeperPos, animatingShot;
+
+const TOTAL_ATTACKS = 5;
+
+function startGame(){
+  score = 0; oppScore = 0; attackNum = 0; running = true; fieldOffset = 0;
+  document.getElementById('myScore').textContent = 0;
+  document.getElementById('oppScore').textContent = 0;
+  document.getElementById('overlay').style.display = 'none';
+  startAttack();
+  loop();
+}
+
+function startAttack(){
+  attackNum++;
+  document.getElementById('attackNum').textContent = attackNum;
+  document.getElementById('stageLabel').textContent = 'Topu sürerek rakip yarı sahaya geç!';
+  phase = 'run';
+  player = { lane: 1, x: laneX(1), tilt:0, targetTilt:0 };
+  defenders = [];
+  spawnTimer = 0;
+  animatingShot = false;
+}
+
+function spawnDefender(){
+  const lane = Math.floor(Math.random()*laneCount);
+  defenders.push({ lane, x: laneX(lane), y: -50 });
+}
+
+function endMatch(){
+  running = false;
+  document.getElementById('overMsg').textContent =
+    score > oppScore ? `Maçı kazandın! ${score} - ${oppScore}` :
+    score === oppScore ? `Berabere bitti: ${score} - ${oppScore}` :
+    `Maçı kaybettin: ${score} - ${oppScore}`;
+  document.getElementById('stars').textContent = starRating(score, TOTAL_ATTACKS);
+  document.getElementById('overlay').style.display = 'flex';
+}
+
+function drawField(){
+  ctx.fillStyle = '#4fa84f'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 3; ctx.setLineDash([16,16]);
+  fieldOffset = (fieldOffset + 3) % 40;
+  for(let i=1;i<laneCount;i++){
+    ctx.beginPath();
+    ctx.moveTo(ROAD_MARGIN+laneW*i, fieldOffset-40);
+    ctx.lineTo(ROAD_MARGIN+laneW*i, H);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+}
+
+function loopRun(){
+  drawField();
+  player.tilt += (player.targetTilt - player.tilt) * 0.2;
+
+  spawnTimer -= 1;
+  if(spawnTimer <= 0){ spawnDefender(); spawnTimer = 40; }
+
+  ctx.font='32px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  let progressDone = false;
+  for(let i=defenders.length-1;i>=0;i--){
+    const d = defenders[i];
+    d.y += 4.2;
+    ctx.fillText('🧍', d.x, d.y);
+    if(Math.abs(d.x-player.x) < 26 && Math.abs(d.y-RUN_Y) < 34){
+      playError();
+      oppScore++;
+      document.getElementById('oppScore').textContent = oppScore;
+      defenders.splice(i,1);
+      if(attackNum >= TOTAL_ATTACKS){ setTimeout(endMatch, 400); return; }
+      setTimeout(startAttack, 500);
+      return;
+    }
+    if(d.y > H+40) defenders.splice(i,1);
+  }
+  player.distance = (player.distance||0) + 1;
+  if(player.distance > 130){ startShotPhase(); return; }
+
+  ctx.save(); ctx.translate(player.x, RUN_Y); ctx.rotate(player.tilt);
+  ctx.font='40px serif'; ctx.fillText('⚽', 0, 0);
+  ctx.restore();
+}
+
+function startShotPhase(){
+  phase = 'shoot';
+  document.getElementById('stageLabel').textContent = 'Şimdi kaleye tıkla ve şutunu çek!';
+  shotGoal = { x: 40, y: 24, w: W-80, h: 90 };
+  shotKeeperPos = { x: W/2, y: shotGoal.y + shotGoal.h/2 };
+  animatingShot = false;
+}
+
+function zoneCenterShot(zi){
+  return { x: shotGoal.x + (zi+0.5)*(shotGoal.w/3), y: shotGoal.y + shotGoal.h/2 };
+}
+
+function loopShoot(){
+  ctx.fillStyle = '#4fa84f'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 5;
+  ctx.strokeRect(shotGoal.x, shotGoal.y, shotGoal.w, shotGoal.h);
+  ctx.font = '38px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🧤', shotKeeperPos.x, shotKeeperPos.y);
+  ctx.font = '30px serif';
+  ctx.fillText('⚽', W/2, H-50);
+}
+
+function handleShotClick(cx, cy){
+  if(phase !== 'shoot' || animatingShot) return;
+  if(cy > shotGoal.y+shotGoal.h+30) return;
+  animatingShot = true;
+  const zi = Math.max(0, Math.min(2, Math.floor((cx-shotGoal.x)/(shotGoal.w/3))));
+  const target = zoneCenterShot(zi);
+  const accuracy = Math.min(0.7, 0.2 + attackNum*0.08);
+  const diveZi = Math.random() < accuracy ? zi : Math.floor(Math.random()*3);
+  const divePos = zoneCenterShot(diveZi);
+
+  const t0 = Date.now();
+  const startBall = { x: W/2, y: H-50 };
+  const startKeeper = { x: shotKeeperPos.x, y: shotKeeperPos.y };
+  function anim(){
+    const t = Math.min(1, (Date.now()-t0)/380);
+    const bx = startBall.x + (target.x-startBall.x)*t;
+    const by = startBall.y + (target.y-startBall.y)*t;
+    shotKeeperPos.x = startKeeper.x + (divePos.x-startKeeper.x)*Math.min(1,t*1.3);
+
+    ctx.fillStyle = '#4fa84f'; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 5;
+    ctx.strokeRect(shotGoal.x, shotGoal.y, shotGoal.w, shotGoal.h);
+    ctx.font = '38px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🧤', shotKeeperPos.x, shotKeeperPos.y);
+    ctx.font = '30px serif';
+    ctx.fillText('⚽', bx, by);
+
+    if(t < 1){ requestAnimationFrame(anim); }
+    else {
+      const saved = diveZi === zi;
+      if(saved){ playError(); document.getElementById('stageLabel').textContent = 'Kaleci kurtardı!'; }
+      else {
+        score++;
+        document.getElementById('myScore').textContent = score;
+        playSuccess();
+        document.getElementById('stageLabel').textContent = 'GOOOL! ⚽';
+      }
+      setTimeout(()=>{
+        if(attackNum >= TOTAL_ATTACKS){ endMatch(); }
+        else { startAttack(); }
+      }, 900);
+    }
+  }
+  anim();
+}
+
+function loop(){
+  if(!running) return;
+  if(phase === 'run') loopRun();
+  else if(phase === 'shoot') loopShoot();
+  raf = requestAnimationFrame(loop);
+}
+
+function moveLane(dir){
+  if(phase !== 'run') return;
+  player.lane = Math.max(0, Math.min(laneCount-1, player.lane+dir));
+  player.x = laneX(player.lane);
+  player.targetTilt = dir*0.28;
+  setTimeout(()=>{ player.targetTilt = 0; }, 200);
+  playClick(500);
+}
+
+canvas.addEventListener('click', e=>{
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.clientX-rect.left)*(W/rect.width);
+  const cy = (e.clientY-rect.top)*(H/rect.height);
+  if(phase === 'shoot') handleShotClick(cx, cy);
+  else { if(cx < W/2) moveLane(-1); else moveLane(1); }
+});
+window.addEventListener('keydown', e=>{
+  if(e.key==='ArrowLeft') moveLane(-1);
+  if(e.key==='ArrowRight') moveLane(1);
+});
+let touchStartX = null;
+canvas.addEventListener('touchstart', e=>{
+  touchStartX = e.touches[0].clientX;
+  if(phase === 'shoot'){
+    const rect = canvas.getBoundingClientRect();
+    const t = e.touches[0];
+    handleShotClick((t.clientX-rect.left)*(W/rect.width), (t.clientY-rect.top)*(H/rect.height));
+  }
+});
+canvas.addEventListener('touchend', e=>{
+  if(phase !== 'run' || touchStartX===null) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if(dx > 30) moveLane(1); else if(dx < -30) moveLane(-1);
+  touchStartX = null;
+});
+
+startGame();
+</script>
+</body>
+</html>
