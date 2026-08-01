@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kelime Avı — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  #wordList{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:320px; margin-bottom:12px; }
+  .word-chip{ background:#fff; padding:6px 12px; border-radius:10px; font-weight:800; font-size:.85rem; box-shadow:0 2px 0 #ddd; }
+  .word-chip.found{ background:var(--teal); color:#fff; text-decoration:line-through; box-shadow:0 2px 0 var(--teal-dark); }
+  #letterGrid{ display:grid; gap:3px; user-select:none; touch-action:none; }
+  .letter{ width:34px; height:34px; background:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-weight:900; font-size:1.05rem; box-shadow:0 2px 0 #ddd; cursor:pointer; }
+  .letter.selected{ background:var(--yellow); box-shadow:0 2px 0 #e0b326; }
+  .letter.found{ background:var(--teal); color:#fff; box-shadow:0 2px 0 var(--teal-dark); }
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1 id="title">🔤 Kelime Avı</h1>
+  <div id="hud"><span>✅ Bulunan: <span id="foundCount">0</span>/<span id="totalCount">0</span></span></div>
+  <div id="wordList"></div>
+  <div class="panel">
+    <div id="letterGrid"></div>
+    <div id="overlay">
+      <div class="big">🎉</div>
+      <div class="msg">Tüm kelimeleri buldun!</div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="init()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <p style="font-size:.85rem; opacity:.7; margin-top:10px; text-align:center;">Bir harften başlayıp sürükleyerek kelimeyi çiz (yatay, dikey veya çapraz olabilir)!</p>
+
+<script src="common.js"></script>
+<script>
+const { theme, level } = getParams();
+setTitle('Kelime Avı');
+document.getElementById('title').textContent = `🔤 ${theme.name} Kelime Avı`;
+
+const size = [null,8,9,10,11][level];
+const wordCount = Math.min(theme.words.length, 4 + level);
+document.getElementById('letterGrid').style.gridTemplateColumns = `repeat(${size}, 34px)`;
+
+const TR_UPPER = (s)=> s.toLocaleUpperCase('tr-TR').replace(/İ/g,'İ');
+const ALPHABET = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ';
+
+let grid, words, foundWords, selecting, selection;
+
+function emptyGrid(n){
+  return Array.from({length:n}, ()=> Array.from({length:n}, ()=> null));
+}
+
+const DIRS = [[1,0],[0,1],[1,1],[1,-1],[-1,0],[0,-1],[-1,-1],[-1,1]];
+
+function tryPlaceWord(g, word, n){
+  const letters = TR_UPPER(word).replace(/\s/g,'').split('');
+  for(let attempt=0; attempt<60; attempt++){
+    const dir = DIRS[Math.floor(Math.random()*DIRS.length)];
+    const startR = Math.floor(Math.random()*n);
+    const startC = Math.floor(Math.random()*n);
+    const endR = startR + dir[1]*(letters.length-1);
+    const endC = startC + dir[0]*(letters.length-1);
+    if(endR<0||endR>=n||endC<0||endC>=n) continue;
+    let ok = true;
+    for(let i=0;i<letters.length;i++){
+      const r = startR+dir[1]*i, c = startC+dir[0]*i;
+      if(g[r][c] !== null && g[r][c] !== letters[i]){ ok=false; break; }
+    }
+    if(!ok) continue;
+    const cells = [];
+    for(let i=0;i<letters.length;i++){
+      const r = startR+dir[1]*i, c = startC+dir[0]*i;
+      g[r][c] = letters[i];
+      cells.push([r,c]);
+    }
+    return cells;
+  }
+  return null;
+}
+
+function init(){
+  const n = size;
+  grid = emptyGrid(n);
+  const chosenWords = shuffle(theme.words).slice(0, wordCount);
+  words = [];
+  chosenWords.forEach(w=>{
+    const cells = tryPlaceWord(grid, w, n);
+    if(cells) words.push({ word: TR_UPPER(w).replace(/\s/g,''), cells, found:false });
+  });
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(grid[r][c]===null) grid[r][c] = ALPHABET[Math.floor(Math.random()*ALPHABET.length)];
+
+  foundWords = 0;
+  document.getElementById('foundCount').textContent = 0;
+  document.getElementById('totalCount').textContent = words.length;
+  document.getElementById('overlay').style.display = 'none';
+
+  const wl = document.getElementById('wordList');
+  wl.innerHTML = '';
+  words.forEach((w,i)=>{
+    const chip = document.createElement('div');
+    chip.className = 'word-chip';
+    chip.id = 'chip-'+i;
+    chip.textContent = w.word;
+    wl.appendChild(chip);
+  });
+
+  renderGrid();
+}
+
+function renderGrid(){
+  const gridEl = document.getElementById('letterGrid');
+  gridEl.innerHTML = '';
+  for(let r=0;r<size;r++){
+    for(let c=0;c<size;c++){
+      const div = document.createElement('div');
+      div.className = 'letter';
+      div.textContent = grid[r][c];
+      div.dataset.r = r; div.dataset.c = c;
+      const isFound = words.some(w=>w.found && w.cells.some(([cr,cc])=>cr===r&&cc===c));
+      if(isFound) div.classList.add('found');
+      div.addEventListener('mousedown', ()=>startSelect(r,c));
+      div.addEventListener('mouseenter', ()=>continueSelect(r,c));
+      div.addEventListener('touchstart', e=>{ e.preventDefault(); startSelect(r,c); }, {passive:false});
+      gridEl.appendChild(div);
+    }
+  }
+}
+
+selecting = false; selection = [];
+
+function startSelect(r,c){ selecting = true; selection = [[r,c]]; updateSelectionUI(); }
+function continueSelect(r,c){
+  if(!selecting) return;
+  const start = selection[0];
+  const dr = r-start[0], dc = c-start[1];
+  const steps = Math.max(Math.abs(dr), Math.abs(dc));
+  if(steps === 0){ selection = [start]; updateSelectionUI(); return; }
+  const stepR = Math.sign(dr), stepC = Math.sign(dc);
+  if(dr!==0 && dc!==0 && Math.abs(dr)!==Math.abs(dc)) return; // sadece düz/çapraz çizgi
+  const newSel = [];
+  for(let i=0;i<=steps;i++) newSel.push([start[0]+stepR*i, start[1]+stepC*i]);
+  selection = newSel;
+  updateSelectionUI();
+}
+function updateSelectionUI(){
+  document.querySelectorAll('.letter').forEach(el=>{
+    const r = +el.dataset.r, c = +el.dataset.c;
+    const sel = selection.some(([sr,sc])=>sr===r&&sc===c);
+    el.classList.toggle('selected', sel && !el.classList.contains('found'));
+  });
+}
+
+function endSelect(){
+  if(!selecting) return;
+  selecting = false;
+  const selStr = selection.map(([r,c])=>grid[r][c]).join('');
+  const selRev = selStr.split('').reverse().join('');
+  const match = words.find(w=>!w.found && (w.word===selStr || w.word===selRev));
+  if(match){
+    match.found = true;
+    foundWords++;
+    document.getElementById('foundCount').textContent = foundWords;
+    document.getElementById('chip-'+words.indexOf(match)).classList.add('found');
+    playSuccess();
+    if(foundWords === words.length){
+      document.getElementById('stars').textContent = starRating(words.length, words.length);
+      document.getElementById('overlay').style.display = 'flex';
+      fireConfetti(document.querySelector('.panel'));
+    }
+  } else {
+    playClick(300);
+  }
+  selection = [];
+  renderGrid();
+}
+document.addEventListener('mouseup', endSelect);
+document.addEventListener('touchend', endSelect);
+document.getElementById('letterGrid').addEventListener('touchmove', e=>{
+  e.preventDefault();
+  const t = e.touches[0];
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  if(el && el.classList.contains('letter')) continueSelect(+el.dataset.r, +el.dataset.c);
+}, {passive:false});
+
+init();
+</script>
+</body>
+</html>

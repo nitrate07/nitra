@@ -4,19 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Basketbol Atışı — Oyun Kutusu</title>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  canvas{background:linear-gradient(#ffd9a0,#ffb85c); border-radius:20px; box-shadow:0 10px 30px rgba(200,120,20,.25); touch-action:none;}
-  p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
+  canvas{background:#c98a4a; touch-action:none; border-radius:16px; box-shadow:0 12px 30px rgba(120,70,20,.35);}
+  #powerBar{ position:absolute; left:10px; bottom:16px; width:14px; height:120px; background:rgba(0,0,0,.25); border-radius:8px; overflow:hidden; display:none; }
+  #powerFill{ position:absolute; bottom:0; width:100%; background:linear-gradient(0deg,#ff3d6e,#ffd23f); height:0%; }
+  #wrap{ position:relative; }
+  #comboText{ position:absolute; top:14px; left:50%; transform:translate(-50%,0); font-weight:900; font-size:1.3rem; color:#fff;
+    text-shadow:0 2px 4px rgba(0,0,0,.4); opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; }
+  p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:340px;}
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>🏀 Basketbol Atışı</h1>
-  <div id="hud"><span>🏀 Sayı: <span id="score">0</span></span><span>⏱️ <span id="time">45</span> sn</span><span>🏆 <span id="best">0</span></span></div>
+  <div id="hud"><span>🏀 Skor: <span id="score">0</span></span><span>🔥 Seri: <span id="streak">0</span></span><span>⏱️ <span id="time">45</span> sn</span><span>🏆 <span id="best">0</span></span></div>
   <div id="wrap">
-    <canvas id="c" width="320" height="440"></canvas>
+    <canvas id="c" width="400" height="560"></canvas>
+    <div id="powerBar"><div id="powerFill"></div></div>
+    <div id="comboText"></div>
     <div id="overlay">
       <div class="big">🏀</div>
       <div class="msg" id="overMsg"></div>
@@ -25,37 +32,42 @@
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
-  <p class="hint">Ekrana bas ve yukarı doğru sürükle — gücü ve açıyı ayarla, bırakınca oyuncumuz potaya atsın!</p>
+  <p class="hint">Topu geri çek ve bırak. Tahmini atış yolunu (noktalı çizgi) takip et, potaya sok, seri yaparak bonus kazan!</p>
 
 <script src="common.js"></script>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
-const GRAVITY = 0.45;
+const GRAVITY = 0.55;
 const PLAYER_X = W/2;
-const PLAYER_FEET_Y = H - 34;
-const HAND_OFFSET = { x: 14, y: -68 }; // oyuncunun elinin gövdeye göre konumu
+const PLAYER_FEET_Y = H - 40;
+const HAND_OFFSET = { x: 18, y: -86 };
+const MAX_PULL = 100;
+const BACKBOARD = { w: 8 };
 
-let bestScore = parseInt(localStorage.getItem('ok_basketbol_best2') || '0', 10);
+let bestScore = parseInt(localStorage.getItem('ok_basketbol_best3') || '0', 10);
 document.getElementById('best').textContent = bestScore;
 
-let ball, hoop, score, timeLeft, running, dragging, dragCur, timerInt, raf, scored, netFlash, armSwing, shotsCount;
+let ball, hoop, score, streak, timeLeft, running, dragging, timerInt, raf, scored, netFlash, armSwing, ballSpin, particles;
 
 function newHoop(){
-  return { x: 70 + Math.random()*(W-140), y: 74 + Math.random()*36, w: 58 };
+  return { x: 90 + Math.random()*(W-180), y: 100 + Math.random()*60, w: 76, bh: 90 };
 }
 function handPos(){ return { x: PLAYER_X + HAND_OFFSET.x, y: PLAYER_FEET_Y + HAND_OFFSET.y }; }
 function resetBall(){
   const h = handPos();
-  ball = { x: h.x, y: h.y, vx:0, vy:0, r:13, flying:false };
+  ball = { x: h.x, y: h.y, vx:0, vy:0, r:16, flying:false };
+  ballSpin = 0;
 }
 
 function startGame(){
-  score = 0; timeLeft = 45; running = true; dragging = false; scored=false; netFlash=0; armSwing=0; shotsCount=0;
+  score = 0; streak = 0; timeLeft = 45; running = true; dragging = false; scored=false; netFlash=0; armSwing=0;
+  particles = [];
   resetBall();
   hoop = newHoop();
   document.getElementById('score').textContent = 0;
+  document.getElementById('streak').textContent = 0;
   document.getElementById('time').textContent = timeLeft;
   document.getElementById('overlay').style.display = 'none';
   if(timerInt) clearInterval(timerInt);
@@ -71,82 +83,173 @@ function endGame(){
   running = false;
   clearInterval(timerInt);
   cancelAnimationFrame(raf);
-  if(score > bestScore){ bestScore = score; localStorage.setItem('ok_basketbol_best2', bestScore); }
+  if(score > bestScore){ bestScore = score; localStorage.setItem('ok_basketbol_best3', bestScore); }
   document.getElementById('best').textContent = bestScore;
   document.getElementById('overMsg').textContent = `${score} sayı yaptın!`;
-  document.getElementById('stars').textContent = starRating(score, 12);
+  document.getElementById('stars').textContent = starRating(score, 15);
   document.getElementById('overlay').style.display = 'flex';
 }
 
+function showCombo(text, color){
+  const el = document.getElementById('comboText');
+  el.textContent = text; el.style.color = color;
+  el.style.opacity = 1; el.style.transform = 'translate(-50%,-10px)';
+  setTimeout(()=>{ el.style.opacity = 0; el.style.transform='translate(-50%,0)'; }, 750);
+}
+
+function spawnConfettiAt(x,y){
+  for(let i=0;i<16;i++){
+    const a = Math.random()*Math.PI*2;
+    particles.push({ x, y, vx:Math.cos(a)*3.2, vy:Math.sin(a)*3.2-1, life:26, maxLife:26,
+      color: ['#ff6b6b','#ffd23f','#2ec4b6','#6c4ef5'][Math.floor(Math.random()*4)] });
+  }
+}
+
+// --- Zemin/saha çizimi ---
+function drawCourt(){
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, '#e0a15c'); g.addColorStop(1, '#c98a4a');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.lineWidth = 2;
+  for(let x=0;x<W;x+=26){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  // saha çizgileri
+  ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(PLAYER_X, H-10, 110, Math.PI, 0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,H-10); ctx.lineTo(W,H-10); ctx.stroke();
+}
+
+// --- Pota (pano + çember + file) ---
 function drawHoop(){
-  ctx.strokeStyle = '#fff'; ctx.lineWidth = 5;
-  ctx.beginPath(); ctx.moveTo(hoop.x-hoop.w/2-6, hoop.y-30); ctx.lineTo(hoop.x-hoop.w/2-6, hoop.y+30); ctx.stroke();
-  ctx.strokeStyle = netFlash>0 ? '#ffd23f' : '#fff';
-  ctx.lineWidth = netFlash>0 ? 6 : 4;
-  ctx.beginPath(); ctx.ellipse(hoop.x, hoop.y, hoop.w/2, 7, 0, 0, Math.PI*2); ctx.stroke();
-  ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=2;
-  for(let i=-2;i<=2;i++){
-    ctx.beginPath(); ctx.moveTo(hoop.x+i*(hoop.w/6), hoop.y+4); ctx.lineTo(hoop.x+i*(hoop.w/8), hoop.y+26); ctx.stroke();
+  const bx = hoop.x, by = hoop.y - hoop.bh/2;
+  // pano
+  ctx.fillStyle = 'rgba(255,255,255,.92)';
+  ctx.fillRect(bx-2, hoop.y-hoop.bh, 4, hoop.bh);
+  ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 2;
+  ctx.strokeRect(hoop.x-hoop.w*0.42, hoop.y-hoop.bh*0.62, hoop.w*0.84, hoop.bh*0.32);
+  // çember desteği
+  ctx.strokeStyle = '#ddd'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(hoop.x, hoop.y-hoop.bh*0.3); ctx.lineTo(hoop.x, hoop.y); ctx.stroke();
+  // çember
+  ctx.strokeStyle = '#ff5c1a'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.ellipse(hoop.x, hoop.y, hoop.w/2, 8, 0, 0, Math.PI*2); ctx.stroke();
+  // file
+  ctx.strokeStyle = netFlash>0 ? '#ffd23f' : 'rgba(255,255,255,.85)';
+  ctx.lineWidth = netFlash>0 ? 2.4 : 1.6;
+  const flare = netFlash>0 ? Math.sin(netFlash*0.9)*6 : 0;
+  for(let i=-3;i<=3;i++){
+    ctx.beginPath();
+    ctx.moveTo(hoop.x+i*(hoop.w/8), hoop.y+3);
+    ctx.quadraticCurveTo(hoop.x+i*(hoop.w/10)+flare, hoop.y+20, hoop.x+i*(hoop.w/16), hoop.y+34);
+    ctx.stroke();
   }
   if(netFlash>0) netFlash--;
 }
 
-// basit ama tanınabilir bir oyuncu figürü çiz (kollar atış açısına göre hareket eder)
+function drawBackboardBounds(){ return { x1: hoop.x-hoop.w*0.42, x2: hoop.x+hoop.w*0.42, yTop: hoop.y-hoop.bh*0.62, yBot: hoop.y-hoop.bh*0.3 }; }
+
+// --- Oyuncu figürü ---
 function drawPlayer(){
   const feetY = PLAYER_FEET_Y;
   ctx.save();
   ctx.translate(PLAYER_X, 0);
-  // bacaklar
-  ctx.strokeStyle = '#2b2b40'; ctx.lineWidth = 7; ctx.lineCap='round';
-  ctx.beginPath(); ctx.moveTo(-6, feetY-40); ctx.lineTo(-10, feetY); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(6, feetY-40); ctx.lineTo(10, feetY); ctx.stroke();
-  // gövde (forma)
-  ctx.fillStyle = '#ff6b6b';
-  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-14, feetY-88, 28, 50, 8) : ctx.rect(-14, feetY-88, 28, 50); ctx.fill();
-  // kafa
+  ctx.fillStyle = 'rgba(0,0,0,.15)';
+  ctx.beginPath(); ctx.ellipse(0, feetY+6, 26, 7, 0, 0, Math.PI*2); ctx.fill();
+
+  ctx.strokeStyle = '#2b2b40'; ctx.lineWidth = 9; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-8, feetY-48); ctx.lineTo(-13, feetY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(8, feetY-48); ctx.lineTo(13, feetY); ctx.stroke();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.ellipse(-13, feetY+2, 8, 4, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(13, feetY+2, 8, 4, 0, 0, Math.PI*2); ctx.fill();
+
+  ctx.fillStyle = '#3D6EFF';
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-18, feetY-108, 36, 62, 10) : ctx.rect(-18, feetY-108, 36, 62); ctx.fill();
+  ctx.fillStyle = '#ffd23f'; ctx.font='800 12px Nunito, sans-serif'; ctx.textAlign='center';
+  ctx.fillText('7', 0, feetY-78);
+
   ctx.fillStyle = '#ffcf9b';
-  ctx.beginPath(); ctx.arc(0, feetY-98, 12, 0, Math.PI*2); ctx.fill();
-  // arka kol (sabit)
-  ctx.strokeStyle = '#ffcf9b'; ctx.lineWidth = 7;
-  ctx.beginPath(); ctx.moveTo(-12, feetY-80); ctx.lineTo(-20, feetY-56); ctx.stroke();
-  // atış kolu (armSwing'e göre yukarı kalkar)
-  const swingAng = -0.3 - armSwing*1.3; // negatif = yukarı
-  const shoulderX = 12, shoulderY = feetY-80;
-  const armLen = 34;
+  ctx.beginPath(); ctx.arc(0, feetY-122, 15, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#5a3a1a';
+  ctx.beginPath(); ctx.arc(0, feetY-130, 13, Math.PI, 0); ctx.fill();
+
+  ctx.strokeStyle = '#ffcf9b'; ctx.lineWidth = 9;
+  ctx.beginPath(); ctx.moveTo(-15, feetY-98); ctx.lineTo(-26, feetY-68); ctx.stroke();
+
+  const swingAng = -0.35 - armSwing*1.35;
+  const shoulderX = 15, shoulderY = feetY-98, armLen = 40;
   const elbowX = shoulderX + Math.cos(swingAng)*armLen*0.55;
   const elbowY = shoulderY + Math.sin(swingAng)*armLen*0.55;
   const handX = shoulderX + Math.cos(swingAng)*armLen;
   const handY = shoulderY + Math.sin(swingAng)*armLen;
   ctx.beginPath(); ctx.moveTo(shoulderX, shoulderY); ctx.lineTo(elbowX, elbowY); ctx.lineTo(handX, handY); ctx.stroke();
-  if(armSwing>0) armSwing = Math.max(0, armSwing-0.05);
+  if(armSwing>0) armSwing = Math.max(0, armSwing-0.045);
+  ctx.restore();
+}
+
+function drawBall(x,y){
+  ctx.save();
+  ctx.translate(x,y); ctx.rotate(ballSpin);
+  ctx.fillStyle = '#ff8a3d';
+  ctx.beginPath(); ctx.arc(0,0,ball.r,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#8a3d10'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(-ball.r,0); ctx.lineTo(ball.r,0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,-ball.r); ctx.lineTo(0,ball.r); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0,0,ball.r,0.3,Math.PI-0.3); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0,0,ball.r,Math.PI+0.3,Math.PI*2-0.3); ctx.stroke();
+  ctx.restore();
+}
+
+function drawTrajectoryPreview(vx, vy){
+  ctx.save();
+  ctx.setLineDash([5,7]);
+  ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  let px = ball.x, py = ball.y, pvx = vx, pvy = vy;
+  ctx.moveTo(px,py);
+  for(let i=0;i<26;i++){
+    pvy += GRAVITY; px += pvx; py += pvy;
+    if(py > H) break;
+    ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
   ctx.restore();
 }
 
 function loop(){
   if(!running) return;
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle = 'rgba(255,255,255,.15)';
-  ctx.beginPath(); ctx.arc(60,60,50,0,Math.PI*2); ctx.fill();
-  // zemin çizgisi
-  ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=3;
-  ctx.beginPath(); ctx.moveTo(0,PLAYER_FEET_Y+2); ctx.lineTo(W,PLAYER_FEET_Y+2); ctx.stroke();
-
+  drawCourt();
   drawHoop();
 
   if(ball.flying){
     ball.vy += GRAVITY;
     ball.x += ball.vx;
     ball.y += ball.vy;
+    ballSpin += 0.25;
+
+    const bb = drawBackboardBounds();
+    if(ball.y > bb.yTop-ball.r && ball.y < bb.yBot+ball.r && Math.abs(ball.x - hoop.x) - hoop.w*0.42 < ball.r*0.4 && ball.vx !== 0){
+      if((ball.vx>0 && ball.x < hoop.x) || (ball.vx<0 && ball.x > hoop.x)){
+        ball.vx *= -0.55; playTone(340,0.08,'triangle',0.1);
+      }
+    }
 
     if(!scored && ball.vy > 0 && Math.abs(ball.x-hoop.x) < hoop.w/2-6 && ball.y > hoop.y-6 && ball.y < hoop.y+10){
       scored = true;
-      score++;
+      streak++;
+      const bonus = streak >= 3 ? 5 : 0;
+      score += 10 + bonus;
       document.getElementById('score').textContent = score;
+      document.getElementById('streak').textContent = streak;
       playSuccess();
       netFlash = 14;
+      spawnConfettiAt(hoop.x, hoop.y);
+      showCombo(streak>=3 ? `🔥 ${streak} SERİ! +${10+bonus}` : 'SEPET! +10', streak>=3 ? '#ff6b6b' : '#ffd23f');
       hoop = newHoop();
     }
     if(ball.y > H+40 || ball.x < -40 || ball.x > W+40){
+      if(!scored){ streak = 0; document.getElementById('streak').textContent = 0; }
       resetBall(); scored=false;
     }
   } else if(!dragging){
@@ -154,16 +257,30 @@ function loop(){
     ball.x = h.x; ball.y = h.y;
   }
 
-  drawPlayer();
+  if(dragging){
+    const h = handPos();
+    const dx = h.x-ball.x, dy = h.y-ball.y;
+    drawTrajectoryPreview(dx*0.17, dy*0.17);
+  }
 
-  ctx.font = '28px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('🏀', ball.x, ball.y);
+  drawPlayer();
+  drawBall(ball.x, ball.y);
 
   if(dragging){
     const h = handPos();
-    ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth=3; ctx.setLineDash([6,6]);
+    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth=2; ctx.setLineDash([4,5]);
     ctx.beginPath(); ctx.moveTo(h.x, h.y); ctx.lineTo(ball.x, ball.y); ctx.stroke();
     ctx.setLineDash([]);
+  }
+
+  for(let i=particles.length-1;i>=0;i--){
+    const p = particles[i];
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.life--;
+    const a = Math.max(0,p.life/p.maxLife);
+    ctx.save(); ctx.globalAlpha=a; ctx.fillStyle=p.color;
+    ctx.fillRect(p.x-3,p.y-3,6,6);
+    ctx.restore();
+    if(p.life<=0) particles.splice(i,1);
   }
 
   raf = requestAnimationFrame(loop);
@@ -176,7 +293,7 @@ function pointerPos(e){
   return { x: (cx-rect.left)*(W/rect.width), y: (cy-rect.top)*(H/rect.height) };
 }
 
-function beginDrag(){ if(!ball.flying){ dragging=true; } }
+function beginDrag(){ if(!ball.flying){ dragging=true; document.getElementById('powerBar').style.display='block'; } }
 canvas.addEventListener('mousedown', beginDrag);
 canvas.addEventListener('touchstart', e=>{ e.preventDefault(); beginDrag(); }, {passive:false});
 
@@ -185,10 +302,11 @@ function moveDrag(e){
   const h = handPos();
   const p = pointerPos(e);
   const dx = p.x-h.x, dy = p.y-h.y;
-  const dist = Math.min(80, Math.hypot(dx,dy));
+  const dist = Math.min(MAX_PULL, Math.hypot(dx,dy));
   const ang = Math.atan2(dy,dx);
   ball.x = h.x + Math.cos(ang)*dist;
   ball.y = h.y + Math.sin(ang)*dist;
+  document.getElementById('powerFill').style.height = Math.round((dist/MAX_PULL)*100) + '%';
 }
 canvas.addEventListener('mousemove', moveDrag);
 canvas.addEventListener('touchmove', e=>{ e.preventDefault(); moveDrag(e); }, {passive:false});
@@ -196,6 +314,7 @@ canvas.addEventListener('touchmove', e=>{ e.preventDefault(); moveDrag(e); }, {p
 function release(){
   if(!dragging) return;
   dragging = false;
+  document.getElementById('powerBar').style.display = 'none';
   const h = handPos();
   const dx = h.x-ball.x, dy = h.y-ball.y;
   if(Math.hypot(dx,dy) < 8){ ball.x=h.x; ball.y=h.y; return; }

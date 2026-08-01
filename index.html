@@ -432,7 +432,7 @@
     <div class="section-band band-hafiza">🧠 Hafıza Geliştirici Oyunlar <span class="count" id="hafizaCount">100 oyun</span></div>
     <div class="grid" id="hafizaGrid"></div>
 
-    <div class="section-band band-bulmaca">🧩 Bulmaca Oyunları <span class="count" id="bulmacaCount">80 oyun</span></div>
+    <div class="section-band band-bulmaca">🧩 Bulmaca Oyunları <span class="count" id="bulmacaCount">100 oyun</span></div>
     <div class="grid" id="bulmacaGrid"></div>
 
     <div class="section-band band-yaratici">🎨 Yaratıcılık Oyunları <span class="count">5 oyun</span></div>
@@ -485,12 +485,13 @@
   });
   hafizaGrid.appendChild(frag);
 
-  // Bulmaca kataloğu: 4 motor x 5 tema x 4 seviye = 80 kart
+  // Bulmaca kataloğu: 5 motor x 5 tema x 4 seviye = 100 kart
   const PUZZLE_ENGINES = [
     { file: 'kaydirma.html', name: 'Kaydırmalı Bulmaca', icon: '🧩', shape: 'match' },
     { file: 'parca.html',    name: 'Parça Değiştirme', icon: '🔀', shape: 'match' },
     { file: 'desen.html',    name: 'Desen Tamamlama', icon: '🔮', shape: 'order' },
-    { file: 'yapboz.html',   name: 'Yapboz', icon: '🖼️', shape: 'recall' }
+    { file: 'yapboz.html',   name: 'Yapboz', icon: '🖼️', shape: 'recall' },
+    { file: 'kelimeavi.html', name: 'Kelime Avı', icon: '🔤', shape: 'match' }
   ];
   const bulmacaGrid = document.getElementById('bulmacaGrid');
   const puzzleFrag = document.createDocumentFragment();
