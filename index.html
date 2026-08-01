@@ -61,6 +61,14 @@
     box-shadow:0 3px 0 #e4e0f7; min-width:200px; flex:1; max-width:320px;
   }
   .search-box input{ border:none; outline:none; font-family:inherit; font-size:.95rem; flex:1; background:transparent;}
+  .music-btn{
+    width:44px; height:44px; border:none; border-radius:50%; background:#fff; font-size:1.3rem; cursor:pointer;
+    box-shadow:0 3px 0 #e4e0f7; display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+    transition:transform .15s;
+  }
+  .music-btn:active{ transform:scale(.9); }
+  .music-btn.playing{ animation:musicPulse 1.2s ease-in-out infinite; }
+  @keyframes musicPulse{ 0%,100%{ box-shadow:0 3px 0 #e4e0f7, 0 0 0 0 rgba(108,78,245,.4);} 50%{ box-shadow:0 3px 0 #e4e0f7, 0 0 0 8px rgba(108,78,245,0);} }
 
   /* hero */
   .hero{
@@ -195,6 +203,7 @@
         <span>🔍</span>
         <input id="searchInput" type="text" placeholder="Oyun ara...">
       </div>
+      <button class="music-btn" id="musicToggle" title="Müziği aç/kapat">🔊</button>
     </div>
   </header>
 
@@ -514,6 +523,52 @@
       applyFilter();
     });
   });
+
+  // ---- Karşılama müziği (özgün, neşeli 8 nota döngüsü) ----
+  const MELODY = [
+    {f:523.25, d:0.26}, {f:659.25, d:0.26}, {f:783.99, d:0.26}, {f:1046.50, d:0.38},
+    {f:783.99, d:0.24}, {f:659.25, d:0.24}, {f:587.33, d:0.26}, {f:523.25, d:0.5}
+  ];
+  let musicMuted = localStorage.getItem('ok_music_muted') === 'true';
+  let musicPlaying = false, musicTimer = null, noteIndex = 0;
+  const MAX_LOOPS = 3;
+  const musicBtn = document.getElementById('musicToggle');
+  musicBtn.textContent = musicMuted ? '🔇' : '🔊';
+
+  function scheduleNote(){
+    if(musicMuted || !musicPlaying) return;
+    if(noteIndex >= MELODY.length * MAX_LOOPS){ stopMusic(); return; }
+    const note = MELODY[noteIndex % MELODY.length];
+    playTone(note.f, note.d*0.85, 'triangle', 0.07);
+    noteIndex++;
+    musicTimer = setTimeout(scheduleNote, note.d*1000);
+  }
+  function startMusic(){
+    if(musicPlaying || musicMuted) return;
+    musicPlaying = true;
+    musicBtn.classList.add('playing');
+    noteIndex = 0;
+    scheduleNote();
+  }
+  function stopMusic(){
+    musicPlaying = false;
+    musicBtn.classList.remove('playing');
+    if(musicTimer) clearTimeout(musicTimer);
+  }
+
+  musicBtn.addEventListener('click', ()=>{
+    musicMuted = !musicMuted;
+    localStorage.setItem('ok_music_muted', musicMuted);
+    musicBtn.textContent = musicMuted ? '🔇' : '🔊';
+    if(musicMuted) stopMusic(); else startMusic();
+  });
+
+  // tarayıcılar sessiz açılış zorunlu kılar; ilk dokunuşta otomatik başlat
+  function firstInteraction(){
+    if(!musicMuted) startMusic();
+  }
+  document.addEventListener('click', firstInteraction, { once:true });
+  document.addEventListener('touchstart', firstInteraction, { once:true });
 </script>
 </body>
 </html>
