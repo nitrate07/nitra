@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>İp Atlama — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  body{ background:radial-gradient(circle at 50% 0%, #ffe0f0, #ffc2e0 70%); }
+  h1{ font-family:'Fredoka',sans-serif; color:var(--ink); }
+  canvas{background:linear-gradient(#fff3d6,#ffe0a3); touch-action:none; cursor:pointer;}
+  p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:340px;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>🪢 İp Atlama</h1>
+  <div id="hud"><span>🔢 Atlama: <span id="score">0</span></span><span>🏆 <span id="best">0</span></span></div>
+  <div id="wrap">
+    <canvas id="c" width="320" height="360"></canvas>
+    <div id="overlay">
+      <div class="big">😿</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <p class="hint">İp ayaklara yaklaşınca tam zamanında tıkla ve zıpla! Çok erken/geç dokunursan ipe takılırsın.</p>
+
+<script src="common.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const GROUND_Y = H-70;
+
+let score, running, ropeAngle, ropeSpeed, jumping, jumpV, charY, misses, raf;
+
+function startGame(){
+  score=0; running=true; ropeAngle=0; ropeSpeed=0.09; jumping=false; jumpV=0; charY=0; misses=0;
+  document.getElementById('score').textContent=0;
+  document.getElementById('overlay').style.display='none';
+  loop();
+}
+function endGame(){
+  running=false;
+  document.getElementById('overMsg').textContent=`${score} kere atladın!`;
+  document.getElementById('stars').textContent=starRating(score,25);
+  document.getElementById('overlay').style.display='flex';
+  playError();
+}
+function loop(){
+  if(!running) return;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#fff3d6'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(0,0,0,.15)'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(0,GROUND_Y+30); ctx.lineTo(W,GROUND_Y+30); ctx.stroke();
+
+  ropeAngle += ropeSpeed;
+  const ropeY = GROUND_Y - Math.abs(Math.sin(ropeAngle))*90;
+  const ropeNearGround = Math.sin(ropeAngle) > 0.85 || Math.sin(ropeAngle) < -0.85 ? false : Math.abs(Math.sin(ropeAngle))<0.15 && Math.cos(ropeAngle)>0;
+
+  // ip çizimi (yay şeklinde)
+  ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=5; ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(W/2-90, GROUND_Y+10);
+  ctx.quadraticCurveTo(W/2, ropeY-20, W/2+90, GROUND_Y+10);
+  ctx.stroke();
+
+  if(jumping){
+    jumpV += 0.9; charY += jumpV;
+    if(charY>=0){ charY=0; jumping=false; jumpV=0; }
+  }
+
+  ctx.font='42px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🧒', W/2, GROUND_Y-10+charY);
+
+  // ipin ayak seviyesinden geçtiği an kontrolü
+  const ropeAtFeet = Math.abs(GROUND_Y+10 - (GROUND_Y - Math.abs(Math.sin(ropeAngle))*4)) < 6 && Math.cos(ropeAngle) > 0.9;
+  if(ropeAtFeet && !jumping && charY > -14){
+    misses++;
+    playError();
+    if(misses>=3){ endGame(); return; }
+  }
+
+  raf = requestAnimationFrame(loop);
+}
+function doJump(){
+  if(!running || jumping) return;
+  jumping=true; jumpV=-13;
+  score++;
+  document.getElementById('score').textContent=score;
+  playTone(600,0.1,'triangle',0.14);
+}
+canvas.addEventListener('click', doJump);
+canvas.addEventListener('touchstart', e=>{ e.preventDefault(); doJump(); }, {passive:false});
+window.addEventListener('keydown', e=>{ if(e.key===' ') doJump(); });
+startGame();
+</script>
+</body>
+</html>

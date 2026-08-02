@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Denge Ustası — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  body{ background:radial-gradient(circle at 50% 0%, #bdefff, #eafcff 70%); }
+  h1{ font-family:'Fredoka',sans-serif; color:var(--ink); }
+  canvas{background:linear-gradient(#7fc8f8,#cdeeff); touch-action:none;}
+  p.hint{font-size:.85rem; opacity:.7; margin-top:10px; text-align:center; max-width:340px;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>🎪 Denge Ustası</h1>
+  <div id="hud"><span>⭐ Puan: <span id="score">0</span></span><span>🏆 <span id="best">0</span></span></div>
+  <div id="wrap">
+    <canvas id="c" width="360" height="440"></canvas>
+    <div id="overlay">
+      <div class="big">💥</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <p class="hint">Fareyi/parmağını sağa sola hareket ettir, ip cambazını dengede tutup kuşlardan kaç, bayrak topla!</p>
+
+<script src="common.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const ROPE_Y = H*0.55;
+
+let bestScore = parseInt(localStorage.getItem('ok_denge_best') || '0', 10);
+document.getElementById('best').textContent = bestScore;
+
+function drawWalker(x,tilt){
+  ctx.save(); ctx.translate(x,ROPE_Y); ctx.rotate(tilt);
+  ctx.strokeStyle='#2b2b40'; ctx.lineWidth=3; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-16,-6); ctx.lineTo(16,-6); ctx.stroke(); // denge çubuğu
+  ctx.beginPath(); ctx.moveTo(0,-4); ctx.lineTo(0,14); ctx.stroke();
+  ctx.fillStyle='#ff6ec7'; ctx.beginPath(); ctx.arc(0,-14,9,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+let walkerX, targetX, obstacles, score, speed, running, spawnTimer, raf;
+
+function startGame(){
+  walkerX = W/2; targetX = W/2;
+  obstacles=[]; score=0; speed=2.4; running=true; spawnTimer=0;
+  document.getElementById('score').textContent=0;
+  document.getElementById('overlay').style.display='none';
+  loop();
+}
+function spawnObstacle(){
+  const isFlag = Math.random()<0.25;
+  obstacles.push({ x: W/2+(Math.random()<0.5?-1:1)*(60+Math.random()*(W/2-60)), y:-30, emoji: isFlag?'🚩':['🐦','☁️'][Math.floor(Math.random()*2)], isFlag });
+}
+function endGame(){
+  running=false;
+  const s=Math.floor(score);
+  if(s>bestScore){ bestScore=s; localStorage.setItem('ok_denge_best', bestScore); }
+  document.getElementById('best').textContent=bestScore;
+  document.getElementById('overMsg').textContent=`${s} puan topladın!`;
+  document.getElementById('stars').textContent=starRating(s,350);
+  document.getElementById('overlay').style.display='flex';
+  playError();
+}
+function loop(){
+  if(!running) return;
+  ctx.clearRect(0,0,W,H);
+  speed = 2.4 + score*0.008;
+  score += 0.3;
+  document.getElementById('score').textContent = Math.floor(score);
+
+  // ip
+  ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=5;
+  ctx.beginPath(); ctx.moveTo(10,ROPE_Y+16); ctx.lineTo(W-10,ROPE_Y+16); ctx.stroke();
+  ctx.fillStyle='rgba(0,0,0,.12)'; ctx.fillRect(0,ROPE_Y+16,W,H-ROPE_Y-16);
+
+  walkerX += (targetX-walkerX)*0.15;
+  walkerX = Math.max(20, Math.min(W-20, walkerX));
+  const tilt = (targetX-walkerX)*0.01;
+
+  spawnTimer-=1; if(spawnTimer<=0){ spawnObstacle(); spawnTimer=Math.max(38,72-score*0.12); }
+
+  ctx.font='26px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=obstacles.length-1;i>=0;i--){
+    const o=obstacles[i]; o.y+=speed+1.2;
+    ctx.fillText(o.emoji,o.x,o.y);
+    const dist = Math.hypot(o.x-walkerX, o.y-ROPE_Y);
+    if(dist<24){
+      if(o.isFlag){ score+=25; playTone(750,0.1,'triangle',0.15); obstacles.splice(i,1); continue; }
+      endGame(); return;
+    }
+    if(o.y>H+30) obstacles.splice(i,1);
+  }
+
+  drawWalker(walkerX, tilt);
+  raf = requestAnimationFrame(loop);
+}
+function setTargetX(clientX){ const rect=canvas.getBoundingClientRect(); targetX=(clientX-rect.left)*(W/rect.width); }
+canvas.addEventListener('mousemove', e=>setTargetX(e.clientX));
+canvas.addEventListener('touchmove', e=>{ e.preventDefault(); setTargetX(e.touches[0].clientX); }, {passive:false});
+startGame();
+</script>
+</body>
+</html>

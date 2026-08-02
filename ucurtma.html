@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uçurtma Uçurma — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  body{ background:radial-gradient(circle at 50% 0%, #bdefff, #eafcff 70%); }
+  h1{ font-family:'Fredoka',sans-serif; color:var(--ink); }
+  canvas{background:linear-gradient(#7fc8f8,#cdeeff); touch-action:none;}
+  #wrap{position:relative;}
+  p.hint{font-size:.85rem; opacity:.7; margin-top:10px; text-align:center; max-width:340px;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>🪁 Uçurtma Uçurma</h1>
+  <div id="hud"><span>⭐ Puan: <span id="score">0</span></span><span>🏆 <span id="best">0</span></span></div>
+  <div id="wrap">
+    <canvas id="c" width="360" height="440"></canvas>
+    <div id="overlay">
+      <div class="big">💥</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <p class="hint">Fareyi/parmağını yukarı-aşağı hareket ettir, ağaç ve kuşlardan kaç, rüzgar topla!</p>
+
+<script src="common.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+let bestScore = parseInt(localStorage.getItem('ok_ucurtma_best') || '0', 10);
+document.getElementById('best').textContent = bestScore;
+
+function drawKite(x,y,tilt){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(tilt);
+  ctx.fillStyle='#ff6b6b';
+  ctx.beginPath(); ctx.moveTo(0,-16); ctx.lineTo(14,0); ctx.lineTo(0,16); ctx.lineTo(-14,0); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(0,-16); ctx.lineTo(0,16); ctx.moveTo(-14,0); ctx.lineTo(14,0); ctx.stroke();
+  ctx.fillStyle='#ffd23f';
+  for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(0, 20+i*10, 3, 0, Math.PI*2); ctx.fill(); }
+  ctx.restore();
+}
+
+let kite, obstacles, score, speed, running, spawnTimer, raf, targetY;
+
+function startGame(){
+  kite = { x:70, y:H/2, vy:0, tilt:0 };
+  obstacles=[]; score=0; speed=2.6; running=true; spawnTimer=0; targetY=H/2;
+  document.getElementById('score').textContent=0;
+  document.getElementById('overlay').style.display='none';
+  loop();
+}
+function spawnObstacle(){
+  const isWind = Math.random()<0.25;
+  const y = 30 + Math.random()*(H-60);
+  obstacles.push({ x:W+30, y, r: isWind?15:24, emoji: isWind?'💨':['🐦','🌳','☁️'][Math.floor(Math.random()*3)], isWind });
+}
+function endGame(){
+  running=false;
+  const s=Math.floor(score);
+  if(s>bestScore){ bestScore=s; localStorage.setItem('ok_ucurtma_best', bestScore); }
+  document.getElementById('best').textContent=bestScore;
+  document.getElementById('overMsg').textContent=`${s} puan topladın!`;
+  document.getElementById('stars').textContent=starRating(s,400);
+  document.getElementById('overlay').style.display='flex';
+  playError();
+}
+function loop(){
+  if(!running) return;
+  ctx.clearRect(0,0,W,H);
+  speed = 2.6 + score*0.01;
+  score += 0.35;
+  document.getElementById('score').textContent = Math.floor(score);
+
+  kite.vy += (targetY-kite.y)*0.06; kite.vy*=0.8; kite.y+=kite.vy;
+  kite.y = Math.max(20, Math.min(H-20, kite.y));
+  kite.tilt = Math.max(-0.3, Math.min(0.3, kite.vy*0.05));
+
+  spawnTimer-=1; if(spawnTimer<=0){ spawnObstacle(); spawnTimer=Math.max(35,70-score*0.15); }
+
+  ctx.font='30px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=obstacles.length-1;i>=0;i--){
+    const o=obstacles[i]; o.x -= speed+1.5;
+    ctx.fillText(o.emoji, o.x, o.y);
+    const dist = Math.hypot(o.x-kite.x, o.y-kite.y);
+    if(dist < o.r+16-6){
+      if(o.isWind){ score+=20; playTone(750,0.1,'triangle',0.15); obstacles.splice(i,1); continue; }
+      endGame(); return;
+    }
+    if(o.x<-40) obstacles.splice(i,1);
+  }
+  drawKite(kite.x, kite.y, kite.tilt);
+  raf = requestAnimationFrame(loop);
+}
+function setTargetY(clientY){ const rect=canvas.getBoundingClientRect(); targetY=(clientY-rect.top)*(H/rect.height); }
+canvas.addEventListener('mousemove', e=>setTargetY(e.clientY));
+canvas.addEventListener('touchmove', e=>{ e.preventDefault(); setTargetY(e.touches[0].clientY); }, {passive:false});
+startGame();
+</script>
+</body>
+</html>

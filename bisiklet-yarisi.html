@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bisiklet Yarışı — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  body{ background:radial-gradient(circle at 50% 0%, #eafce0, #c2f0a8 70%); }
+  h1{ font-family:'Fredoka',sans-serif; color:var(--ink); }
+  #hud span{ background:#fff; box-shadow:0 3px 0 #a8d888; }
+  canvas{background:#8fd88f; border-radius:20px; box-shadow:0 12px 30px rgba(60,120,40,.25); touch-action:none;}
+  #wrap{position:relative;}
+  .controls{display:flex; gap:12px; margin-top:14px; align-items:center;}
+  .ctl{width:64px; height:54px; border:none; border-radius:14px; background:#4a9a3a; color:#fff; font-size:1.5rem;
+    box-shadow:0 4px 0 #2f6a22; cursor:pointer;}
+  .ctl:active{transform:translateY(3px);}
+  #nitroBtn{background:linear-gradient(180deg,#ffd23f,#ff9f3d); color:#1B1B3A; font-weight:900; width:120px; font-size:.9rem; box-shadow:0 4px 0 #c9762a;}
+  #nitroBtn.active{ animation:pedalGlow .3s ease-in-out infinite alternate; }
+  @keyframes pedalGlow{ from{ box-shadow:0 4px 0 #c9762a;} to{ box-shadow:0 0 20px rgba(255,210,63,.9), 0 4px 0 #c9762a;} }
+  #nitroBar{ width:100%; max-width:280px; height:12px; background:#3a6a2a; border-radius:999px; overflow:hidden; margin:0 auto 10px; }
+  #nitroFill{ height:100%; background:linear-gradient(90deg,#ffd23f,#ff9f3d); border-radius:999px; transition:width .1s linear; }
+  p.hint{ font-size:.82rem; opacity:.65; margin-top:8px; text-align:center; max-width:340px; }
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>🚴 Bisiklet Yarışı</h1>
+  <div id="hud"><span>📍 <span id="score">0</span> m</span><span>⚡ <span id="speedNum">0</span> km/s</span><span>🏆 <span id="best">0</span> m</span></div>
+  <div id="nitroBar"><div id="nitroFill" style="width:100%"></div></div>
+  <div id="wrap">
+    <canvas id="c" width="380" height="600"></canvas>
+    <div id="overlay">
+      <div class="big">💥</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <div class="controls">
+    <button class="ctl" id="leftBtn">◀</button>
+    <button class="ctl" id="nitroBtn">💨 PEDAL</button>
+    <button class="ctl" id="rightBtn">▶</button>
+  </div>
+  <p class="hint">Şerit değiştir, engellerden kaç, muz toplayıp PEDAL ile hızlan!</p>
+
+<script src="common.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const laneCount = 3;
+const ROAD_MARGIN = 36;
+const roadWidth = W - ROAD_MARGIN*2;
+const laneW = roadWidth / laneCount;
+const laneX = i => ROAD_MARGIN + laneW*i + laneW/2;
+
+let bestScore = parseInt(localStorage.getItem('ok_bisiklet_best') || '0', 10);
+document.getElementById('best').textContent = bestScore;
+
+function drawBike(x,y,tilt=0,boost=false){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(tilt);
+  if(boost){ ctx.shadowColor='#ffd23f'; ctx.shadowBlur=18; }
+  ctx.strokeStyle='#222'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.arc(-11,16,9,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(11,16,9,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-11,16); ctx.lineTo(2,-4); ctx.lineTo(11,16); ctx.lineTo(-2,16); ctx.lineTo(2,-4); ctx.stroke();
+  ctx.fillStyle='#ff6b6b'; ctx.beginPath(); ctx.ellipse(0,3,7,12,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#3D6EFF'; ctx.beginPath(); ctx.arc(0,-14,7,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+let player, obstacles, particles, score, speed, running, spawnTimer, roadOffset, raf, nitro, nitroActive, shakeMag, clouds;
+
+function makeClouds(){ const a=[]; let y=-40; while(y<H+60){ a.push({y, x: Math.random()*W}); y+=110+Math.random()*70; } return a; }
+
+function startGame(){
+  player = { lane:1, x:laneX(1), tilt:0, targetTilt:0 };
+  obstacles=[]; particles=[]; score=0; speed=3.8; running=true; roadOffset=0; spawnTimer=0;
+  nitro=100; nitroActive=false; shakeMag=0; clouds=makeClouds();
+  document.getElementById('score').textContent=0;
+  document.getElementById('overlay').style.display='none';
+  loop();
+}
+function spawnObstacle(){
+  const lane=Math.floor(Math.random()*laneCount); const r=Math.random();
+  const type = r<0.14 ? 'boost' : (r<0.3 ? 'coin' : 'rock');
+  obstacles.push({lane, x:laneX(lane), y:-50, type});
+}
+function endGame(){
+  running=false;
+  const d=Math.floor(score);
+  if(d>bestScore){ bestScore=d; localStorage.setItem('ok_bisiklet_best', bestScore); }
+  document.getElementById('best').textContent=bestScore;
+  document.getElementById('overMsg').textContent=`${d} metre gidebildin!`;
+  document.getElementById('stars').textContent=starRating(d,900);
+  document.getElementById('overlay').style.display='flex';
+  playError();
+}
+function loop(){
+  if(!running) return;
+  const boosting = nitroActive && nitro>0;
+  if(boosting) nitro=Math.max(0,nitro-1.5); else { nitro=Math.min(100,nitro+0.24); nitroActive=false; }
+  document.getElementById('nitroFill').style.width=nitro+'%';
+  document.getElementById('nitroBtn').classList.toggle('active', boosting);
+  const curSpeed = speed + (boosting?4.5:0);
+  speed = 3.8 + score*0.0035;
+  score += curSpeed*0.08;
+  document.getElementById('score').textContent = Math.floor(score);
+  document.getElementById('speedNum').textContent = Math.round(curSpeed*30);
+  roadOffset = (roadOffset+curSpeed)%40;
+  shakeMag*=0.85; const sx=(Math.random()-0.5)*shakeMag;
+  ctx.clearRect(0,0,W,H); ctx.save(); ctx.translate(sx,0);
+
+  const sky = ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#bdefff'); sky.addColorStop(1,'#8fd88f');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+  clouds.forEach(c=>{ c.y+=curSpeed*0.4; if(c.y>H+30){c.y=-30; c.x=Math.random()*W;}
+    ctx.fillStyle='rgba(255,255,255,.7)'; ctx.beginPath(); ctx.ellipse(c.x,c.y,24,12,0,0,Math.PI*2); ctx.fill(); });
+
+  ctx.fillStyle='#6b9e4a'; ctx.fillRect(0,0,ROAD_MARGIN,H); ctx.fillRect(W-ROAD_MARGIN,0,ROAD_MARGIN,H);
+  ctx.fillStyle='#c9a86a'; ctx.fillRect(ROAD_MARGIN,0,roadWidth,H);
+  ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=3; ctx.setLineDash([16,16]);
+  for(let i=1;i<laneCount;i++){ ctx.beginPath(); ctx.moveTo(ROAD_MARGIN+laneW*i, roadOffset-40); ctx.lineTo(ROAD_MARGIN+laneW*i,H); ctx.stroke(); }
+  ctx.setLineDash([]);
+
+  spawnTimer-=1; if(spawnTimer<=0){ spawnObstacle(); spawnTimer=Math.max(26,54-score*0.05); }
+  player.tilt += (player.targetTilt-player.tilt)*0.2;
+  if(boosting && Math.random()<0.6) particles.push({x:player.x,y:H-92,vx:(Math.random()-0.5)*1,vy:2+Math.random()*1.5,life:14,maxLife:14,color:'#ffd23f'});
+
+  ctx.font='26px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=obstacles.length-1;i>=0;i--){
+    const o=obstacles[i]; o.y+=curSpeed+1.1;
+    if(o.type==='rock') ctx.fillText('🪨',o.x,o.y);
+    else if(o.type==='coin') ctx.fillText('🍌',o.x,o.y);
+    else { ctx.save(); ctx.shadowColor='#ffd23f'; ctx.shadowBlur=10; ctx.fillText('💨',o.x,o.y); ctx.restore(); }
+    if(Math.abs(o.x-player.x)<28 && Math.abs(o.y-(H-92))<40){
+      if(o.type==='coin'){ score+=20; playTone(700,0.1,'triangle',0.15); obstacles.splice(i,1); continue; }
+      if(o.type==='boost'){ nitro=Math.min(100,nitro+40); playTone(850,0.15,'triangle',0.18); obstacles.splice(i,1); continue; }
+      shakeMag=14; endGame(); ctx.restore(); return;
+    }
+    if(o.y>H+50) obstacles.splice(i,1);
+  }
+  for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.life--;
+    const a=Math.max(0,p.life/p.maxLife); ctx.save(); ctx.globalAlpha=a; ctx.fillStyle=p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,3*a+1,0,Math.PI*2); ctx.fill(); ctx.restore(); if(p.life<=0) particles.splice(i,1); }
+
+  drawBike(player.x, H-92, player.tilt, boosting);
+  ctx.restore();
+  raf = requestAnimationFrame(loop);
+}
+function moveLane(dir){ if(!running) return; player.lane=Math.max(0,Math.min(laneCount-1,player.lane+dir)); player.x=laneX(player.lane);
+  player.targetTilt=dir*0.3; setTimeout(()=>{player.targetTilt=0;},200); playClick(500); }
+function setNitro(on){ if(!running) return; nitroActive = on && nitro>4; if(on) shakeMag=Math.max(shakeMag,2); }
+document.getElementById('leftBtn').onclick=()=>moveLane(-1);
+document.getElementById('rightBtn').onclick=()=>moveLane(1);
+const nitroBtn=document.getElementById('nitroBtn');
+nitroBtn.addEventListener('mousedown',()=>setNitro(true));
+nitroBtn.addEventListener('mouseup',()=>setNitro(false));
+nitroBtn.addEventListener('touchstart',e=>{e.preventDefault();setNitro(true);},{passive:false});
+nitroBtn.addEventListener('touchend',e=>{e.preventDefault();setNitro(false);},{passive:false});
+window.addEventListener('keydown',e=>{ if(e.key==='ArrowLeft') moveLane(-1); if(e.key==='ArrowRight') moveLane(1); if(e.key==='Shift'||e.key===' ') setNitro(true); });
+window.addEventListener('keyup',e=>{ if(e.key==='Shift'||e.key===' ') setNitro(false); });
+let touchStartX=null;
+canvas.addEventListener('touchstart', e=>{ touchStartX=e.touches[0].clientX; });
+canvas.addEventListener('touchend', e=>{ if(touchStartX===null) return; const dx=e.changedTouches[0].clientX-touchStartX;
+  if(dx>30) moveLane(1); else if(dx<-30) moveLane(-1); touchStartX=null; });
+startGame();
+</script>
+</body>
+</html>

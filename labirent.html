@@ -7,22 +7,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  body{ background:radial-gradient(circle at 50% 0%, #fff3d6, #ffe0a3 70%); }
+  body{ background:radial-gradient(circle at 50% 0%, var(--s-bg1,#fff3d6), var(--s-bg2,#ffe0a3) 70%); }
   h1{ font-family:'Fredoka',sans-serif; text-shadow:0 2px 6px rgba(180,120,20,.25); }
   #hud span{ background:#fff; box-shadow:0 3px 0 #e0c48a; font-family:'Fredoka',sans-serif; }
-  canvas{ background:#3a2b1a; border-radius:20px; box-shadow:0 0 0 6px #8a6a3a, 0 18px 40px rgba(120,80,20,.35); touch-action:none;}
+  canvas{ background:var(--s-canvasbg,#3a2b1a); border-radius:20px; box-shadow:0 0 0 6px var(--s-border,#8a6a3a), 0 18px 40px rgba(120,80,20,.35); touch-action:none;}
   #wrap{position:relative;}
   .controls{display:grid; grid-template-columns:64px 64px 64px; grid-template-rows:64px 64px 64px; gap:8px; margin-top:16px;}
-  .ctl{border:none; border-radius:18px; background:linear-gradient(180deg,#ffb85c,#e8912e); color:#fff; font-size:1.6rem;
-    box-shadow:0 4px 0 #a86a1a; cursor:pointer;}
-  .ctl:active{transform:translateY(3px); box-shadow:0 1px 0 #a86a1a;}
+  .ctl{border:none; border-radius:18px; background:linear-gradient(180deg,var(--s-btn1,#ffb85c),var(--s-btn2,#e8912e)); color:#fff; font-size:1.6rem;
+    box-shadow:0 4px 0 var(--s-border,#a86a1a); cursor:pointer;}
+  .ctl:active{transform:translateY(3px); box-shadow:0 1px 0 var(--s-border,#a86a1a);}
   #up{grid-column:2; grid-row:1;} #left{grid-column:1; grid-row:2;} #down{grid-column:2; grid-row:2;} #right{grid-column:3; grid-row:2;}
   p.hint{ font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:340px;}
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
-  <h1>🌀 Labirent Macerası</h1>
+  <h1 id="title">🌀 Labirent Macerası</h1>
   <div id="hud"><span>⏱️ <span id="time">0</span> sn</span><span>🎯 Bölüm <span id="level">1</span></span><span>⭐ <span id="gems">0</span></span></div>
   <div id="wrap">
     <canvas id="c" width="440" height="440"></canvas>
@@ -44,6 +44,26 @@
 
 <script src="common.js"></script>
 <script>
+const STYLES = {
+  altin: { name:'Altın', bg1:'#fff3d6', bg2:'#ffe0a3', canvasbg:'#3a2b1a', border:'#8a6a3a', wall:'#ffb85c', btn1:'#ffb85c', btn2:'#e8912e', floorA:'#3a2b1a', floorB:'#362715', player:'🐱', goal:'🏁', gem:'⭐' },
+  buz:   { name:'Buzul', bg1:'#e0f7ff', bg2:'#b8e6ff', canvasbg:'#1a3a4a', border:'#3a8ab8', wall:'#8fe0ff', btn1:'#5cc9ff', btn2:'#2e94c9', floorA:'#1a3a4a', floorB:'#173241', player:'🐧', goal:'🏁', gem:'❄️' },
+  orman: { name:'Orman', bg1:'#eafce0', bg2:'#c2f0a8', canvasbg:'#1f3a1a', border:'#4a8a3a', wall:'#8fe07a', btn1:'#7bc94a', btn2:'#4a9a32', floorA:'#1f3a1a', floorB:'#1b3216', player:'🐰', goal:'🏁', gem:'🍃' },
+  uzay:  { name:'Uzay', bg1:'#241a4d', bg2:'#120c2e', canvasbg:'#0c0a1a', border:'#4a34c9', wall:'#9c7bff', btn1:'#6C4EF5', btn2:'#4a34c9', floorA:'#0c0a1a', floorB:'#100c22', player:'👽', goal:'🏁', gem:'⭐' },
+  col:   { name:'Çöl', bg1:'#fff0d6', bg2:'#ffd9a0', canvasbg:'#4a2f18', border:'#8a5a2a', wall:'#ffb04d', btn1:'#ff9f3d', btn2:'#c9762a', floorA:'#4a2f18', floorB:'#412911', player:'🐫', goal:'🏁', gem:'💎' },
+  magara:{ name:'Mağara', bg1:'#e8e0f0', bg2:'#c9bbd8', canvasbg:'#2b1f38', border:'#6a4a8a', wall:'#b89cd8', btn1:'#8a6ab8', btn2:'#5a3a8a', floorA:'#2b1f38', floorB:'#251a30', player:'🦇', goal:'🏁', gem:'💰' },
+  bulut: { name:'Bulut', bg1:'#eafcff', bg2:'#bdefff', canvasbg:'#3a5a7a', border:'#5a8ab0', wall:'#cdeeff', btn1:'#7bc4e8', btn2:'#4a94b8', floorA:'#3a5a7a', floorB:'#345170', player:'🐰', goal:'🏁', gem:'✨' }
+};
+const styleKey = (new URLSearchParams(location.search).get('style')) || 'altin';
+const S = STYLES[styleKey] || STYLES.altin;
+document.documentElement.style.setProperty('--s-bg1', S.bg1);
+document.documentElement.style.setProperty('--s-bg2', S.bg2);
+document.documentElement.style.setProperty('--s-canvasbg', S.canvasbg);
+document.documentElement.style.setProperty('--s-border', S.border);
+document.documentElement.style.setProperty('--s-btn1', S.btn1);
+document.documentElement.style.setProperty('--s-btn2', S.btn2);
+document.title = `${S.name} Labirenti — Oyun Kutusu`;
+document.getElementById('title').textContent = `🌀 ${S.name} Labirenti`;
+
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 let cols = 9, rows = 9, cell = canvas.width/cols;
@@ -107,12 +127,12 @@ function draw(){
 
   // zemin karoları (hafif desenli)
   for(let y=0;y<rows;y++) for(let x=0;x<cols;x++){
-    ctx.fillStyle = (x+y)%2===0 ? '#3a2b1a' : '#362715';
+    ctx.fillStyle = (x+y)%2===0 ? S.floorA : S.floorB;
     ctx.fillRect(x*cell,y*cell,cell,cell);
   }
 
   // duvarlar (parlak, yuvarlatılmış)
-  ctx.strokeStyle = '#ffb85c'; ctx.lineWidth = 5; ctx.lineCap='round';
+  ctx.strokeStyle = S.wall; ctx.lineWidth = 5; ctx.lineCap='round';
   ctx.shadowColor = 'rgba(255,184,92,.5)'; ctx.shadowBlur = 6;
   for(let y=0;y<rows;y++){
     for(let x=0;x<cols;x++){
@@ -136,7 +156,7 @@ function draw(){
   ctx.scale(pr,pr);
   ctx.shadowColor = '#7bff6b'; ctx.shadowBlur = 16;
   ctx.font = `${cell*0.7}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('🏁', 0, 0);
+  ctx.fillText(S.goal, 0, 0);
   ctx.restore();
 
   // yıldızlar
@@ -145,7 +165,7 @@ function draw(){
     const bob = Math.sin(pulse*1.5 + g.x)*3;
     ctx.save(); ctx.shadowColor='#ffd23f'; ctx.shadowBlur=10;
     ctx.font = `${cell*0.5}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('⭐', g.x*cell+cell/2, g.y*cell+cell/2+bob);
+    ctx.fillText(S.gem, g.x*cell+cell/2, g.y*cell+cell/2+bob);
     ctx.restore();
   });
 
@@ -165,7 +185,7 @@ function draw(){
   ctx.save();
   ctx.shadowColor = '#ff9f5a'; ctx.shadowBlur = 10;
   ctx.font = `${cell*0.7}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('🐱', player.renderX, player.renderY);
+  ctx.fillText(S.player, player.renderX, player.renderY);
   ctx.restore();
 
   requestAnimationFrame(draw);

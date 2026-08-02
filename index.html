@@ -26,7 +26,12 @@
   html{scroll-behavior:smooth;}
   body{
     font-family:'Nunito', system-ui, sans-serif;
-    background:var(--bg);
+    background:
+      radial-gradient(circle at 8% 12%, rgba(255,209,63,.28), transparent 45%),
+      radial-gradient(circle at 92% 18%, rgba(46,196,182,.25), transparent 45%),
+      radial-gradient(circle at 15% 85%, rgba(255,110,199,.22), transparent 45%),
+      radial-gradient(circle at 88% 82%, rgba(108,78,245,.2), transparent 45%),
+      var(--bg);
     color:var(--ink);
     min-height:100vh;
   }
@@ -108,6 +113,9 @@
     font-size:.85rem; box-shadow:0 3px 0 #e4e0f7, 0 6px 14px rgba(108,78,245,.08); transition:transform .15s;
   }
   .badge:hover{ transform:translateY(-2px) scale(1.05); }
+  .badge:nth-child(1){ box-shadow:0 3px 0 #ffd9a0, 0 6px 14px rgba(255,159,61,.15); border:2px solid rgba(255,159,61,.3);}
+  .badge:nth-child(2){ box-shadow:0 3px 0 #b8e6ff, 0 6px 14px rgba(61,214,255,.15); border:2px solid rgba(61,214,255,.3);}
+  .badge:nth-child(3){ box-shadow:0 3px 0 #ffc2e0, 0 6px 14px rgba(255,110,199,.15); border:2px solid rgba(255,110,199,.3);}
   .hero-art{
     flex:1; min-width:240px; display:flex; justify-content:center; align-items:center;
     font-size:8rem; position:relative;
@@ -136,6 +144,16 @@
     font-size:.9rem; cursor:pointer; box-shadow:0 3px 0 #e4e0f7; color:var(--ink); white-space:nowrap;
   }
   .cat-pill.active{ background:var(--purple); color:#fff; box-shadow:0 3px 0 var(--purple-dark); }
+  .cat-pill[data-cat="hafiza"].active{ background:linear-gradient(135deg,#6C4EF5,#9C7BFF); box-shadow:0 3px 0 #4a34c9; }
+  .cat-pill[data-cat="bulmaca"].active{ background:linear-gradient(135deg,#FF6B9E,#FF9F6B); box-shadow:0 3px 0 #c94b6e; }
+  .cat-pill[data-cat="yaris"].active{ background:linear-gradient(135deg,#4a34c9,#2b2456); box-shadow:0 3px 0 #1a1638; }
+  .cat-pill[data-cat="spor"].active{ background:linear-gradient(135deg,#6bc46b,#4a9a4a); box-shadow:0 3px 0 #327032; }
+  .cat-pill[data-cat="yaratici"].active{ background:linear-gradient(135deg,#FFB03D,#FF9F5A); color:#1B1B3A; box-shadow:0 3px 0 #c97a2a; }
+  .cat-pill[data-cat="zeka"].active{ background:linear-gradient(135deg,#2EC4B6,#3DD6FF); box-shadow:0 3px 0 #1c9c90; }
+  .cat-pill[data-cat="macera"].active{ background:linear-gradient(135deg,#22B8AA,#2EC4B6); box-shadow:0 3px 0 #17847a; }
+  .cat-pill[data-cat="hareket"].active{ background:linear-gradient(135deg,#3DD6FF,#2EC4B6); box-shadow:0 3px 0 #1c9cae; }
+  .cat-pill[data-cat="mutfak"].active{ background:linear-gradient(135deg,#ff9f5a,#ffb85c); color:#1B1B3A; box-shadow:0 3px 0 #c9762a; }
+  .cat-pill[data-cat="aksiyon"].active{ background:linear-gradient(135deg,#FF6B6B,#FF3D6E); box-shadow:0 3px 0 #c9304f; }
 
   /* grid */
   main{ max-width:1100px; margin:0 auto; padding:30px 20px 60px; position:relative; z-index:1;}
@@ -469,6 +487,89 @@
         </svg></div>
         <h3>Hedef Vurma</h3>
         <div class="tag">Aksiyon</div>
+      </a>
+      <a class="game-card" href="futbol-simsek.html" data-cat="spor" data-name="şimşek fc efsane şut">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb-svg"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="gSimsek" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b1f4d"/><stop offset="1" stop-color="#05060f"/></linearGradient></defs>
+          <rect width="100" height="100" fill="url(#gSimsek)"/>
+          <text x="50" y="55" font-size="30" text-anchor="middle">⚡</text>
+          <text x="70" y="75" font-size="22" text-anchor="middle">⚽</text>
+        </svg></div>
+        <h3>Şimşek FC — Efsane Şut</h3>
+        <div class="tag">Spor</div>
+      </a>
+
+      <a class="game-card" href="labirent.html?style=buz" data-cat="macera" data-name="buzul labirenti">
+        <div class="thumb" style="background:linear-gradient(135deg,#e0f7ff,#8fe0ff)"><span class="ic">🐧</span></div>
+        <h3>Buzul Labirenti</h3><div class="tag">Macera</div>
+      </a>
+      <a class="game-card" href="labirent.html?style=orman" data-cat="macera" data-name="orman labirenti">
+        <div class="thumb" style="background:linear-gradient(135deg,#eafce0,#8fe07a)"><span class="ic">🐰</span></div>
+        <h3>Orman Labirenti</h3><div class="tag">Macera</div>
+      </a>
+      <a class="game-card" href="labirent.html?style=uzay" data-cat="macera" data-name="uzay labirenti">
+        <div class="thumb" style="background:linear-gradient(135deg,#241a4d,#6C4EF5)"><span class="ic">👽</span></div>
+        <h3>Uzay Labirenti</h3><div class="tag">Macera</div>
+      </a>
+      <a class="game-card" href="labirent.html?style=col" data-cat="macera" data-name="çöl labirenti">
+        <div class="thumb" style="background:linear-gradient(135deg,#fff0d6,#ffb04d)"><span class="ic">🐫</span></div>
+        <h3>Çöl Labirenti</h3><div class="tag">Macera</div>
+      </a>
+      <a class="game-card" href="labirent.html?style=magara" data-cat="macera" data-name="mağara labirenti">
+        <div class="thumb" style="background:linear-gradient(135deg,#e8e0f0,#b89cd8)"><span class="ic">🦇</span></div>
+        <h3>Mağara Labirenti</h3><div class="tag">Macera</div>
+      </a>
+      <a class="game-card" href="labirent.html?style=bulut" data-cat="macera" data-name="bulut labirenti">
+        <div class="thumb" style="background:linear-gradient(135deg,#eafcff,#7bc4e8)"><span class="ic">🐰</span></div>
+        <h3>Bulut Labirenti</h3><div class="tag">Macera</div>
+      </a>
+
+      <a class="game-card" href="bisiklet-yarisi.html" data-cat="yaris hareket" data-name="bisiklet yarışı">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb" style="background:linear-gradient(135deg,#eafce0,#c2f0a8)"><span class="ic">🚴</span></div>
+        <h3>Bisiklet Yarışı</h3><div class="tag">Yarış</div>
+      </a>
+      <a class="game-card" href="tekne-yarisi.html" data-cat="yaris hareket" data-name="tekne yarışı">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb" style="background:linear-gradient(135deg,#bdefff,#1fb3a6)"><span class="ic">🚤</span></div>
+        <h3>Tekne Yarışı</h3><div class="tag">Yarış</div>
+      </a>
+      <a class="game-card" href="kaykay-yarisi.html" data-cat="yaris hareket" data-name="kaykay yarışı">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb" style="background:linear-gradient(135deg,#ffe0f0,#ff6ec7)"><span class="ic">🛹</span></div>
+        <h3>Kaykay Yarışı</h3><div class="tag">Yarış</div>
+      </a>
+      <a class="game-card" href="at-yarisi.html" data-cat="yaris hareket" data-name="at yarışı">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb" style="background:linear-gradient(135deg,#eafce0,#c9a86a)"><span class="ic">🐎</span></div>
+        <h3>At Yarışı</h3><div class="tag">Yarış</div>
+      </a>
+
+      <a class="game-card" href="ucurtma.html" data-cat="hareket" data-name="uçurtma uçurma">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb" style="background:linear-gradient(135deg,#bdefff,#eafcff)"><span class="ic">🪁</span></div>
+        <h3>Uçurtma Uçurma</h3><div class="tag">Hareket</div>
+      </a>
+      <a class="game-card" href="paten.html" data-cat="hareket" data-name="paten kaçışı">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb" style="background:linear-gradient(135deg,#fff3d6,#c9c9d4)"><span class="ic">🛼</span></div>
+        <h3>Paten Kaçışı</h3><div class="tag">Hareket</div>
+      </a>
+      <a class="game-card" href="merdiven.html" data-cat="hareket" data-name="merdiven tırmanışı">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb" style="background:linear-gradient(135deg,#8a6ab8,#5a3a8a)"><span class="ic">🏰</span></div>
+        <h3>Merdiven Tırmanışı</h3><div class="tag">Hareket</div>
+      </a>
+      <a class="game-card" href="ipatlama.html" data-cat="hareket" data-name="ip atlama">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb" style="background:linear-gradient(135deg,#ffe0f0,#fff3d6)"><span class="ic">🪢</span></div>
+        <h3>İp Atlama</h3><div class="tag">Hareket</div>
+      </a>
+      <a class="game-card" href="denge.html" data-cat="hareket" data-name="denge ustası">
+        <span class="badge-new">Yeni</span>
+        <div class="thumb" style="background:linear-gradient(135deg,#bdefff,#eafcff)"><span class="ic">🎪</span></div>
+        <h3>Denge Ustası</h3><div class="tag">Hareket</div>
       </a>
     </template>
 

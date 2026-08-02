@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merdiven Tırmanışı — Oyun Kutusu</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  body{ background:radial-gradient(circle at 50% 0%, #e8e0f0, #c9bbd8 70%); }
+  h1{ font-family:'Fredoka',sans-serif; color:var(--ink); }
+  canvas{background:linear-gradient(#8a6ab8,#5a3a8a); touch-action:none;}
+  p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:340px;}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>🏰 Merdiven Tırmanışı</h1>
+  <div id="hud"><span>📏 Yükseklik: <span id="score">0</span> m</span><span>🏆 <span id="best">0</span> m</span></div>
+  <div id="wrap">
+    <canvas id="c" width="320" height="480"></canvas>
+    <div id="overlay">
+      <div class="big">💥</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+  <p class="hint">Fareyi/parmağını sağa sola hareket ettir, basamaklara zıplayarak kuleye tırman!</p>
+
+<script src="common.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const GRAVITY = 0.32;
+const JUMP_V = -10.5;
+
+let bestScore = parseInt(localStorage.getItem('ok_merdiven_best') || '0', 10);
+document.getElementById('best').textContent = bestScore;
+
+let player, platforms, score, running, targetX, raf;
+
+function makePlatform(y){ return { x: 20+Math.random()*(W-100), y, w:70, h:14, star: Math.random()<0.22 }; }
+
+function startGame(){
+  player = { x:W/2, y:H-60, vy:JUMP_V, r:18 };
+  targetX = player.x; platforms=[];
+  let y=H-30; while(y>-40){ platforms.push(makePlatform(y)); y -= 55+Math.random()*25; }
+  score=0; running=true;
+  document.getElementById('score').textContent=0;
+  document.getElementById('overlay').style.display='none';
+  loop();
+}
+function endGame(){
+  running=false;
+  const s=Math.floor(score/8);
+  if(s>bestScore){ bestScore=s; localStorage.setItem('ok_merdiven_best', bestScore); }
+  document.getElementById('best').textContent=bestScore;
+  document.getElementById('overMsg').textContent=`${s} metre yükseldin!`;
+  document.getElementById('stars').textContent=starRating(s,300);
+  document.getElementById('overlay').style.display='flex';
+  playError();
+}
+function loop(){
+  if(!running) return;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='rgba(255,255,255,.12)';
+  [[40,60],[240,140],[120,280]].forEach(([bx,by])=>{ ctx.fillRect(bx-14, (by+score*0.15)%(H+60)-30, 28, 40); });
+
+  player.vy += GRAVITY; player.y += player.vy;
+  player.x += (targetX-player.x)*0.18;
+  if(player.x<-10) player.x=W+10; if(player.x>W+10) player.x=-10;
+
+  if(player.vy>0){
+    for(const p of platforms){
+      if(player.y+player.r>p.y && player.y+player.r<p.y+p.h+14 && player.x>p.x-10 && player.x<p.x+p.w+10){
+        player.vy = JUMP_V; playClick(480);
+        if(p.star){ score+=80; p.star=false; playTone(700,0.1,'triangle',0.15); }
+        break;
+      }
+    }
+  }
+  if(player.y < H*0.42){
+    const delta = H*0.42-player.y; player.y = H*0.42;
+    platforms.forEach(p=>p.y+=delta); score+=delta;
+    document.getElementById('score').textContent = Math.floor(score/8);
+  }
+  platforms = platforms.filter(p=>p.y<H+30);
+  while(platforms.length<9){ const minY=Math.min(...platforms.map(p=>p.y),0); platforms.push(makePlatform(minY-(55+Math.random()*25))); }
+
+  platforms.forEach(p=>{
+    ctx.fillStyle = p.star ? '#ffd23f' : '#e0c9a0';
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(p.x,p.y,p.w,p.h,6) : ctx.rect(p.x,p.y,p.w,p.h); ctx.fill();
+    if(p.star){ ctx.font='16px serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('⭐',p.x+p.w/2,p.y-10); }
+  });
+  ctx.font='38px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🧗', player.x, player.y);
+
+  if(player.y>H+30){ endGame(); return; }
+  raf = requestAnimationFrame(loop);
+}
+function setTargetX(clientX){ const rect=canvas.getBoundingClientRect(); targetX=(clientX-rect.left)*(W/rect.width); }
+canvas.addEventListener('mousemove', e=>setTargetX(e.clientX));
+canvas.addEventListener('touchmove', e=>{ e.preventDefault(); setTargetX(e.touches[0].clientX); }, {passive:false});
+window.addEventListener('keydown', e=>{ if(e.key==='ArrowLeft') targetX=Math.max(0,targetX-60); if(e.key==='ArrowRight') targetX=Math.min(W,targetX+60); });
+startGame();
+</script>
+</body>
+</html>
