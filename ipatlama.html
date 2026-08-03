@@ -10,14 +10,18 @@
   body{ background:radial-gradient(circle at 50% 0%, #ffe0f0, #ffc2e0 70%); }
   h1{ font-family:'Fredoka',sans-serif; color:var(--ink); }
   canvas{background:linear-gradient(#fff3d6,#ffe0a3); touch-action:none; cursor:pointer;}
+  #zoneBar{ width:100%; max-width:280px; height:14px; background:#e8d8b0; border-radius:999px; overflow:hidden; margin:0 auto 10px; position:relative; }
+  #zoneMarker{ position:absolute; top:0; width:14px; height:14px; background:#ff6b6b; border-radius:50%; transition:left .05s linear; }
+  #zoneSafe{ position:absolute; top:0; height:14px; background:rgba(123,201,74,.55); border-radius:999px; }
   p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:340px;}
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
-  <h1>🪢 İp Atlama</h1>
-  <div id="hud"><span>🔢 Atlama: <span id="score">0</span></span><span>🏆 <span id="best">0</span></span></div>
-  <div id="wrap">
+  <h1>🤸 İp Atlama</h1>
+  <div id="hud"><span>🔢 Atlama: <span id="score">0</span></span><span>❌ Kaçırılan: <span id="misses">0</span>/3</span><span>🏆 <span id="best">0</span></span></div>
+  <div id="zoneBar"><div id="zoneSafe"></div><div id="zoneMarker"></div></div>
+  <div class="panel" style="display:flex; flex-direction:column; align-items:center;">
     <canvas id="c" width="320" height="360"></canvas>
     <div id="overlay">
       <div class="big">😿</div>
@@ -27,76 +31,128 @@
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
-  <p class="hint">İp ayaklara yaklaşınca tam zamanında tıkla ve zıpla! Çok erken/geç dokunursan ipe takılırsın.</p>
+  <p class="hint">İp yere değeceği an (yeşil bölgeye gelince) tıkla/boşluk tuşuna bas ve zıpla! Yanlış zamanda zıplarsan ya da hiç zıplamazsan ipe takılırsın.</p>
 
 <script src="common.js"></script>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
-const GROUND_Y = H-70;
+const GROUND_Y = H - 80;
 
-let score, running, ropeAngle, ropeSpeed, jumping, jumpV, charY, misses, raf;
+let score, misses, running, cyclePos, cycleSpeed, jumping, jumpV, charY, judged, best;
+best = parseInt(localStorage.getItem('ok_ipatlama_best') || '0', 10);
+document.getElementById('best').textContent = best;
+
+// ---- Oyun döngüsü: 0 -> 1 arası ilerleyen tek bir "ip turu" ----
+// 0.85 - 1.0 arası ip ayakların hizasından geçiyor (bu aralıkta zıplamak GEREKİYOR)
+const SAFE_START = 0.84, SAFE_END = 1.0;
 
 function startGame(){
-  score=0; running=true; ropeAngle=0; ropeSpeed=0.09; jumping=false; jumpV=0; charY=0; misses=0;
-  document.getElementById('score').textContent=0;
-  document.getElementById('overlay').style.display='none';
+  score = 0; misses = 0; running = true; cyclePos = 0; cycleSpeed = 0.0095; jumping=false; jumpV=0; charY=0; judged=false;
+  document.getElementById('score').textContent = 0;
+  document.getElementById('misses').textContent = 0;
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('zoneSafe').style.left = (SAFE_START*100)+'%';
+  document.getElementById('zoneSafe').style.width = ((SAFE_END-SAFE_START)*100)+'%';
   loop();
 }
+
 function endGame(){
-  running=false;
-  document.getElementById('overMsg').textContent=`${score} kere atladın!`;
-  document.getElementById('stars').textContent=starRating(score,25);
-  document.getElementById('overlay').style.display='flex';
-  playError();
+  running = false;
+  if(score > best){ best = score; localStorage.setItem('ok_ipatlama_best', best); }
+  document.getElementById('best').textContent = best;
+  document.getElementById('overMsg').textContent = `${score} kere üst üste atladın!`;
+  document.getElementById('stars').textContent = starRating(score, 20);
+  document.getElementById('overlay').style.display = 'flex';
 }
-function loop(){
-  if(!running) return;
+
+function drawScene(){
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#fff3d6'; ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle='rgba(0,0,0,.15)'; ctx.lineWidth=3;
-  ctx.beginPath(); ctx.moveTo(0,GROUND_Y+30); ctx.lineTo(W,GROUND_Y+30); ctx.stroke();
+  ctx.fillStyle = '#fff3d6'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0,GROUND_Y+26); ctx.lineTo(W,GROUND_Y+26); ctx.stroke();
 
-  ropeAngle += ropeSpeed;
-  const ropeY = GROUND_Y - Math.abs(Math.sin(ropeAngle))*90;
-  const ropeNearGround = Math.sin(ropeAngle) > 0.85 || Math.sin(ropeAngle) < -0.85 ? false : Math.abs(Math.sin(ropeAngle))<0.15 && Math.cos(ropeAngle)>0;
-
-  // ip çizimi (yay şeklinde)
-  ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=5; ctx.lineCap='round';
+  // ip: cyclePos 0->1 boyunca yayın en üstten (uzakta) yere (yakında) inişini gösterir
+  // görsel olarak: ip yüksekteyken ince/yukarıda bir yay, yere değerken düz bir çizgi gibi alçalır
+  const ropeHeight = 110 * (1 - Math.pow(Math.abs(cyclePos-0.5)*2, 1)); // 0.5'te en yüksek, 0 ve 1'de yerde
+  const ropeY = GROUND_Y + 10 - ropeHeight;
+  ctx.strokeStyle = '#8a5a2a'; ctx.lineWidth = 5; ctx.lineCap='round';
   ctx.beginPath();
-  ctx.moveTo(W/2-90, GROUND_Y+10);
-  ctx.quadraticCurveTo(W/2, ropeY-20, W/2+90, GROUND_Y+10);
+  ctx.moveTo(W/2-95, GROUND_Y+10);
+  ctx.quadraticCurveTo(W/2, ropeY, W/2+95, GROUND_Y+10);
   ctx.stroke();
 
+  // zıplama fiziği
   if(jumping){
-    jumpV += 0.9; charY += jumpV;
-    if(charY>=0){ charY=0; jumping=false; jumpV=0; }
+    jumpV += 0.85; charY += jumpV;
+    if(charY >= 0){ charY = 0; jumping = false; jumpV = 0; }
+  }
+  ctx.font='44px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🧒', W/2, GROUND_Y-16+charY);
+
+  // gösterge çubuğunu güncelle
+  document.getElementById('zoneMarker').style.left = `calc(${cyclePos*100}% - 7px)`;
+}
+
+function loop(){
+  if(!running) return;
+  cyclePos += cycleSpeed;
+
+  const inSafeZone = cyclePos >= SAFE_START && cyclePos <= SAFE_END;
+  const isAirborne = charY < -12; // karakter yeterince yukarıdaysa ipten kurtulmuş sayılır
+
+  if(cyclePos >= 1){
+    // tur tamamlandı - o turda doğru zamanlama yapıldı mı kontrol et
+    if(!judged){
+      // hiç zıplanmadıysa veya yanlış zamanda zıplandıysa kaçırıldı sayılır
+      registerMiss();
+    }
+    cyclePos = 0;
+    judged = false;
+    cycleSpeed = Math.min(0.019, cycleSpeed + 0.0006); // giderek zorlaşır
+  } else if(inSafeZone && !judged){
+    // güvenli bölgedeyken karakter havadaysa BAŞARILI sayılır (otomatik değerlendirme penceresi kapanınca)
   }
 
-  ctx.font='42px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('🧒', W/2, GROUND_Y-10+charY);
-
-  // ipin ayak seviyesinden geçtiği an kontrolü
-  const ropeAtFeet = Math.abs(GROUND_Y+10 - (GROUND_Y - Math.abs(Math.sin(ropeAngle))*4)) < 6 && Math.cos(ropeAngle) > 0.9;
-  if(ropeAtFeet && !jumping && charY > -14){
-    misses++;
-    playError();
-    if(misses>=3){ endGame(); return; }
-  }
-
+  drawScene();
   raf = requestAnimationFrame(loop);
 }
+let raf;
+
+function registerMiss(){
+  misses++;
+  document.getElementById('misses').textContent = misses;
+  playError();
+  if(misses >= 3){ endGame(); }
+}
+
+function registerSuccess(){
+  score++;
+  document.getElementById('score').textContent = score;
+  playTone(600 + Math.min(400, score*8), 0.09, 'triangle', 0.14);
+}
+
 function doJump(){
   if(!running || jumping) return;
-  jumping=true; jumpV=-13;
-  score++;
-  document.getElementById('score').textContent=score;
-  playTone(600,0.1,'triangle',0.14);
+  jumping = true; jumpV = -12.5;
+
+  // zıplama anında ip nerede? doğru pencerede mi?
+  const inSafeZone = cyclePos >= SAFE_START - 0.06 && cyclePos <= SAFE_END + 0.03;
+  if(inSafeZone && !judged){
+    judged = true;
+    registerSuccess();
+  } else if(!judged){
+    // çok erken zıpladı - ip henüz gelmemişken zıpladı, bu turun sonunda tekrar değerlendirilmeyecek
+    judged = true;
+    registerMiss();
+  }
 }
+
 canvas.addEventListener('click', doJump);
 canvas.addEventListener('touchstart', e=>{ e.preventDefault(); doJump(); }, {passive:false});
-window.addEventListener('keydown', e=>{ if(e.key===' ') doJump(); });
+window.addEventListener('keydown', e=>{ if(e.key===' '){ e.preventDefault(); doJump(); } });
+
 startGame();
 </script>
 </body>

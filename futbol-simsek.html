@@ -347,13 +347,15 @@ function update(){
     } else {
       keeper.targetY = ball.y;
     }
-    const reactSpeed = ball.special ? 0.05 : 0.09;
+    const skill = Math.min(1, score.player*0.06 + (60-timeLeft)*0.004);
+    const reactSpeed = (ball.special ? 0.05 : 0.09) + skill*0.035;
     keeper.y += (keeper.targetY - keeper.y) * reactSpeed * slowMo;
     keeper.y = Math.max(goalTop+12, Math.min(goalTop+goalH-12, keeper.y));
     keeper.animT += 0.3;
 
-    // Top kaleye yaklaşınca dalış animasyonu başlat
-    if(ball.x > goalCX - 75 && !keeper.diving){
+    // Top kaleye yaklaşınca dalış animasyonu başlat (deneyimli kaleci daha erken tepki verir)
+    const diveTriggerDist = 75 + skill*20;
+    if(ball.x > goalCX - diveTriggerDist && !keeper.diving){
       keeper.diving = true;
       keeper.diveDir = Math.sign(keeper.targetY - keeper.y) || 1;
       keeper.diveT = 0;
@@ -362,7 +364,8 @@ function update(){
 
     if(ball.inPlay && ball.x > goalCX - 6){
       const keeperDist = Math.hypot(ball.x-keeper.x, ball.y-keeper.y);
-      const saveChance = ball.special ? 20 : 32;
+      let saveChance = ball.special ? 20 : 32;
+      if(keeper.diving) saveChance += 14 * keeper.diveT; // dalış ilerledikçe kollar uzanır, menzil genişler
       ball.inPlay = false;
       if(ball.y > goalTop+6 && ball.y < goalTop+goalH-6 && keeperDist > saveChance){
         score.player++;

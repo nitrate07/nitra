@@ -19,7 +19,7 @@
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
-  <h1>🛼 Paten Kaçışı</h1>
+  <h1>⛸️ Paten Kaçışı</h1>
   <div id="hud"><span>📍 <span id="score">0</span> m</span><span>🏆 <span id="best">0</span> m</span></div>
   <div id="wrap">
     <canvas id="c" width="340" height="520"></canvas>
@@ -102,7 +102,7 @@ function loop(){
   }
   ctx.save(); ctx.translate(player.x, H-90); ctx.rotate(player.tilt);
   ctx.font='40px serif'; ctx.fillText('🧑‍🦽‍➡️'.length ? '🧑' : '🧑', 0, 0);
-  ctx.font='40px serif'; ctx.fillText('🛼', 0, 14);
+  ctx.font='40px serif'; ctx.fillText('⛸️', 0, 14);
   ctx.restore();
   raf = requestAnimationFrame(loop);
 }
