@@ -84,3 +84,50 @@ function starRating(score, max){
   const stars = ratio >= 0.99 ? 3 : ratio >= 0.6 ? 2 : ratio > 0 ? 1 : 0;
   return '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
 }
+
+// ---- Ebeveyn paneli için hafif oynama takibi (oyun mantığını etkilemez) ----
+(function trackPlaySession(){
+  try{
+    const path = location.pathname.split('/').pop() || 'oyun';
+    const sessionStart = Date.now();
+
+    // toplam başlatma sayısı
+    const totalPlays = parseInt(localStorage.getItem('ok_stat_totalPlays')||'0',10) + 1;
+    localStorage.setItem('ok_stat_totalPlays', totalPlays);
+
+    // bu oyunun kaç kez açıldığı
+    const perGameKey = 'ok_stat_plays_'+path;
+    const gamePlays = parseInt(localStorage.getItem(perGameKey)||'0',10) + 1;
+    localStorage.setItem(perGameKey, gamePlays);
+
+    // son oynananlar listesi (en fazla 8, en yeni başta) - başlık tema ile güncellensin diye 'load' sonrası yazılır
+    window.addEventListener('load', ()=>{
+      try{
+        const gameName = document.title.replace(' — Oyun Kutusu','').trim() || path;
+        let recent = [];
+        try{ recent = JSON.parse(localStorage.getItem('ok_stat_recent')||'[]'); }catch(e){ recent = []; }
+        recent = recent.filter(r=>r.path !== path);
+        recent.unshift({ path, name: gameName, t: sessionStart });
+        recent = recent.slice(0,8);
+        localStorage.setItem('ok_stat_recent', JSON.stringify(recent));
+      } catch(e){}
+    });
+
+    // bugünün tarihine göre günlük oyun sayısı
+    const today = new Date().toISOString().slice(0,10);
+    const dayKey = 'ok_stat_day_'+today;
+    localStorage.setItem(dayKey, (parseInt(localStorage.getItem(dayKey)||'0',10)+1));
+
+    // sekme kapanırken / gizlenirken geçen süreyi (saniye) topla
+    function flush(){
+      const elapsed = Math.round((Date.now()-sessionStart)/1000);
+      if(elapsed < 1) return;
+      const totalSec = parseInt(localStorage.getItem('ok_stat_totalSeconds')||'0',10) + elapsed;
+      localStorage.setItem('ok_stat_totalSeconds', totalSec);
+      const todaySecKey = 'ok_stat_seconds_'+today;
+      localStorage.setItem(todaySecKey, (parseInt(localStorage.getItem(todaySecKey)||'0',10)+elapsed));
+    }
+    document.addEventListener('visibilitychange', ()=>{ if(document.hidden) flush(); });
+    window.addEventListener('pagehide', flush);
+  } catch(e){ /* takip başarısız olursa oyunu asla etkilemesin */ }
+})();
