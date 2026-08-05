@@ -142,6 +142,95 @@
   html.dark .parent-bar-track{ background:#1c1740; }
   .parent-bar-fill{ height:100%; background:linear-gradient(90deg,var(--purple),var(--teal)); border-radius:8px; }
   #parentCard .empty-note{ font-size:.85rem; opacity:.6; text-align:center; padding:14px; }
+
+  /* Gerçek verili istatistik şeridi */
+  #statsRow{
+    max-width:1100px; margin:14px auto 0; padding:0 20px; position:relative; z-index:1;
+    display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
+  }
+  .stat-pill{
+    display:flex; align-items:center; gap:8px; background:linear-gradient(135deg,#fff,#F7F5FF);
+    border-radius:999px; padding:8px 16px; box-shadow:0 3px 0 #e4e0f7, 0 6px 14px rgba(108,78,245,.08);
+    font-weight:800; font-size:.85rem;
+  }
+  .stat-pill .icon{ font-size:1.2rem; }
+  .stat-pill .val{ color:var(--purple); font-weight:900; }
+  html.dark .stat-pill{ background:linear-gradient(135deg,#221c46,#1c1740); }
+
+  /* Macera banner */
+  #adventureBanner{
+    max-width:1100px; margin:18px auto 0; padding:0 20px; position:relative; z-index:1;
+  }
+  #adventureCard{
+    background:linear-gradient(120deg,#6C4EF5,#4a34c9); border-radius:24px; padding:22px 26px;
+    display:flex; align-items:center; gap:18px; box-shadow:0 10px 30px rgba(108,78,245,.35); flex-wrap:wrap;
+    color:#fff; text-decoration:none;
+  }
+  #adventureCard .a-mascot{ font-size:3.2rem; animation:mascotIdle 2.2s ease-in-out infinite; flex:0 0 auto; }
+  #adventureCard .a-text{ flex:1; min-width:200px; }
+  #adventureCard h3{ font-family:'Fredoka',sans-serif; font-size:1.25rem; margin-bottom:4px; }
+  #adventureCard p{ font-size:.85rem; opacity:.92; }
+  #adventureCard .a-cta{
+    background:#fff; color:var(--purple); font-weight:900; padding:10px 20px; border-radius:999px;
+    font-size:.85rem; white-space:nowrap; box-shadow:0 3px 0 rgba(0,0,0,.15);
+  }
+
+  /* Sol kenar çubuğu navigasyonu */
+  #sidebar{
+    position:fixed; left:0; top:0; bottom:0; width:190px; z-index:90;
+    background:linear-gradient(180deg,#1b1440,#0f0c2e);
+    display:flex; flex-direction:column; padding:18px 12px; gap:4px;
+    transform:translateX(-100%); transition:transform .3s ease;
+    overflow-y:auto;
+  }
+  #sidebar.open{ transform:translateX(0); box-shadow:10px 0 40px rgba(0,0,0,.4); }
+  #sidebar .sb-logo{
+    font-family:'Fredoka',sans-serif; color:#fff; font-size:1.2rem; font-weight:600; text-align:center;
+    margin-bottom:14px; padding:6px 0;
+  }
+  .sb-item{
+    display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:14px; color:#c9c4e8;
+    text-decoration:none; font-weight:800; font-size:.88rem; border:none; background:none; width:100%;
+    text-align:left; cursor:pointer; font-family:inherit;
+  }
+  .sb-item:hover{ background:rgba(255,255,255,.08); color:#fff; }
+  .sb-item.active{ background:linear-gradient(90deg,#FFD23F,#FFB03D); color:#1B1B3A; }
+  .sb-item .sb-icon{ font-size:1.15rem; }
+  #sidebarBackdrop{ position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:85; display:none; }
+  #sidebarBackdrop.show{ display:block; }
+  #sidebarToggle{
+    position:fixed; top:14px; left:14px; z-index:95; width:44px; height:44px; border-radius:14px; border:none;
+    background:#221c46; color:#fff; font-size:1.3rem; box-shadow:0 4px 12px rgba(0,0,0,.3); cursor:pointer;
+  }
+  @media (min-width:960px){
+    #sidebar{ transform:translateX(0); }
+    #sidebarToggle{ display:none; }
+    #sidebarBackdrop{ display:none !important; }
+    body{ padding-left:190px; }
+  }
+
+  /* Günlük Görevler + Sandık */
+  #dailySection{ max-width:1100px; margin:18px auto 0; padding:0 20px; position:relative; z-index:1;
+    display:flex; gap:14px; flex-wrap:wrap; }
+  #questsBox{ flex:2; min-width:260px; background:#fff; border-radius:20px; padding:16px 18px; box-shadow:0 4px 0 #e4e0f7; }
+  html.dark #questsBox{ background:#221c46; }
+  #questsBox h4{ font-family:'Fredoka',sans-serif; margin-bottom:10px; }
+  .quest-item{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .quest-item .q-icon{ font-size:1.3rem; }
+  .quest-item .q-body{ flex:1; }
+  .quest-item .q-label{ font-size:.8rem; font-weight:800; margin-bottom:3px; display:flex; justify-content:space-between; }
+  .quest-track{ background:#F1EEFF; border-radius:8px; height:9px; overflow:hidden; }
+  html.dark .quest-track{ background:#1c1740; }
+  .quest-fill{ height:100%; background:linear-gradient(90deg,var(--teal),var(--purple)); border-radius:8px; transition:width .3s; }
+  .quest-item.done .quest-fill{ background:linear-gradient(90deg,#7bc94a,#4a9a3a); }
+  #chestsBox{ flex:1; min-width:200px; background:#fff; border-radius:20px; padding:16px 18px; box-shadow:0 4px 0 #e4e0f7; text-align:center; }
+  html.dark #chestsBox{ background:#221c46; }
+  #chestsBox h4{ font-family:'Fredoka',sans-serif; margin-bottom:10px; }
+  .chest-btn{ font-size:2.2rem; background:none; border:none; cursor:pointer; padding:6px; transition:transform .15s; }
+  .chest-btn:hover{ transform:scale(1.1); }
+  .chest-btn:disabled{ opacity:.4; cursor:default; }
+  .chest-btn:disabled:hover{ transform:none; }
+  #chestNote{ font-size:.75rem; opacity:.65; margin-top:6px; }
   *{box-sizing:border-box; margin:0; padding:0;}
   html{scroll-behavior:smooth;}
   body{
@@ -366,6 +455,21 @@
 </style>
 </head>
 <body>
+  <button id="sidebarToggle">☰</button>
+  <div id="sidebarBackdrop"></div>
+  <aside id="sidebar">
+    <div class="sb-logo">🐱 Oyun Kutusu</div>
+    <a class="sb-item active" href="#"><span class="sb-icon">🏠</span> Ana Sayfa</a>
+    <a class="sb-item" href="#oyunlar"><span class="sb-icon">🎮</span> Oyunlar</a>
+    <a class="sb-item" href="#worldMap"><span class="sb-icon">🗺️</span> Dünyalar</a>
+    <button class="sb-item" id="sbProfileBtn"><span class="sb-icon">🧑</span> Profilim</button>
+    <a class="sb-item" href="#achievements"><span class="sb-icon">🏆</span> Başarılarım</a>
+    <button class="sb-item" id="sbParentBtn"><span class="sb-icon">👨‍👩‍👧</span> Ebeveyn Paneli</button>
+    <div style="flex:1;"></div>
+    <button class="sb-item" id="sbThemeBtn"><span class="sb-icon">🌙</span> Tema</button>
+    <button class="sb-item" id="sbMusicBtn"><span class="sb-icon">🔊</span> Müzik</button>
+  </aside>
+
   <div class="blob blob1"></div>
   <div class="blob blob2"></div>
   <div class="blob blob3"></div>
@@ -417,6 +521,31 @@
       <div id="parentBody"></div>
       <button class="btn alt" id="closeParentBtn" style="width:100%; margin-top:10px;">Kapat</button>
     </div>
+  </div>
+
+  <div id="dailySection">
+    <div id="questsBox">
+      <h4>📋 Günlük Görevler</h4>
+      <div id="questsList"></div>
+    </div>
+    <div id="chestsBox">
+      <h4>🎁 Günlük Sandık</h4>
+      <button class="chest-btn" id="chestBtn">📦</button>
+      <div id="chestNote">Her gün bir kez açabilirsin!</div>
+    </div>
+  </div>
+
+  <div id="statsRow"></div>
+
+  <div id="adventureBanner">
+    <a id="adventureCard" href="#worldMap">
+      <span class="a-mascot">🐱</span>
+      <div class="a-text">
+        <h3 id="adventureTitle">Macera Seni Bekliyor!</h3>
+        <p id="adventureSub">Yeni bölgeler keşfet, yıldız topla!</p>
+      </div>
+      <span class="a-cta" id="adventureCta">Keşfetmeye Başla →</span>
+    </a>
   </div>
 
   <section class="hero">
@@ -1253,6 +1382,118 @@
   document.getElementById('parentNavLink').addEventListener('click', e=>{ e.preventDefault(); openParentPanel(); playClick(500); });
   document.getElementById('closeParentBtn').addEventListener('click', ()=> document.getElementById('parentModal').classList.remove('show'));
   document.getElementById('parentModal').addEventListener('click', e=>{ if(e.target.id==='parentModal') document.getElementById('parentModal').classList.remove('show'); });
+
+  // ---- Gerçek verilerle istatistik şeridi ----
+  function computeStreak(){
+    let streak = 0;
+    for(let i=0;i<365;i++){
+      const d = new Date(); d.setDate(d.getDate()-i);
+      const key = 'ok_stat_day_'+d.toISOString().slice(0,10);
+      if(localStorage.getItem(key)){ streak++; } else { break; }
+    }
+    return streak;
+  }
+  const recordCount = ACHIEVEMENT_REGISTRY.filter(a=> parseInt(localStorage.getItem(a.key)||'0',10) > 0).length;
+  const discoveredCount = REGIONS.filter(r=> r.always || r.cats.some(c=>localStorage.getItem('ok_visited_'+c))).length;
+  const streakDays = computeStreak();
+  const todayKey2 = new Date().toISOString().slice(0,10);
+  const todayMin = Math.round(parseInt(localStorage.getItem('ok_stat_seconds_'+todayKey2)||'0',10)/60);
+
+  const statsRow = document.getElementById('statsRow');
+  const stats = [
+    { icon:'🏆', label:'Rekor', val: recordCount },
+    { icon:'🗺️', label:'Bölge', val: discoveredCount+'/7' },
+    { icon:'🔥', label:'Gün Serisi', val: streakDays },
+    { icon:'⏱️', label:'Bugün', val: todayMin+' dk' }
+  ];
+  stats.forEach(s=>{
+    const pill = document.createElement('div');
+    pill.className = 'stat-pill';
+    pill.innerHTML = `<span class="icon">${s.icon}</span> <span class="val">${s.val}</span> ${s.label}`;
+    statsRow.appendChild(pill);
+  });
+
+  // ---- Macera banner: ilerlemeye göre kişiselleştirilmiş öneri ----
+  const undiscovered = REGIONS.find(r=> !r.always && !r.cats.some(c=>localStorage.getItem('ok_visited_'+c)));
+  const profileName = localStorage.getItem('ok_profile_name');
+  if(discoveredCount <= 1){
+    document.getElementById('adventureTitle').textContent = profileName ? `Hoş geldin, ${profileName}!` : 'Maceraya Hazır mısın?';
+    document.getElementById('adventureSub').textContent = 'Dünya haritasını keşfet, ilk bölgeni aç!';
+  } else if(undiscovered){
+    document.getElementById('adventureTitle').textContent = `${undiscovered.emoji} ${undiscovered.name} Seni Bekliyor!`;
+    document.getElementById('adventureSub').textContent = 'Henüz keşfetmediğin yeni bir bölge var.';
+    document.getElementById('adventureCard').href = undiscovered.href;
+  } else {
+    document.getElementById('adventureTitle').textContent = 'Tüm Bölgeleri Keşfettin! 🎉';
+    document.getElementById('adventureSub').textContent = `${streakDays} gündür buradasın, harikasın!`;
+    document.getElementById('adventureCta').textContent = 'Yeniden Oyna →';
+  }
+
+  // ---- Sidebar (mobil çekmece + masaüstü sabit) ----
+  const sidebar = document.getElementById('sidebar');
+  const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  function openSidebar(){ sidebar.classList.add('open'); sidebarBackdrop.classList.add('show'); }
+  function closeSidebar(){ sidebar.classList.remove('open'); sidebarBackdrop.classList.remove('show'); }
+  sidebarToggle.addEventListener('click', ()=>{ sidebar.classList.contains('open') ? closeSidebar() : openSidebar(); playClick(480); });
+  sidebarBackdrop.addEventListener('click', closeSidebar);
+  sidebar.querySelectorAll('.sb-item[href]').forEach(a=> a.addEventListener('click', ()=> closeSidebar()));
+
+  document.getElementById('sbProfileBtn').addEventListener('click', ()=>{ closeSidebar(); profileBadge.click(); });
+  document.getElementById('sbParentBtn').addEventListener('click', ()=>{ closeSidebar(); document.getElementById('parentNavLink').click(); });
+  document.getElementById('sbThemeBtn').addEventListener('click', ()=>{ themeBtn.click(); });
+  document.getElementById('sbMusicBtn').addEventListener('click', ()=>{ musicBtn.click(); });
+
+  // ---- Günlük Görevler (gerçek veriden) ----
+  const todayStr = new Date().toISOString().slice(0,10);
+  const todayPlaysCount = parseInt(localStorage.getItem('ok_stat_day_'+todayStr)||'0',10);
+  const todayMinutes = Math.round(parseInt(localStorage.getItem('ok_stat_seconds_'+todayStr)||'0',10)/60);
+  let todayRecent = [];
+  try{ todayRecent = JSON.parse(localStorage.getItem('ok_stat_recent')||'[]'); }catch(e){}
+  const todayUniqueGames = new Set(
+    todayRecent.filter(r=> new Date(r.t).toISOString().slice(0,10)===todayStr).map(r=>r.path)
+  ).size;
+
+  const QUESTS = [
+    { icon:'🎮', label:'1 oyun aç', cur: Math.min(todayPlaysCount,1), max:1 },
+    { icon:'⏱️', label:'10 dakika oyna', cur: Math.min(todayMinutes,10), max:10 },
+    { icon:'🎯', label:'3 farklı oyun dene', cur: Math.min(todayUniqueGames,3), max:3 }
+  ];
+  const questsList = document.getElementById('questsList');
+  QUESTS.forEach(q=>{
+    const done = q.cur >= q.max;
+    const row = document.createElement('div');
+    row.className = 'quest-item' + (done ? ' done' : '');
+    row.innerHTML = `<span class="q-icon">${done?'✅':q.icon}</span>
+      <div class="q-body">
+        <div class="q-label"><span>${q.label}</span><span>${q.cur}/${q.max}</span></div>
+        <div class="quest-track"><div class="quest-fill" style="width:${Math.round(q.cur/q.max*100)}%"></div></div>
+      </div>`;
+    questsList.appendChild(row);
+  });
+
+  // ---- Günlük Sandık (gerçek: günde bir kez açılabilir) ----
+  const chestBtn = document.getElementById('chestBtn');
+  const chestNote = document.getElementById('chestNote');
+  const chestKey = 'ok_chest_opened_'+todayStr;
+  function refreshChest(){
+    if(localStorage.getItem(chestKey)){
+      chestBtn.disabled = true; chestBtn.textContent = '📭';
+      chestNote.textContent = 'Bugün açtın! Yarın tekrar gel 🌙';
+    } else {
+      chestBtn.disabled = false; chestBtn.textContent = '📦';
+      chestNote.textContent = 'Her gün bir kez açabilirsin!';
+    }
+  }
+  refreshChest();
+  chestBtn.addEventListener('click', ()=>{
+    if(localStorage.getItem(chestKey)) return;
+    localStorage.setItem(chestKey, '1');
+    playSuccess();
+    fireConfetti(document.getElementById('chestsBox'));
+    showMascotTip('Harika! Sandığı açtın, yarın yenisi seni bekliyor! 🎁');
+    refreshChest();
+  });
 </script>
 
 </body>
