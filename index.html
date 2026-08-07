@@ -517,7 +517,34 @@
   <div id="parentModal">
     <div id="parentCard">
       <h3>👨‍👩‍👧 Ebeveyn Paneli</h3>
-      <div class="sub">Reklam takibi veya kişisel veri toplama yapılmaz; bu bilgiler yalnızca bu tarayıcıda, cihazınızda saklanır.</div>
+      <div class="sub">Reklam takibi veya kişisel veri toplama yapılmaz; hesap bilgileri yalnızca sizin onayınızla saklanır.</div>
+
+      <div id="parentAuthGate" style="display:none;">
+        <div id="authTabs" style="display:flex; gap:8px; margin-bottom:14px;">
+          <button class="btn alt" id="tabSignIn" style="flex:1;">Giriş Yap</button>
+          <button class="btn alt" id="tabSignUp" style="flex:1;">Kayıt Ol</button>
+        </div>
+        <input id="authEmail" type="email" placeholder="E-posta adresiniz" style="width:100%; padding:10px 14px; border-radius:12px; border:2px solid #E4DDFF; font-family:inherit; font-size:.95rem; margin-bottom:10px;">
+        <input id="authPassword" type="password" placeholder="Şifre (en az 6 karakter)" style="width:100%; padding:10px 14px; border-radius:12px; border:2px solid #E4DDFF; font-family:inherit; font-size:.95rem; margin-bottom:10px;">
+        <div id="authError" style="color:#c94b4b; font-size:.8rem; font-weight:700; margin-bottom:8px; display:none;"></div>
+        <button class="btn" id="authSubmitBtn" style="width:100%;">Giriş Yap</button>
+      </div>
+
+      <div id="parentUnverified" style="display:none; text-align:center; padding:10px 0;">
+        <div style="font-size:2rem;">📧</div>
+        <p style="font-weight:800; margin:8px 0;">E-postanı doğrulaman gerekiyor</p>
+        <p class="sub" style="margin-bottom:12px;">Gelen kutunu (ve spam klasörünü) kontrol et, doğrulama bağlantısına tıkla.</p>
+        <button class="btn alt" id="resendVerifyBtn">Doğrulama E-postasını Tekrar Gönder</button>
+        <button class="btn alt" id="checkVerifyBtn" style="margin-top:8px;">Doğruladım, Kontrol Et</button>
+      </div>
+
+      <div id="parentAuthedArea" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span id="parentEmailLabel" style="font-weight:800; font-size:.85rem;"></span>
+          <button class="btn alt" id="signOutBtn" style="padding:6px 14px; font-size:.75rem;">Çıkış</button>
+        </div>
+      </div>
+
       <div id="parentStatsGrid" class="parent-stats"></div>
       <div id="parentBody"></div>
       <button class="btn alt" id="closeParentBtn" style="width:100%; margin-top:10px;">Kapat</button>
@@ -899,6 +926,12 @@
     <div id="mascotBubble"></div>
   </div>
 
+<!-- Ebeveyn hesabı sistemi (Firebase yapılandırılmadıysa sessizce devre dışı kalır) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="parent-auth.js"></script>
 <script src="common.js"></script>
 <script>
   // 5 oyun motoru x 5 tema x 4 seviye = 100 hafıza geliştirici oyun kartı
@@ -1303,6 +1336,40 @@
   };
 
   function openParentPanel(){
+    document.getElementById('parentModal').classList.add('show');
+
+    // Firebase yapılandırılmadıysa: eskisi gibi doğrudan istatistikleri göster
+    if(!window.FIREBASE_READY){
+      document.getElementById('parentAuthGate').style.display = 'none';
+      document.getElementById('parentUnverified').style.display = 'none';
+      document.getElementById('parentAuthedArea').style.display = 'none';
+      renderParentStats();
+      return;
+    }
+
+    // Firebase yapılandırıldıysa: giriş durumuna göre doğru ekranı göster
+    if(!fbUser){
+      document.getElementById('parentAuthGate').style.display = 'block';
+      document.getElementById('parentUnverified').style.display = 'none';
+      document.getElementById('parentAuthedArea').style.display = 'none';
+      document.getElementById('parentStatsGrid').innerHTML = '';
+      document.getElementById('parentBody').innerHTML = '';
+    } else if(!fbUser.emailVerified){
+      document.getElementById('parentAuthGate').style.display = 'none';
+      document.getElementById('parentUnverified').style.display = 'block';
+      document.getElementById('parentAuthedArea').style.display = 'none';
+      document.getElementById('parentStatsGrid').innerHTML = '';
+      document.getElementById('parentBody').innerHTML = '';
+    } else {
+      document.getElementById('parentAuthGate').style.display = 'none';
+      document.getElementById('parentUnverified').style.display = 'none';
+      document.getElementById('parentAuthedArea').style.display = 'block';
+      document.getElementById('parentEmailLabel').textContent = '✅ ' + fbUser.email;
+      renderParentStats();
+    }
+  }
+
+  function renderParentStats(){
     const totalSec = parseInt(localStorage.getItem('ok_stat_totalSeconds')||'0',10);
     const totalPlays = parseInt(localStorage.getItem('ok_stat_totalPlays')||'0',10);
     const today = new Date().toISOString().slice(0,10);
@@ -1320,7 +1387,6 @@
 
     if(totalPlays === 0){
       body.innerHTML = '<div class="empty-note">Henüz veri yok — çocuğunuz bir oyun oynadığında burada gerçek istatistikler görünecek.</div>';
-      document.getElementById('parentModal').classList.add('show');
       return;
     }
 
@@ -1376,8 +1442,6 @@
       html += '</div>';
       body.innerHTML += html;
     }
-
-    document.getElementById('parentModal').classList.add('show');
   }
 
   document.getElementById('parentNavLink').addEventListener('click', e=>{ e.preventDefault(); openParentPanel(); playClick(500); });
@@ -1495,6 +1559,71 @@
     showMascotTip('Harika! Sandığı açtın, yarın yenisi seni bekliyor! 🎁');
     refreshChest();
   });
+
+  // ---- Ebeveyn Hesabı: Firebase kimlik doğrulama olayları ----
+  let authMode = 'signin'; // 'signin' | 'signup'
+  const authEmailEl = document.getElementById('authEmail');
+  const authPasswordEl = document.getElementById('authPassword');
+  const authErrorEl = document.getElementById('authError');
+  const authSubmitBtn = document.getElementById('authSubmitBtn');
+
+  function setAuthMode(mode){
+    authMode = mode;
+    document.getElementById('tabSignIn').style.opacity = mode==='signin' ? 1 : .55;
+    document.getElementById('tabSignUp').style.opacity = mode==='signup' ? 1 : .55;
+    authSubmitBtn.textContent = mode==='signin' ? 'Giriş Yap' : 'Kayıt Ol';
+    authErrorEl.style.display = 'none';
+  }
+  document.getElementById('tabSignIn').addEventListener('click', ()=> setAuthMode('signin'));
+  document.getElementById('tabSignUp').addEventListener('click', ()=> setAuthMode('signup'));
+
+  authSubmitBtn.addEventListener('click', ()=>{
+    const email = authEmailEl.value.trim();
+    const pass = authPasswordEl.value;
+    if(!email || !pass){
+      authErrorEl.textContent = 'E-posta ve şifre gerekli.';
+      authErrorEl.style.display = 'block';
+      return;
+    }
+    authSubmitBtn.disabled = true;
+    authErrorEl.style.display = 'none';
+    const done = ()=>{ authSubmitBtn.disabled = false; };
+    const onErr = (msg)=>{ authErrorEl.textContent = msg; authErrorEl.style.display = 'block'; done(); };
+    if(authMode === 'signup'){
+      parentSignUp(email, pass, ()=>{ done(); openParentPanel(); playSuccess(); }, onErr);
+    } else {
+      parentSignIn(email, pass, ()=>{ done(); openParentPanel(); playSuccess(); }, onErr);
+    }
+  });
+
+  document.getElementById('signOutBtn').addEventListener('click', ()=>{
+    parentSignOut();
+    document.getElementById('parentModal').classList.remove('show');
+  });
+
+  document.getElementById('resendVerifyBtn').addEventListener('click', ()=>{
+    resendVerificationEmail(
+      ()=> showMascotTip('Doğrulama e-postası tekrar gönderildi! 📧'),
+      (msg)=> showMascotTip(msg)
+    );
+  });
+  document.getElementById('checkVerifyBtn').addEventListener('click', ()=>{
+    if(fbAuth && fbAuth.currentUser){
+      fbAuth.currentUser.reload().then(()=>{
+        fbUser = fbAuth.currentUser;
+        openParentPanel();
+        if(fbUser.emailVerified) playSuccess();
+      });
+    }
+  });
+
+  // Firebase'i başlat ve oturum durumu değişikliklerini dinle
+  if(initFirebase()){
+    fbAuth.onAuthStateChanged(user=>{
+      fbUser = user;
+      if(document.getElementById('parentModal').classList.contains('show')) openParentPanel();
+    });
+  }
 </script>
 
 </body>
