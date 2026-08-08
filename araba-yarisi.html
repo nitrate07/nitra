@@ -2,43 +2,82 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Gece Yarışı Underground — Oyun Kutusu</title>
+<meta name="description" content="Gece şehrinde nitro dolu yarış! Araba yarışı oyunu tamamen ücretsiz, tarayıcıda oynanır, indirme gerektirmez.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://SITE-ADRESIN-BURAYA.com/araba-yarisi.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Gece Yarışı Underground — Oyun Kutusu">
+<meta property="og:description" content="Gece şehrinde nitro dolu yarış! Araba yarışı oyunu tamamen ücretsiz, tarayıcıda oynanır, indirme gerektirmez.">
+<meta property="og:url" content="https://SITE-ADRESIN-BURAYA.com/araba-yarisi.html">
+<meta property="og:site_name" content="Oyun Kutusu">
+<meta property="og:locale" content="tr_TR">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Gece Yarışı Underground — Oyun Kutusu">
+<meta name="twitter:description" content="Gece şehrinde nitro dolu yarış! Araba yarışı oyunu tamamen ücretsiz, tarayıcıda oynanır, indirme gerektirmez.">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  body{ background:radial-gradient(circle at 50% 0%, #221a3d, #0c0a1a 70%); }
+  body{
+    background:radial-gradient(circle at 50% 0%, #221a3d, #0c0a1a 70%);
+    padding-bottom:max(16px, env(safe-area-inset-bottom));
+    padding-top:max(16px, env(safe-area-inset-top));
+  }
   h1{ color:#fff; text-shadow:0 0 14px #7ce9ff; font-family:'Orbitron','Baloo 2',sans-serif; letter-spacing:1px; }
   a.back{ color:#9be8ff; }
-  #hud span{ background:rgba(20,14,40,.85); color:#fff; box-shadow:0 0 0 1px rgba(124,233,255,.3), 0 3px 0 #000; font-family:'Fredoka',sans-serif; }
-  canvas{background:#14102a; border-radius:20px; box-shadow:0 0 0 2px rgba(124,233,255,.3), 0 18px 50px rgba(0,0,0,.65); touch-action:none;}
+  #hud{
+    position:relative; padding:2px 0;
+  }
+  #hud span{
+    background:rgba(20,14,40,.85); color:#fff; box-shadow:0 0 0 1px rgba(124,233,255,.3), 0 3px 0 #000;
+    font-family:'Fredoka',sans-serif; transition:box-shadow .2s, transform .15s;
+  }
+  #hud span.pop{ animation:pop-in .3s ease-out; }
+  #hud span#speedWrap.boostGlow{ box-shadow:0 0 0 1px #ffd23f, 0 0 16px rgba(255,210,63,.75), 0 3px 0 #000; }
+  canvas{background:#14102a; border-radius:20px; box-shadow:0 0 0 2px rgba(124,233,255,.3), 0 18px 50px rgba(0,0,0,.65); touch-action:none; -webkit-tap-highlight-color:transparent;}
   #wrap{position:relative;}
-  .controls{display:flex; gap:12px; margin-top:14px; align-items:center;}
+  .progress-track{ background:#1c1735; box-shadow:inset 0 0 0 1px rgba(124,233,255,.3); }
+  .progress-fill{ background:linear-gradient(90deg,#3dd6ff,#7bff6b); }
+  .controls{display:flex; gap:10px; margin-top:14px; align-items:center; justify-content:center; flex-wrap:wrap;}
   .ctl{width:64px; height:54px; border:none; border-radius:14px; background:#2a2456; color:#9be8ff; font-size:1.5rem;
-    box-shadow:0 0 0 1px rgba(124,233,255,.35), 0 4px 0 #000; cursor:pointer;}
+    box-shadow:0 0 0 1px rgba(124,233,255,.35), 0 4px 0 #000; cursor:pointer;
+    -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;}
   .ctl:active{transform:translateY(3px);}
+  #muteBtn{ width:48px; font-size:1.2rem; }
   #nitroBtn{
     background:linear-gradient(180deg,#ff3d6e,#ff7a3d); color:#fff; font-weight:900; font-family:'Orbitron',sans-serif;
     width:120px; font-size:.95rem; box-shadow:0 0 16px rgba(255,90,90,.65), 0 4px 0 #7a1230; letter-spacing:1px;
   }
   #nitroBtn.active{ animation:nitroGlow .3s ease-in-out infinite alternate; }
   @keyframes nitroGlow{ from{ box-shadow:0 0 16px rgba(255,90,90,.65), 0 4px 0 #7a1230;} to{ box-shadow:0 0 32px rgba(255,150,90,.95), 0 4px 0 #7a1230;} }
-  #nitroBar{ width:100%; max-width:280px; height:12px; background:#1c1735; border-radius:999px; overflow:hidden; margin:0 auto 10px;
+  #nitroBar{ width:100%; max-width:280px; height:12px; background:#1c1735; border-radius:999px; overflow:hidden; margin:0 auto 8px;
     box-shadow:inset 0 0 0 1px rgba(124,233,255,.3); }
   #nitroFill{ height:100%; background:linear-gradient(90deg,#ff3d6e,#ffd23f); border-radius:999px; transition:width .1s linear; }
   #overlay{ background:rgba(10,8,24,.95); color:#fff; }
   .msg, .big{ color:#fff; }
   .stars{ filter:drop-shadow(0 0 6px #ffd23f); }
   p.hint{ font-size:.82rem; opacity:.6; margin-top:8px; text-align:center; max-width:340px; color:#cbd0e6;}
+
+  /* Geri sayım overlay */
+  #countdownOverlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    font-family:'Orbitron','Baloo 2',sans-serif; font-weight:900; font-size:5.5rem; color:#fff;
+    text-shadow:0 0 24px #7ce9ff, 0 0 60px rgba(124,233,255,.6); pointer-events:none; z-index:8;
+  }
+  #countdownOverlay.go{ color:#ffd23f; text-shadow:0 0 30px #ffd23f, 0 0 90px rgba(255,210,63,.75); font-size:3.6rem; letter-spacing:2px;}
+  @keyframes cdPop{ from{ transform:scale(.3); opacity:0;} 60%{ transform:scale(1.18); opacity:1;} to{ transform:scale(1); opacity:1;} }
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>🏎️ Gece Yarışı</h1>
-  <div id="hud"><span>📍 <span id="score">0</span> m</span><span>⚡ <span id="speedNum">0</span> km/s</span><span>🏆 <span id="best">0</span> m</span></div>
+  <div id="hud"><span>📍 <span id="score">0</span> m</span><span id="speedWrap">⚡ <span id="speedNum">0</span> km/s</span><span>🏆 <span id="best">0</span> m</span></div>
+  <div class="progress-track"><div class="progress-fill" id="raceProgress" style="width:0%"></div></div>
   <div id="nitroBar"><div id="nitroFill" style="width:100%"></div></div>
   <div id="wrap">
     <canvas id="c" width="400" height="620"></canvas>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">💥</div>
       <div class="msg" id="overMsg"></div>
@@ -51,6 +90,7 @@
     <button class="ctl" id="leftBtn">◀</button>
     <button class="ctl" id="nitroBtn">🔥 NİTRO</button>
     <button class="ctl" id="rightBtn">▶</button>
+    <button class="ctl" id="muteBtn">🔊</button>
   </div>
   <p class="hint">Ok tuşlarıyla şerit değiştir, ⚡ topla, NİTRO ile roket gibi hızlan!</p>
 
@@ -69,6 +109,134 @@ let bestScore = parseInt(localStorage.getItem('ok_araba_best_v3') || '0', 10);
 document.getElementById('best').textContent = bestScore;
 
 const CAR_COLORS = ['#ff3d6e','#3dd6ff','#ffd23f','#7bff6b','#c96bff','#ff9f3d'];
+
+// ================= SES MOTORU (Web Audio API, tek AudioContext) =================
+const Audio_ = (function(){
+  let unlocked = false;
+  let muted = localStorage.getItem('ok_araba_muted') === '1';
+  let engineOsc1, engineOsc2, engineFilter, engineGain;
+  let noiseBuffer;
+  let musicOn = false, musicStep = 0, musicTimeoutId = null;
+
+  function getCtx(){ return _ctx(); } // common.js'teki paylaşılan AudioContext
+
+  function unlock(){
+    if(unlocked) return;
+    unlocked = true;
+    try{ getCtx().resume(); }catch(e){}
+  }
+
+  function makeNoiseBuffer(){
+    if(noiseBuffer) return noiseBuffer;
+    const c = getCtx();
+    const len = Math.floor(c.sampleRate * 0.5);
+    noiseBuffer = c.createBuffer(1, len, c.sampleRate);
+    const d = noiseBuffer.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    return noiseBuffer;
+  }
+
+  function tone(freq, dur=0.15, type='sine', vol=0.18, delay=0){
+    if(muted) return;
+    try{
+      const c = getCtx();
+      const t0 = c.currentTime + delay;
+      const osc = c.createOscillator(); const gain = c.createGain();
+      osc.type = type; osc.frequency.setValueAtTime(freq, t0);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(Math.max(vol,0.001), t0+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+      osc.connect(gain); gain.connect(c.destination);
+      osc.start(t0); osc.stop(t0+dur+0.03);
+    }catch(e){}
+  }
+
+  function noiseBurst(dur=0.3, vol=0.3, filterFreq=1200, type='lowpass', delay=0){
+    if(muted) return;
+    try{
+      const c = getCtx();
+      const t0 = c.currentTime + delay;
+      const src = c.createBufferSource(); src.buffer = makeNoiseBuffer();
+      const filt = c.createBiquadFilter(); filt.type = type; filt.frequency.setValueAtTime(filterFreq, t0);
+      const gain = c.createGain();
+      gain.gain.setValueAtTime(vol, t0);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+      src.connect(filt); filt.connect(gain); gain.connect(c.destination);
+      src.start(t0); src.stop(t0+dur+0.05);
+    }catch(e){}
+  }
+
+  function startEngine(){
+    if(muted || engineOsc1) return;
+    try{
+      const c = getCtx();
+      engineOsc1 = c.createOscillator(); engineOsc1.type = 'sawtooth';
+      engineOsc2 = c.createOscillator(); engineOsc2.type = 'square';
+      engineFilter = c.createBiquadFilter(); engineFilter.type = 'lowpass'; engineFilter.frequency.value = 400;
+      engineGain = c.createGain(); engineGain.gain.value = 0.0001;
+      engineOsc1.frequency.value = 60; engineOsc2.frequency.value = 60.5;
+      engineOsc1.connect(engineFilter); engineOsc2.connect(engineFilter);
+      engineFilter.connect(engineGain); engineGain.connect(c.destination);
+      engineOsc1.start(); engineOsc2.start();
+      engineGain.gain.linearRampToValueAtTime(0.045, c.currentTime + 0.4);
+    }catch(e){}
+  }
+  function updateEngine(speedRatio, boosting){
+    if(!engineOsc1) return;
+    try{
+      const c = getCtx();
+      const base = 55 + speedRatio*150 + (boosting?70:0);
+      engineOsc1.frequency.setTargetAtTime(base, c.currentTime, 0.08);
+      engineOsc2.frequency.setTargetAtTime(base*1.008, c.currentTime, 0.08);
+      engineFilter.frequency.setTargetAtTime(300 + speedRatio*2200 + (boosting?900:0), c.currentTime, 0.1);
+      const vol = muted ? 0 : (0.03 + speedRatio*0.045 + (boosting?0.04:0));
+      engineGain.gain.setTargetAtTime(vol, c.currentTime, 0.08);
+    }catch(e){}
+  }
+  function stopEngine(){
+    if(!engineOsc1) return;
+    try{
+      const c = getCtx();
+      engineGain.gain.setTargetAtTime(0.0001, c.currentTime, 0.15);
+      const o1 = engineOsc1, o2 = engineOsc2;
+      setTimeout(()=>{ try{ o1.stop(); o2.stop(); }catch(e){} }, 400);
+    }catch(e){}
+    engineOsc1 = engineOsc2 = engineFilter = engineGain = null;
+  }
+
+  function nitroWhoosh(){ noiseBurst(0.5, 0.2, 2200, 'bandpass'); tone(180,0.4,'sawtooth',0.1); tone(900,0.3,'sine',0.07,0.05); }
+  function crash(){ noiseBurst(0.4, 0.32, 700, 'lowpass'); tone(90,0.35,'square',0.2); }
+  function coin(){ tone(700,0.08,'triangle',0.13); tone(1050,0.12,'triangle',0.12,0.06); }
+  function pickupNitro(){ tone(500,0.08,'sine',0.13); tone(850,0.16,'sine',0.14,0.06); }
+  function countdownBeep(){ tone(440,0.12,'square',0.15); }
+  function goBeep(){ tone(220,0.05,'square',0.18); tone(880,0.35,'sawtooth',0.18,0.03); }
+  function winJingle(){ [523,659,784,1046].forEach((f,i)=> tone(f,0.22,'triangle',0.15,i*0.11)); }
+  function loseJingle(){ [300,260,200].forEach((f,i)=> tone(f,0.3,'sawtooth',0.13,i*0.13)); }
+
+  // basit synthwave arpej döngüsü (yarış müziği, dosya gerektirmez)
+  const arp = [220,262,330,392, 330,392,440,523];
+  function scheduleMusic(){
+    if(!musicOn){ musicTimeoutId = null; return; }
+    if(!muted){
+      const f = arp[musicStep % arp.length];
+      tone(f, 0.22, 'triangle', 0.045);
+      if(musicStep % 4 === 0) tone(55, 0.5, 'sawtooth', 0.05);
+    }
+    musicStep++;
+    musicTimeoutId = setTimeout(scheduleMusic, 230);
+  }
+  function startMusic(){ if(musicOn) return; musicOn = true; scheduleMusic(); }
+  function stopMusic(){ musicOn = false; if(musicTimeoutId){ clearTimeout(musicTimeoutId); musicTimeoutId = null; } }
+
+  function setMuted(v){
+    muted = v; localStorage.setItem('ok_araba_muted', v ? '1' : '0');
+    if(muted) stopEngine();
+  }
+  function isMuted(){ return muted; }
+
+  return { unlock, startEngine, updateEngine, stopEngine, nitroWhoosh, crash, coin, pickupNitro,
+    countdownBeep, goBeep, winJingle, loseJingle, startMusic, stopMusic, setMuted, isMuted, tone };
+})();
 
 // ---- Detaylı araba çizimi (gövde + spoiler + jantlar + camlar) ----
 function drawCar(x, y, color, tilt=0, glow=1, driving=true, scale=1){
@@ -118,6 +286,13 @@ function drawCar(x, y, color, tilt=0, glow=1, driving=true, scale=1){
   ctx.fillStyle = 'rgba(255,255,255,.55)';
   ctx.fillRect(-2, -h*0.46, 4, h*0.9);
 
+  // gövde parlaklığı (premium gloss)
+  ctx.save();
+  ctx.globalAlpha = 0.22;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.ellipse(-w*0.06, -h*0.14, w*0.26, h*0.14, -0.3, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+
   // ön/yan camlar
   ctx.fillStyle = 'rgba(180,230,255,.9)';
   ctx.beginPath();
@@ -161,6 +336,7 @@ function drawCar(x, y, color, tilt=0, glow=1, driving=true, scale=1){
 
 let player, obstacles, particles, trail, score, speed, running, spawnTimer, roadOffset;
 let nitro, nitroActive, shakeMag, farStars, skylineOffset, buildingsL, buildingsR, guardOffset, keysHeld={};
+let neonSigns, farLights, frameCount, wasBoosting;
 
 function makeBuildings(){
   const arr = [];
@@ -176,17 +352,71 @@ function makeStars(){
   for(let i=0;i<50;i++) arr.push({ x: Math.random()*W, y: Math.random()*H*0.55, r: Math.random()*1.6+0.4 });
   return arr;
 }
+function makeNeonSigns(){
+  const arr = [];
+  const hues = ['#ff3d9e','#3dd6ff','#ffd23f','#7bff6b'];
+  for(let i=0;i<5;i++){
+    arr.push({ side: Math.random()<0.5?'left':'right', y: Math.random()*H, w: 24+Math.random()*18, h: 9+Math.random()*5,
+      hue: hues[Math.floor(Math.random()*hues.length)], blink: Math.random()*Math.PI*2 });
+  }
+  return arr;
+}
 
 function startGame(){
-  player = { lane: 1, x: laneX(1), y: H-140, tilt: 0, targetTilt: 0 };
+  player = { lane: 1, x: laneX(1), y: H-140, tilt: 0, targetTilt: 0, bob: 0 };
   obstacles = []; particles = []; trail = [];
-  score = 0; speed = 3.6; running = true; roadOffset = 0; guardOffset = 0; skylineOffset = 0;
-  nitro = 100; nitroActive = false; shakeMag = 0;
+  score = 0; speed = 3.6; running = false; roadOffset = 0; guardOffset = 0; skylineOffset = 0;
+  nitro = 100; nitroActive = false; shakeMag = 0; frameCount = 0; wasBoosting = false;
   buildingsL = makeBuildings(); buildingsR = makeBuildings(); farStars = makeStars();
+  neonSigns = makeNeonSigns(); farLights = [];
   document.getElementById('score').textContent = 0;
+  document.getElementById('speedNum').textContent = 0;
+  document.getElementById('raceProgress').style.width = '0%';
   document.getElementById('overlay').style.display = 'none';
   spawnTimer = 0;
-  loop();
+  drawStaticFrame();
+  runCountdown();
+}
+
+function drawStaticFrame(){
+  ctx.clearRect(0,0,W,H);
+  drawSky();
+  drawBuildingCol(buildingsL,'left');
+  drawBuildingCol(buildingsR,'right');
+  const roadGrad = ctx.createLinearGradient(ROAD_MARGIN,0,W-ROAD_MARGIN,0);
+  roadGrad.addColorStop(0,'#110d24'); roadGrad.addColorStop(0.5,'#1c1732'); roadGrad.addColorStop(1,'#110d24');
+  ctx.fillStyle = roadGrad; ctx.fillRect(ROAD_MARGIN,0,roadWidth,H);
+  drawGuardrail();
+  drawCar(player.x, player.y, '#7bff6b', 0, 1, false);
+  drawVignette();
+}
+
+function runCountdown(){
+  const cd = document.getElementById('countdownOverlay');
+  const seq = ['3','2','1','GO!'];
+  let i = 0;
+  cd.style.display = 'flex';
+  Audio_.unlock();
+  function step(){
+    if(i < seq.length){
+      const label = seq[i];
+      cd.className = label === 'GO!' ? 'go' : '';
+      cd.textContent = label;
+      cd.style.animation = 'none';
+      void cd.offsetWidth;
+      cd.style.animation = 'cdPop .5s cubic-bezier(.34,1.56,.64,1)';
+      if(label === 'GO!'){ Audio_.goBeep(); shakeMag = 10; } else { Audio_.countdownBeep(); }
+      i++;
+      setTimeout(step, label === 'GO!' ? 380 : 620);
+    } else {
+      cd.style.display = 'none';
+      running = true;
+      Audio_.startEngine();
+      Audio_.startMusic();
+      loop();
+    }
+  }
+  step();
 }
 
 function spawnObstacle(){
@@ -218,13 +448,19 @@ function spawnSpark(x,y,color){
 
 function endGame(){
   running = false;
+  Audio_.stopEngine();
+  Audio_.stopMusic();
   const distance = Math.floor(score);
   if(distance > bestScore){ bestScore = distance; localStorage.setItem('ok_araba_best_v3', bestScore); }
   document.getElementById('best').textContent = bestScore;
-  document.getElementById('overMsg').textContent = `${distance} metre gidebildin!`;
+  const won = distance >= 1000;
+  document.getElementById('overMsg').textContent = won
+    ? `Muhteşem! ${distance} metre ile 3 yıldızı kaptın! 🏆`
+    : `${distance} metre gidebildin!`;
+  document.querySelector('#overlay .big').textContent = won ? '🏁' : '💥';
   document.getElementById('stars').textContent = starRating(distance, 1000);
   document.getElementById('overlay').style.display = 'flex';
-  playError();
+  setTimeout(()=> won ? Audio_.winJingle() : Audio_.loseJingle(), 200);
 }
 
 function drawSky(){
@@ -254,6 +490,51 @@ function drawSky(){
     ctx.lineTo(x, hgt);
   }
   ctx.lineTo(W, H*0.42); ctx.closePath(); ctx.fill();
+
+  // hafif sis katmanı (atmosferik derinlik)
+  const fog = ctx.createLinearGradient(0,H*0.28,0,H*0.52);
+  fog.addColorStop(0,'rgba(130,150,210,.16)'); fog.addColorStop(1,'rgba(130,150,210,0)');
+  ctx.fillStyle = fog; ctx.fillRect(0,H*0.26,W,H*0.28);
+}
+
+function drawNeonSigns(moveSpeed){
+  neonSigns.forEach(s=>{
+    s.y += moveSpeed*0.5;
+    if(s.y > H+20){ s.y = -20 - Math.random()*60; }
+    s.blink += 0.08;
+    const alpha = Math.max(0.15, 0.55 + Math.sin(s.blink)*0.35);
+    const x = s.side === 'left' ? 14 : W - 14 - s.w;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.shadowColor = s.hue; ctx.shadowBlur = 12;
+    ctx.fillStyle = s.hue;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(x, s.y, s.w, s.h, 4); else ctx.rect(x, s.y, s.w, s.h);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+function drawFarLights(moveSpeed){
+  if(Math.random() < 0.01 && farLights.length < 6){
+    farLights.push({ x: Math.random()<0.5 ? ROAD_MARGIN-16 : W-ROAD_MARGIN+16, y: -10, spd: 2.4+Math.random()*1.6 });
+  }
+  for(let i=farLights.length-1;i>=0;i--){
+    const l = farLights[i];
+    l.y += l.spd + moveSpeed*0.3;
+    ctx.save();
+    ctx.shadowColor = '#fff8c8'; ctx.shadowBlur = 8;
+    ctx.fillStyle = 'rgba(255,248,200,.85)';
+    ctx.beginPath(); ctx.ellipse(l.x, l.y, 2.4, 6, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+    if(l.y > H+20) farLights.splice(i,1);
+  }
+}
+
+function drawVignette(){
+  const g = ctx.createRadialGradient(W/2,H*0.55,H*0.28, W/2,H*0.55,H*0.78);
+  g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.42)');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
 }
 
 function drawBuildingCol(arr, side){
@@ -291,27 +572,45 @@ function drawGuardrail(){
 
 function loop(){
   if(!running) return;
+  frameCount++;
 
   const boosting = nitroActive && nitro > 0;
+  if(boosting && !wasBoosting){ Audio_.nitroWhoosh(); }
+  wasBoosting = boosting;
   if(boosting){ nitro = Math.max(0, nitro - 1.4); }
   else { nitro = Math.min(100, nitro + 0.22); nitroActive = false; }
   document.getElementById('nitroFill').style.width = nitro + '%';
   document.getElementById('nitroBtn').classList.toggle('active', boosting);
+  document.getElementById('speedWrap').classList.toggle('boostGlow', boosting);
 
   const curSpeed = speed + (boosting ? 5.5 : 0);
   speed = 3.6 + score*0.0035;
   score += curSpeed*0.08;
   document.getElementById('score').textContent = Math.floor(score);
-  document.getElementById('speedNum').textContent = Math.round(curSpeed*38);
+  const speedKmh = Math.round(curSpeed*38);
+  const speedEl = document.getElementById('speedNum');
+  if(speedEl.textContent !== String(speedKmh)){
+    speedEl.textContent = speedKmh;
+  }
+  document.getElementById('raceProgress').style.width = Math.min(100, (score/1000)*100) + '%';
+
+  const speedRatio = Math.min(1, curSpeed/14);
+  Audio_.updateEngine(speedRatio, boosting);
 
   roadOffset = (roadOffset + curSpeed) % 44;
 
-  shakeMag *= 0.85;
+  shakeMag = Math.max(shakeMag*0.85, boosting ? 1.1 : 0);
   const sx = (Math.random()-0.5)*shakeMag, sy = (Math.random()-0.5)*shakeMag;
 
   ctx.clearRect(0,0,W,H);
   ctx.save();
   ctx.translate(sx, sy);
+
+  // nitro sırasında hafif FOV/zoom hissi
+  const zoom = boosting ? 1.035 : 1;
+  if(zoom !== 1){
+    ctx.translate(W/2, H/2); ctx.scale(zoom, zoom); ctx.translate(-W/2, -H/2);
+  }
 
   drawSky();
 
@@ -321,6 +620,8 @@ function loop(){
   buildingsR.forEach(b=>{ if(b.y>H+100){ b.y = -100-Math.random()*80; b.h=50+Math.random()*110; b.lit=Math.random()<0.6; }});
   drawBuildingCol(buildingsL,'left');
   drawBuildingCol(buildingsR,'right');
+  drawNeonSigns(curSpeed);
+  drawFarLights(curSpeed);
 
   // yol (asfalt dokusu ile)
   const roadGrad = ctx.createLinearGradient(ROAD_MARGIN,0,W-ROAD_MARGIN,0);
@@ -348,6 +649,7 @@ function loop(){
   if(spawnTimer <= 0){ spawnObstacle(); spawnTimer = Math.max(24, 55 - score*0.05); }
 
   player.tilt += (player.targetTilt - player.tilt) * 0.2;
+  player.bob = Math.sin(frameCount*0.2) * Math.min(2.2, curSpeed*0.18) * (boosting?1.5:1);
 
   if(boosting) spawnFlame(player.x, player.y);
   if(Math.random()<0.25) spawnSmoke(player.x + (Math.random()<0.5?-12:12), player.y+24);
@@ -381,10 +683,11 @@ function loop(){
       ctx.restore();
     }
     if(Math.abs(o.x - player.x) < 32 && Math.abs(o.y - player.y) < 46){
-      if(o.type==='coin'){ score += 25; playTone(700,0.1,'triangle',0.15); spawnSpark(o.x,o.y,'#ffd23f'); obstacles.splice(i,1); continue; }
-      if(o.type==='nitro'){ nitro = Math.min(100, nitro+40); playTone(850,0.15,'triangle',0.18); spawnSpark(o.x,o.y,'#3dd6ff'); obstacles.splice(i,1); continue; }
+      if(o.type==='coin'){ score += 25; Audio_.coin(); spawnSpark(o.x,o.y,'#ffd23f'); obstacles.splice(i,1); continue; }
+      if(o.type==='nitro'){ nitro = Math.min(100, nitro+40); Audio_.pickupNitro(); spawnSpark(o.x,o.y,'#3dd6ff'); obstacles.splice(i,1); continue; }
       shakeMag = 16;
       spawnSpark(player.x, player.y, '#ff5c5c');
+      Audio_.crash();
       endGame();
       ctx.restore();
       return;
@@ -392,8 +695,8 @@ function loop(){
     if(o.y > H+60) obstacles.splice(i,1);
   }
 
-  for(let i=particles.length-1;i>=0;i--){
-    const p = particles[i];
+  if(particles.length > 140) particles.splice(0, particles.length - 140);
+  for(let i=particles.length-1;i>=0;i--){    const p = particles[i];
     p.x += p.vx; p.y += p.vy; p.life--;
     const alpha = Math.max(0, p.life/p.maxLife);
     ctx.save();
@@ -405,7 +708,9 @@ function loop(){
     if(p.life<=0) particles.splice(i,1);
   }
 
-  drawCar(player.x, player.y, '#7bff6b', player.tilt, boosting ? 1.7 : 1, true);
+  drawCar(player.x, player.y + player.bob, '#7bff6b', player.tilt, boosting ? 1.7 : 1, true);
+
+  drawVignette();
 
   ctx.restore();
   raf = requestAnimationFrame(loop);
@@ -452,6 +757,31 @@ canvas.addEventListener('touchend', e=>{
   const dx = e.changedTouches[0].clientX - touchStartX;
   if(dx > 30) moveLane(1); else if(dx < -30) moveLane(-1);
   touchStartX = null;
+});
+
+// Sessize alma butonu
+const muteBtn = document.getElementById('muteBtn');
+muteBtn.textContent = Audio_.isMuted() ? '🔇' : '🔊';
+muteBtn.addEventListener('click', ()=>{
+  Audio_.setMuted(!Audio_.isMuted());
+  muteBtn.textContent = Audio_.isMuted() ? '🔇' : '🔊';
+  if(!Audio_.isMuted() && running){ Audio_.startEngine(); Audio_.startMusic(); }
+});
+
+// iOS/Safari: ilk gerçek kullanıcı etkileşiminde ses kilidini aç
+['touchstart','click','keydown'].forEach(evt=>
+  window.addEventListener(evt, ()=> Audio_.unlock(), { once:true, passive:true })
+);
+
+// Sekme arka plana alınınca döngüyü ve sesi durdur (performans/pil)
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){
+    if(raf) cancelAnimationFrame(raf);
+    Audio_.stopEngine(); Audio_.stopMusic();
+  } else if(running){
+    Audio_.startEngine(); Audio_.startMusic();
+    loop();
+  }
 });
 
 startGame();
