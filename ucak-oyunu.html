@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Gece Uçuşu Turbo — Oyun Kutusu</title>
 <meta name="description" content="Gökyüzünde tam gaz uçuş! Ücretsiz uçak oyunu, indirme gerektirmez, çocuklar için güvenli.">
 <meta name="robots" content="index, follow">
@@ -19,148 +19,707 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  body{ background:radial-gradient(circle at 50% 0%, #142240, #060a18 70%); }
-  h1{ color:#fff; text-shadow:0 0 12px #7ce9ff; font-family:'Orbitron','Baloo 2',sans-serif; }
-  a.back{ color:#9be8ff; }
-  #hud span{ background:rgba(10,16,34,.85); color:#fff; box-shadow:0 0 0 1px rgba(124,233,255,.3), 0 3px 0 #000; }
-  canvas{background:#0a1024; border-radius:20px; box-shadow:0 0 0 2px rgba(124,233,255,.25), 0 14px 40px rgba(0,0,0,.6); touch-action:none;}
-  #wrap{position:relative;}
-  #nitroBar{ width:100%; max-width:260px; height:12px; background:#0e1730; border-radius:999px; overflow:hidden; margin:0 auto 10px; box-shadow:inset 0 0 0 1px rgba(124,233,255,.3); }
+  body{
+    background:radial-gradient(circle at 50% 0%, #142240, #060a18 70%);
+    padding-bottom:max(12px, env(safe-area-inset-bottom));
+    padding-top:max(10px, env(safe-area-inset-top));
+    padding-left:12px; padding-right:12px;
+    min-height:100svh;
+  }
+  h1{ margin:0 0 6px; font-size:1.25rem; color:#fff; text-shadow:0 0 12px #7ce9ff; font-family:'Orbitron','Baloo 2',sans-serif; letter-spacing:.5px; }
+  a.back{ color:#9be8ff; margin-bottom:2px; }
+
+  #hud{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:6px; }
+  #hud .stat{
+    display:flex; align-items:center; gap:5px; background:rgba(10,16,34,.85); color:#fff;
+    box-shadow:0 0 0 1px rgba(124,233,255,.3), 0 3px 0 #000; border-radius:10px; padding:5px 9px;
+    font-family:'Nunito',sans-serif; font-weight:800; font-size:.78rem; transition:box-shadow .2s;
+  }
+  #hud .stat svg{ width:14px; height:14px; flex-shrink:0; }
+  #hud .stat .lbl{ opacity:.6; font-size:.62rem; letter-spacing:.5px; margin-right:1px; }
+  #hud .stat.turbo-glow{ box-shadow:0 0 0 1px #ffd23f, 0 0 14px rgba(255,210,63,.7), 0 3px 0 #000; }
+  #hud .stat.combo{ color:#ffd23f; }
+
+  /* Uçuş ilerleme göstergesi */
+  #flightProgress{
+    position:relative; width:100%; max-width:320px; height:14px; margin:0 auto 8px;
+    background:#0e1730; border-radius:999px; box-shadow:inset 0 0 0 1px rgba(124,233,255,.3); overflow:visible;
+  }
+  #flightProgress .fp-fill{ position:absolute; inset:0; width:0%; border-radius:999px; background:linear-gradient(90deg,#3dd6ff,#7bff6b); transition:width .25s ease; }
+  #flightProgress .fp-label{ position:absolute; top:-14px; font-size:.55rem; font-weight:800; color:#8fa3c9; letter-spacing:.5px; }
+  #flightProgress .fp-start{ left:0; } #flightProgress .fp-finish{ right:0; }
+  #flightProgress .fp-plane{
+    position:absolute; top:50%; width:16px; height:16px; left:0%; transform:translate(-50%,-50%) rotate(90deg);
+    transition:left .25s ease; filter:drop-shadow(0 0 4px #7ce9ff);
+  }
+
+  #nitroBar{ width:100%; max-width:260px; height:10px; background:#0e1730; border-radius:999px; overflow:hidden; margin:0 auto 8px; box-shadow:inset 0 0 0 1px rgba(124,233,255,.3); }
   #nitroFill{ height:100%; background:linear-gradient(90deg,#3dd6ff,#7bff6b); border-radius:999px; transition:width .1s linear; }
-  #overlay{ background:rgba(6,10,24,.95); }
-  #nitroBtn{ margin-top:12px; }
-  p.hint{ font-size:.82rem; opacity:.6; margin-top:8px; text-align:center; max-width:320px; color:#b9c6e6;}
+
+  #wrap{ position:relative; display:flex; justify-content:center; }
+  canvas{
+    background:#0a1024; border-radius:20px; box-shadow:0 0 0 2px rgba(124,233,255,.25), 0 14px 40px rgba(0,0,0,.6);
+    touch-action:none; -webkit-tap-highlight-color:transparent;
+    display:block; margin:0 auto; width:auto; height:auto;
+    aspect-ratio:360/440; max-width:min(92vw,420px); max-height:calc(100vh - 340px); max-height:calc(100svh - 340px);
+  }
+  #overlay{ background:rgba(6,10,24,.96); }
+  #overlay .big{ font-size:2.6rem; }
+  #overlay .msg{ color:#fff; font-family:'Orbitron',sans-serif; letter-spacing:1px; }
+  #overlay .resultGrid{ display:grid; grid-template-columns:1fr 1fr; gap:8px 18px; margin:10px 0 14px; }
+  #overlay .resultGrid div{ opacity:0; animation:resFade .4s ease forwards; }
+  #overlay .resultGrid .rk{ font-size:.62rem; letter-spacing:1px; color:#8fa3c9; font-weight:800; }
+  #overlay .resultGrid .rv{ font-size:1.15rem; font-weight:900; color:#fff; font-family:'Orbitron',sans-serif; }
+  @keyframes resFade{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  #nitroBtn{ margin-top:10px; }
+  .controls{ display:flex; gap:10px; justify-content:center; align-items:center; margin-top:8px; flex-wrap:wrap; }
+  #muteBtn{
+    width:46px; height:46px; border:none; border-radius:12px; background:#12193a; color:#9be8ff; font-size:1.1rem;
+    box-shadow:0 0 0 1px rgba(124,233,255,.3), 0 3px 0 #000; cursor:pointer;
+    -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;
+  }
+  p.hint{ font-size:.76rem; opacity:.6; margin-top:6px; text-align:center; max-width:320px; color:#b9c6e6;}
+
+  /* Geri sayım */
+  #countdownOverlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    font-family:'Orbitron',sans-serif; font-weight:900; font-size:5rem; color:#fff; z-index:9; pointer-events:none;
+    text-shadow:0 0 24px #7ce9ff, 0 0 60px rgba(124,233,255,.6);
+  }
+  #countdownOverlay.go{ color:#ffd23f; font-size:3.2rem; letter-spacing:2px; text-shadow:0 0 30px #ffd23f, 0 0 90px rgba(255,210,63,.75); }
+  @keyframes cdPop{ from{transform:scale(.3); opacity:0;} 60%{transform:scale(1.18); opacity:1;} to{transform:scale(1); opacity:1;} }
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>✈️ Gece Uçuşu Turbo</h1>
-  <div id="hud"><span>⭐ Puan: <span id="score">0</span></span><span>🏆 <span id="best">0</span></span></div>
+
+  <div id="hud">
+    <span class="stat" id="scoreStat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ffd23f" stroke-width="2.2"><path d="M12 2l2.9 6.6L22 9.5l-5 4.9 1.2 7.1L12 18l-6.2 3.5L7 14.4 2 9.5l7.1-.9z"/></svg>
+      <span class="lbl">SKOR</span><span id="score">0</span>
+    </span>
+    <span class="stat" id="distStat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#3dd6ff" stroke-width="2.2"><path d="M2 12h4l3-8 4 16 3-8h6"/></svg>
+      <span class="lbl">MESAFE</span><span id="dist">0</span>
+    </span>
+    <span class="stat combo" id="comboStat" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ffd23f" stroke-width="2.2"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
+      <span id="comboVal">x1</span>
+    </span>
+    <span class="stat" id="bestStat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#9be8ff" stroke-width="2.2"><path d="M8 21h8M12 17v4M6 4h12v3a6 6 0 0 1-12 0V4Z"/><path d="M6 6H3v1a4 4 0 0 0 4 4M18 6h3v1a4 4 0 0 1-4 4"/></svg>
+      <span class="lbl">REKOR</span><span id="best">0</span>
+    </span>
+  </div>
+
+  <div id="flightProgress">
+    <span class="fp-label fp-start">START</span>
+    <span class="fp-label fp-finish">FINISH</span>
+    <div class="fp-fill" id="fpFill"></div>
+    <svg class="fp-plane" id="fpPlane" viewBox="0 0 24 24" fill="#7ce9ff"><path d="M22 12l-8-3-2-7-2 1 1 6.5L3 11l-1 2 8 2 2 7 2-1-1-6.5z"/></svg>
+  </div>
+
   <div id="nitroBar"><div id="nitroFill" style="width:100%"></div></div>
+
   <div id="wrap">
     <canvas id="c" width="360" height="440"></canvas>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">💥</div>
-      <div class="msg" id="overMsg"></div>
+      <div class="msg" id="overMsg">MISSION FAILED</div>
+      <div class="resultGrid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
-  <button class="btn alt" id="nitroBtn">🔥 TURBO</button>
-  <p class="hint">Fareyi/parmağını yukarı-aşağı hareket ettir, bulutlardan kaç, ⚡ toplayıp TURBO ile puanı katla!</p>
+
+  <div class="controls">
+    <button class="btn alt" id="nitroBtn">🔥 TURBO</button>
+    <button id="muteBtn">🔊</button>
+  </div>
+  <p class="hint">Parmağını/fareni yukarı-aşağı sürükle, engellerden kaç, güçlendirmeleri topla, TURBO ile hızlan!</p>
 
 <script src="common.js"></script>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
+const DIFFICULTY_TARGET = 3000; // %100 ilerleme kabul edilen mesafe
 
-let bestScore = parseInt(localStorage.getItem('ok_ucak_best_v2') || '0', 10);
+let bestScore = parseInt(localStorage.getItem('ok_ucak_best_v3') || '0', 10);
 document.getElementById('best').textContent = bestScore;
 
-function drawPlane(x,y,tilt,boost){
+// ================= SES MOTORU (Web Audio API, tek paylaşılan AudioContext) =================
+const Audio_ = (function(){
+  let unlocked = false;
+  let muted = localStorage.getItem('ok_ucak_muted') === '1';
+  let engineOsc1, engineOsc2, engineFilter, engineGain, windGain, windSrc, windFilter;
+  let noiseBuffer;
+  let musicOn = false, musicStep = 0, musicTimeoutId = null;
+
+  function getCtx(){ return _ctx(); }
+  function unlock(){ if(unlocked) return; unlocked = true; try{ getCtx().resume(); }catch(e){} }
+
+  function makeNoiseBuffer(){
+    if(noiseBuffer) return noiseBuffer;
+    const c = getCtx();
+    const len = Math.floor(c.sampleRate*0.5);
+    noiseBuffer = c.createBuffer(1, len, c.sampleRate);
+    const d = noiseBuffer.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    return noiseBuffer;
+  }
+
+  function tone(freq, dur=0.15, type='sine', vol=0.18, delay=0){
+    if(muted) return;
+    try{
+      const c = getCtx(); const t0 = c.currentTime+delay;
+      const osc = c.createOscillator(); const gain = c.createGain();
+      osc.type = type; osc.frequency.setValueAtTime(freq, t0);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(Math.max(vol,0.001), t0+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+      osc.connect(gain); gain.connect(c.destination);
+      osc.start(t0); osc.stop(t0+dur+0.03);
+    }catch(e){}
+  }
+
+  function noiseBurst(dur=0.3, vol=0.3, filterFreq=1200, type='lowpass', delay=0){
+    if(muted) return;
+    try{
+      const c = getCtx(); const t0 = c.currentTime+delay;
+      const src = c.createBufferSource(); src.buffer = makeNoiseBuffer();
+      const filt = c.createBiquadFilter(); filt.type = type; filt.frequency.setValueAtTime(filterFreq, t0);
+      const gain = c.createGain();
+      gain.gain.setValueAtTime(vol, t0);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+      src.connect(filt); filt.connect(gain); gain.connect(c.destination);
+      src.start(t0); src.stop(t0+dur+0.05);
+    }catch(e){}
+  }
+
+  function startEngine(){
+    if(muted || engineOsc1) return;
+    try{
+      const c = getCtx();
+      engineOsc1 = c.createOscillator(); engineOsc1.type='sawtooth';
+      engineOsc2 = c.createOscillator(); engineOsc2.type='square';
+      engineFilter = c.createBiquadFilter(); engineFilter.type='lowpass'; engineFilter.frequency.value=500;
+      engineGain = c.createGain(); engineGain.gain.value = 0.0001;
+      engineOsc1.frequency.value = 90; engineOsc2.frequency.value = 90.6;
+      engineOsc1.connect(engineFilter); engineOsc2.connect(engineFilter);
+      engineFilter.connect(engineGain); engineGain.connect(c.destination);
+      engineOsc1.start(); engineOsc2.start();
+      engineGain.gain.linearRampToValueAtTime(0.035, c.currentTime+0.4);
+
+      windFilter = c.createBiquadFilter(); windFilter.type='bandpass'; windFilter.frequency.value = 900; windFilter.Q.value=0.6;
+      windGain = c.createGain(); windGain.gain.value = 0.0001;
+      windSrc = c.createBufferSource(); windSrc.buffer = makeNoiseBuffer(); windSrc.loop = true;
+      windSrc.connect(windFilter); windFilter.connect(windGain); windGain.connect(c.destination);
+      windSrc.start();
+    }catch(e){}
+  }
+  function updateEngine(speedRatio, boosting){
+    if(!engineOsc1) return;
+    try{
+      const c = getCtx();
+      const base = 80 + speedRatio*180 + (boosting?90:0);
+      engineOsc1.frequency.setTargetAtTime(base, c.currentTime, 0.08);
+      engineOsc2.frequency.setTargetAtTime(base*1.01, c.currentTime, 0.08);
+      engineFilter.frequency.setTargetAtTime(400+speedRatio*2400+(boosting?1000:0), c.currentTime, 0.1);
+      const vol = muted?0:(0.02+speedRatio*0.035+(boosting?0.035:0));
+      engineGain.gain.setTargetAtTime(vol, c.currentTime, 0.08);
+      if(windGain){
+        const wv = muted?0:(0.01+speedRatio*0.05+(boosting?0.05:0));
+        windGain.gain.setTargetAtTime(wv, c.currentTime, 0.1);
+        windFilter.frequency.setTargetAtTime(700+speedRatio*1600+(boosting?800:0), c.currentTime, 0.15);
+      }
+    }catch(e){}
+  }
+  function stopEngine(){
+    if(!engineOsc1) return;
+    try{
+      const c = getCtx();
+      engineGain.gain.setTargetAtTime(0.0001, c.currentTime, 0.15);
+      if(windGain) windGain.gain.setTargetAtTime(0.0001, c.currentTime, 0.15);
+      const o1=engineOsc1, o2=engineOsc2, ws=windSrc;
+      setTimeout(()=>{ try{o1.stop(); o2.stop();}catch(e){} try{ws && ws.stop();}catch(e){} }, 400);
+    }catch(e){}
+    engineOsc1 = engineOsc2 = engineFilter = engineGain = windSrc = windGain = windFilter = null;
+  }
+
+  function turboActivate(){ noiseBurst(0.4,0.18,2400,'bandpass'); tone(200,0.35,'sawtooth',0.1); tone(950,0.3,'sine',0.07,0.05); }
+  function crash(){ noiseBurst(0.45,0.35,650,'lowpass'); tone(85,0.4,'square',0.22); }
+  function nearMiss(){ tone(880,0.08,'sine',0.1); }
+  function dangerPass(){ tone(660,0.07,'triangle',0.12); tone(990,0.1,'triangle',0.11,0.05); }
+  function comboTone(level){ tone(500+level*90, 0.1, 'triangle', 0.12); }
+  function pickupStar(){ tone(700,0.08,'triangle',0.13); tone(1050,0.12,'triangle',0.12,0.06); }
+  function pickupTurbo(){ tone(500,0.08,'sine',0.13); tone(850,0.16,'sine',0.14,0.06); }
+  function pickupShield(){ tone(400,0.12,'sine',0.14); tone(600,0.16,'sine',0.13,0.08); }
+  function pickupLife(){ [523,659,784].forEach((f,i)=>tone(f,0.16,'triangle',0.13,i*0.08)); }
+  function shieldBlock(){ noiseBurst(0.2,0.2,1800,'highpass'); tone(700,0.15,'sine',0.15); }
+  function countdownBeep(){ tone(440,0.12,'square',0.15); }
+  function goBeep(){ tone(220,0.05,'square',0.18); tone(880,0.35,'sawtooth',0.18,0.03); }
+  function winJingle(){ [523,659,784,1046,1318].forEach((f,i)=> tone(f,0.2,'triangle',0.15,i*0.1)); }
+  function loseJingle(){ [300,260,200].forEach((f,i)=> tone(f,0.3,'sawtooth',0.13,i*0.13)); }
+
+  const arp = [196,233,294,349, 294,349,392,466];
+  let musicIntense = false;
+  function scheduleMusic(){
+    if(!musicOn){ musicTimeoutId = null; return; }
+    if(!muted){
+      const f = arp[musicStep % arp.length] * (musicIntense?1.5:1);
+      tone(f, 0.2, 'triangle', musicIntense?0.055:0.04);
+      if(musicStep % 4 === 0) tone(49, 0.5, 'sawtooth', 0.045);
+    }
+    musicStep++;
+    musicTimeoutId = setTimeout(scheduleMusic, musicIntense?170:230);
+  }
+  function startMusic(){ if(musicOn) return; musicOn = true; scheduleMusic(); }
+  function stopMusic(){ musicOn = false; if(musicTimeoutId){ clearTimeout(musicTimeoutId); musicTimeoutId=null; } }
+
+  function setMuted(v){ muted = v; localStorage.setItem('ok_ucak_muted', v?'1':'0'); if(muted) stopEngine(); }
+  function isMuted(){ return muted; }
+
+  return { unlock, startEngine, updateEngine, stopEngine, turboActivate, crash, nearMiss, dangerPass, comboTone,
+    pickupStar, pickupTurbo, pickupShield, pickupLife, shieldBlock, countdownBeep, goBeep, winJingle, loseJingle,
+    startMusic, stopMusic, setMuted, isMuted, tone,
+    setIntense: (v)=>{ musicIntense = v; } };
+})();
+
+// ================= UÇAK ÇİZİMİ =================
+function drawPlane(x,y,tilt,boosting,pitch){
   ctx.save();
-  ctx.translate(x,y); ctx.rotate(tilt);
-  if(boost){ ctx.shadowColor='#3dd6ff'; ctx.shadowBlur=18; }
-  ctx.fillStyle = '#e8eefc';
+  ctx.translate(x,y);
+  ctx.rotate(tilt + pitch*0.12);
+
+  // motor egzoz alevi (hıza göre büyür)
+  const exhaustLen = 10 + (boosting ? 22 : 6);
+  const eg = ctx.createLinearGradient(-18,0,-18-exhaustLen,0);
+  eg.addColorStop(0, boosting ? 'rgba(125,255,255,.95)' : 'rgba(125,200,255,.7)');
+  eg.addColorStop(1, 'rgba(61,214,255,0)');
+  ctx.fillStyle = eg;
   ctx.beginPath();
-  ctx.moveTo(22,0); ctx.lineTo(-10,-8); ctx.lineTo(-18,-3); ctx.lineTo(-18,3); ctx.lineTo(-10,8);
+  ctx.moveTo(-16,-4); ctx.lineTo(-16-exhaustLen, 0); ctx.lineTo(-16,4);
   ctx.closePath(); ctx.fill();
+
+  if(boosting){ ctx.shadowColor = '#3dd6ff'; ctx.shadowBlur = 20; }
+  else { ctx.shadowColor = 'rgba(61,214,255,.5)'; ctx.shadowBlur = 6; }
+
+  // gövde
+  const bodyGrad = ctx.createLinearGradient(0,-8,0,8);
+  bodyGrad.addColorStop(0,'#f4f8ff'); bodyGrad.addColorStop(1,'#c3cfe8');
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath();
+  ctx.moveTo(24,0); ctx.quadraticCurveTo(10,-6, -12,-7); ctx.lineTo(-18,-3);
+  ctx.lineTo(-18,3); ctx.lineTo(-12,7); ctx.quadraticCurveTo(10,6, 24,0);
+  ctx.closePath(); ctx.fill();
+
+  // kanatlar
   ctx.fillStyle = '#3dd6ff';
-  ctx.beginPath(); ctx.moveTo(-2,-3); ctx.lineTo(-14,-16); ctx.lineTo(-9,-3); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(-2,3); ctx.lineTo(-14,16); ctx.lineTo(-9,3); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(0,-3); ctx.lineTo(-16,-18); ctx.lineTo(-8,-3); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(0,3); ctx.lineTo(-16,18); ctx.lineTo(-8,3); ctx.closePath(); ctx.fill();
+  // kanat uçlarında ışık
+  ctx.fillStyle = '#ff3d6e';
+  ctx.beginPath(); ctx.arc(-15,-17,1.6,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#7bff6b';
+  ctx.beginPath(); ctx.arc(-15,17,1.6,0,Math.PI*2); ctx.fill();
+
+  // neon kokpit
+  ctx.shadowBlur = 10; ctx.shadowColor = '#7ce9ff';
+  ctx.fillStyle = 'rgba(124,233,255,.9)';
+  ctx.beginPath(); ctx.ellipse(8,-1,5,3,0,0,Math.PI*2); ctx.fill();
+
   ctx.restore();
 }
 
-let plane, obstacles, particles, score, speed, running, spawnTimer, raf, nitro, nitroActive, stars;
+// ================= OYUN DURUMU =================
+let plane, obstacles, particles, floats, score, distance, speed, running, spawnTimer, raf;
+let nitro, nitroActive, shieldActive, shieldTimer, lives;
+let comboCount, comboLevel, comboTimer, scoreBoostTimer;
+let starsFar, starsNear, clouds, cityGlow, meteors, frameCount, shakeMag, flashAlpha, wasBoosting;
+let targetY = H/2;
 
-function makeStars(){
+function makeStarLayer(n, speedFactor){
   const arr = [];
-  for(let i=0;i<40;i++) arr.push({x:Math.random()*W, y:Math.random()*H, s:Math.random()*1.6+0.4});
+  for(let i=0;i<n;i++) arr.push({ x:Math.random()*W, y:Math.random()*H, s:Math.random()*1.4+0.4, sf:speedFactor });
+  return arr;
+}
+function makeClouds(){
+  const arr = [];
+  for(let i=0;i<5;i++) arr.push({ x:Math.random()*W, y:20+Math.random()*(H-40), w:40+Math.random()*50, alpha:0.08+Math.random()*0.08 });
   return arr;
 }
 
+function difficultyTier(frac){
+  if(frac < 0.2) return { name:'EASY', spawnBase:74, speedMult:1.0, complex:0.05 };
+  if(frac < 0.4) return { name:'NORMAL', spawnBase:60, speedMult:1.15, complex:0.18 };
+  if(frac < 0.6) return { name:'FAST', spawnBase:50, speedMult:1.35, complex:0.32 };
+  if(frac < 0.8) return { name:'HARD', spawnBase:42, speedMult:1.55, complex:0.46 };
+  return { name:'EXTREME', spawnBase:34, speedMult:1.8, complex:0.6 };
+}
+
 function startGame(){
-  plane = { x: 70, y: H/2, r: 20, vy: 0, tilt:0 };
-  obstacles = []; particles = [];
-  score = 0; speed = 2.8; running = true; spawnTimer = 0;
-  nitro = 100; nitroActive = false;
-  stars = makeStars();
+  plane = { x:70, y:H/2, vy:0, tilt:0, r:15, pitch:0 };
+  obstacles = []; particles = []; floats = [];
+  score = 0; distance = 0; speed = 2.6; running = false; spawnTimer = 0;
+  nitro = 100; nitroActive = false; shieldActive = false; shieldTimer = 0; lives = 0;
+  comboCount = 0; comboLevel = 1; comboTimer = 0; scoreBoostTimer = 0;
+  frameCount = 0; shakeMag = 0; flashAlpha = 0; wasBoosting = false;
+  starsFar = makeStarLayer(30, 0.15); starsNear = makeStarLayer(22, 0.35);
+  clouds = makeClouds(); meteors = [];
+  targetY = H/2;
   document.getElementById('score').textContent = 0;
+  document.getElementById('dist').textContent = 0;
+  document.getElementById('comboStat').style.display = 'none';
+  document.getElementById('fpFill').style.width = '0%';
+  document.getElementById('fpPlane').style.left = '0%';
   document.getElementById('overlay').style.display = 'none';
-  loop();
+  drawStaticFrame();
+  runCountdown();
 }
 
-function spawnObstacle(){
-  const isStar = Math.random() < 0.22;
-  const isNitro = !isStar && Math.random() < 0.14;
+function drawStaticFrame(){
+  ctx.clearRect(0,0,W,H);
+  drawBackground(0);
+  drawPlane(plane.x, plane.y, 0, false, 0);
+  drawVignette();
+}
+
+function runCountdown(){
+  const cd = document.getElementById('countdownOverlay');
+  const seq = ['3','2','1','GO!'];
+  let i = 0;
+  cd.style.display = 'flex';
+  Audio_.unlock();
+  function step(){
+    if(i < seq.length){
+      const label = seq[i];
+      cd.className = label==='GO!' ? 'go' : '';
+      cd.textContent = label;
+      cd.style.animation = 'none'; void cd.offsetWidth; cd.style.animation = 'cdPop .5s cubic-bezier(.34,1.56,.64,1)';
+      if(label==='GO!'){ Audio_.goBeep(); shakeMag = 8; flashAlpha = 0.5; burstParticles(plane.x,plane.y,14,'#7ce9ff'); }
+      else Audio_.countdownBeep();
+      i++;
+      setTimeout(step, label==='GO!' ? 380 : 600);
+    } else {
+      cd.style.display = 'none';
+      running = true;
+      Audio_.startEngine(); Audio_.startMusic();
+      loop();
+    }
+  }
+  step();
+}
+
+function burstParticles(x,y,n,color){
+  for(let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2, sp = 1.5+Math.random()*3.5;
+    particles.push({ x,y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:22, maxLife:22, size:2.5+Math.random()*2.5, color });
+  }
+}
+function addFloat(x,y,text,color){
+  floats.push({ x,y, text, color, life:46, maxLife:46 });
+}
+
+function spawnObstacle(tier){
+  const roll = Math.random();
+  let type;
+  if(roll < 0.10) type = 'star';
+  else if(roll < 0.15) type = 'turbo';
+  else if(roll < 0.19) type = 'shield';
+  else if(roll < 0.23 && lives < 1) type = 'life';
+  else if(roll < 0.28) type = 'gate';
+  else {
+    const hazards = ['cloud','bird','asteroid','enemy','barrier'];
+    type = hazards[Math.floor(Math.random()*hazards.length)];
+  }
+
   const y = 30 + Math.random()*(H-60);
-  obstacles.push({
-    x: W+30, y, r: (isStar||isNitro) ? 15 : 22,
-    emoji: isStar ? '⭐' : isNitro ? '⚡' : ['☁️','🐦','🎈'][Math.floor(Math.random()*3)],
-    isStar, isNitro
-  });
+  const isCollectible = (type==='star'||type==='turbo'||type==='shield'||type==='life'||type==='gate');
+  const useComplex = !isCollectible && Math.random() < tier.complex;
+  const pattern = useComplex ? (Math.random()<0.5?'sine':'diagonal') : 'straight';
+
+  const o = {
+    x: W+30, y, baseY: y, type, isCollectible,
+    r: type==='barrier' ? 10 : isCollectible ? 14 : 20,
+    pattern, phase: Math.random()*Math.PI*2, drift: (Math.random()<0.5?-1:1)*(0.4+Math.random()*0.6),
+    rot: 0, passed: false, barrierLen: type==='barrier' ? 70+Math.random()*50 : 0
+  };
+  obstacles.push(o);
 }
 
-function endGame(){
+function endGame(won){
   running = false;
-  const s = Math.floor(score);
-  if(s > bestScore){ bestScore = s; localStorage.setItem('ok_ucak_best_v2', bestScore); }
+  Audio_.stopEngine(); Audio_.stopMusic();
+  const s = Math.floor(score), d = Math.floor(distance);
+  if(s > bestScore){ bestScore = s; localStorage.setItem('ok_ucak_best_v3', bestScore); }
   document.getElementById('best').textContent = bestScore;
-  document.getElementById('overMsg').textContent = `${s} puan topladın!`;
-  document.getElementById('stars').textContent = starRating(s, 500);
+
+  document.querySelector('#overlay .big').textContent = won ? '🏁' : '💥';
+  document.getElementById('overMsg').textContent = won ? 'GÖREV TAMAMLANDI!' : 'GÖREV BAŞARISIZ';
+
+  const grid = document.getElementById('resultGrid');
+  const rows = [
+    ['MESAFE', d + ' m'],
+    ['SKOR', s],
+    ['REKOR', bestScore],
+    ['COMBO', 'x' + comboLevel]
+  ];
+  grid.innerHTML = rows.map(([k,v],i)=>
+    `<div style="animation-delay:${i*0.08}s"><div class="rk">${k}</div><div class="rv">${v}</div></div>`
+  ).join('');
+
+  document.getElementById('stars').textContent = starRating(d, DIFFICULTY_TARGET);
   document.getElementById('overlay').style.display = 'flex';
-  playError();
+  setTimeout(()=> won ? Audio_.winJingle() : Audio_.loseJingle(), 200);
+}
+
+function drawBackground(curSpeed){
+  // derin gece gökyüzü gradyanı
+  const sky = ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#050814'); sky.addColorStop(0.55,'#0a1128'); sky.addColorStop(1,'#0d1730');
+  ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+
+  // uzak şehir silüeti / neon ufuk çizgisi
+  ctx.fillStyle = 'rgba(30,26,60,.55)';
+  ctx.beginPath(); ctx.moveTo(0,H*0.82);
+  for(let x=0;x<=W;x+=30){
+    const hgt = H*0.82 - (10+18*Math.abs(Math.sin((x+frameCount*0.2)*0.03)));
+    ctx.lineTo(x,hgt);
+  }
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
+
+  // meteorlar (ara sıra)
+  if(Math.random() < 0.012 && meteors.length < 3){
+    meteors.push({ x:Math.random()*W*0.6, y:-10, vx:2.5+Math.random()*1.5, vy:3+Math.random()*2, life:40 });
+  }
+  for(let i=meteors.length-1;i>=0;i--){
+    const m = meteors[i]; m.x+=m.vx; m.y+=m.vy; m.life--;
+    ctx.save(); ctx.globalAlpha = Math.max(0,m.life/40);
+    ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 2; ctx.shadowColor='#ffe9a8'; ctx.shadowBlur=8;
+    ctx.beginPath(); ctx.moveTo(m.x,m.y); ctx.lineTo(m.x-m.vx*4,m.y-m.vy*4); ctx.stroke();
+    ctx.restore();
+    if(m.life<=0 || m.y>H) meteors.splice(i,1);
+  }
+
+  // uzak yıldız katmanı (yavaş)
+  starsFar.forEach(s=>{
+    s.x -= curSpeed*s.sf; if(s.x<0){ s.x=W; s.y=Math.random()*H*0.85; }
+    ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.arc(s.x,s.y,s.s,0,Math.PI*2); ctx.fill();
+  });
+  // yakın yıldız katmanı (hızlı, parallax derinlik)
+  starsNear.forEach(s=>{
+    s.x -= curSpeed*s.sf; if(s.x<0){ s.x=W; s.y=Math.random()*H*0.85; }
+    ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.beginPath(); ctx.arc(s.x,s.y,s.s,0,Math.PI*2); ctx.fill();
+  });
+
+  // bulut katmanı (hafif atmosferik)
+  clouds.forEach(c=>{
+    c.x -= curSpeed*0.25; if(c.x < -c.w){ c.x = W+c.w; c.y = 20+Math.random()*(H-40); }
+    ctx.save(); ctx.globalAlpha = c.alpha; ctx.fillStyle = '#cfe0ff';
+    ctx.beginPath(); ctx.ellipse(c.x,c.y,c.w,c.w*0.32,0,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+
+  // hafif sis
+  const fog = ctx.createLinearGradient(0,H*0.6,0,H);
+  fog.addColorStop(0,'rgba(80,100,180,0)'); fog.addColorStop(1,'rgba(80,100,180,.1)');
+  ctx.fillStyle = fog; ctx.fillRect(0,H*0.6,W,H*0.4);
+}
+
+function drawVignette(){
+  const g = ctx.createRadialGradient(W/2,H/2,H*0.25, W/2,H/2,H*0.75);
+  g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.4)');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+}
+
+function drawObstacle(o){
+  ctx.save();
+  ctx.translate(o.x,o.y);
+  if(o.type==='star'){
+    ctx.shadowColor='#ffd23f'; ctx.shadowBlur=10; ctx.fillStyle='#ffd23f';
+    drawStarShape(0,0,5,9,4);
+  } else if(o.type==='turbo'){
+    ctx.shadowColor='#3dd6ff'; ctx.shadowBlur=12; ctx.fillStyle='#3dd6ff';
+    ctx.beginPath(); ctx.moveTo(-3,-9); ctx.lineTo(4,-1); ctx.lineTo(0,-1); ctx.lineTo(3,9); ctx.lineTo(-4,1); ctx.lineTo(0,1); ctx.closePath(); ctx.fill();
+  } else if(o.type==='shield'){
+    ctx.shadowColor='#7bff6b'; ctx.shadowBlur=12; ctx.strokeStyle='#7bff6b'; ctx.lineWidth=2.4;
+    ctx.beginPath(); ctx.moveTo(0,-9); ctx.quadraticCurveTo(9,-6,9,0); ctx.quadraticCurveTo(9,7,0,10);
+    ctx.quadraticCurveTo(-9,7,-9,0); ctx.quadraticCurveTo(-9,-6,0,-9); ctx.stroke();
+  } else if(o.type==='life'){
+    ctx.shadowColor='#ff5c9e'; ctx.shadowBlur=12; ctx.fillStyle='#ff5c9e';
+    ctx.beginPath();
+    ctx.moveTo(0,8); ctx.bezierCurveTo(-10,0,-8,-9,-2,-9); ctx.bezierCurveTo(1,-9,0,-5,0,-4);
+    ctx.bezierCurveTo(0,-5,-1,-9,2,-9); ctx.bezierCurveTo(8,-9,10,0,0,8); ctx.fill();
+  } else if(o.type==='gate'){
+    ctx.rotate(o.rot);
+    ctx.shadowColor='#c96bff'; ctx.shadowBlur=14; ctx.strokeStyle='#c96bff'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(0,0,13,0,Math.PI*2); ctx.stroke();
+  } else if(o.type==='cloud'){
+    ctx.globalAlpha=0.9; ctx.fillStyle='#7d8bb8';
+    ctx.beginPath(); ctx.ellipse(0,0,18,11,0,0,Math.PI*2); ctx.ellipse(-9,3,10,7,0,0,Math.PI*2); ctx.ellipse(9,3,10,7,0,0,Math.PI*2); ctx.fill();
+  } else if(o.type==='bird'){
+    ctx.strokeStyle='#0d1730'; ctx.fillStyle='#1c2748'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(-14,0); ctx.quadraticCurveTo(-4,-10,0,0); ctx.quadraticCurveTo(4,-10,14,0); ctx.stroke();
+  } else if(o.type==='asteroid'){
+    ctx.rotate(o.rot);
+    ctx.fillStyle='#5a4a3a'; ctx.strokeStyle='#2c2318'; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; const rr = o.r*(0.75+((i%3)*0.13)); const px=Math.cos(a)*rr, py=Math.sin(a)*rr; i===0?ctx.moveTo(px,py):ctx.lineTo(px,py); }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  } else if(o.type==='enemy'){
+    ctx.shadowColor='#ff3d6e'; ctx.shadowBlur=10;
+    ctx.fillStyle='#2a1030';
+    ctx.beginPath(); ctx.moveTo(-18,0); ctx.lineTo(8,-6); ctx.lineTo(16,0); ctx.lineTo(8,6); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#ff3d6e'; ctx.beginPath(); ctx.arc(10,0,2.2,0,Math.PI*2); ctx.fill();
+  } else if(o.type==='barrier'){
+    const half = o.barrierLen/2;
+    ctx.shadowColor='#ff3d9e'; ctx.shadowBlur=14; ctx.strokeStyle='#ff3d9e'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(0,-half); ctx.lineTo(0,half); ctx.stroke();
+    ctx.lineWidth=1; ctx.strokeStyle='rgba(255,255,255,.6)';
+    for(let yy=-half+4; yy<half; yy+=8){ ctx.beginPath(); ctx.moveTo(-4,yy); ctx.lineTo(4,yy+3); ctx.stroke(); }
+  }
+  ctx.restore();
+}
+function drawStarShape(cx,cy,spikes,outerR,innerR){
+  let rot = Math.PI/2*3, x=cx, y=cy;
+  const step = Math.PI/spikes;
+  ctx.beginPath(); ctx.moveTo(cx, cy-outerR);
+  for(let i=0;i<spikes;i++){
+    x = cx+Math.cos(rot)*outerR; y = cy+Math.sin(rot)*outerR; ctx.lineTo(x,y); rot+=step;
+    x = cx+Math.cos(rot)*innerR; y = cy+Math.sin(rot)*innerR; ctx.lineTo(x,y); rot+=step;
+  }
+  ctx.lineTo(cx,cy-outerR); ctx.closePath(); ctx.fill();
 }
 
 function loop(){
   if(!running) return;
+  frameCount++;
+
+  // ---- turbo / nitro durumu ----
   const boosting = nitroActive && nitro > 0;
-  if(boosting) nitro = Math.max(0, nitro-1.6); else { nitro = Math.min(100, nitro+0.25); nitroActive=false; }
+  if(boosting && !wasBoosting){ Audio_.turboActivate(); }
+  wasBoosting = boosting;
+  if(boosting) nitro = Math.max(0, nitro-1.5); else { nitro = Math.min(100, nitro+0.22); nitroActive=false; }
   document.getElementById('nitroFill').style.width = nitro+'%';
+  document.getElementById('scoreStat').classList.toggle('turbo-glow', boosting);
+  Audio_.setIntense(boosting);
 
-  const curSpeed = speed + (boosting ? 4.5 : 0);
-  ctx.clearRect(0,0,W,H);
+  if(shieldActive){ shieldTimer--; if(shieldTimer<=0) shieldActive=false; }
+  if(scoreBoostTimer>0) scoreBoostTimer--;
+  if(comboTimer>0){ comboTimer--; } else if(comboCount>0){ comboCount=0; comboLevel=1; document.getElementById('comboStat').style.display='none'; }
 
-  ctx.fillStyle = '#080c1c'; ctx.fillRect(0,0,W,H);
-  stars.forEach(s=>{
-    s.x -= curSpeed*0.3; if(s.x<0){ s.x=W; s.y=Math.random()*H; }
-    ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.beginPath(); ctx.arc(s.x,s.y,s.s,0,Math.PI*2); ctx.fill();
-  });
+  const curSpeed = speed + (boosting ? 4.6 : 0);
+  const progressFrac = Math.min(1, distance/DIFFICULTY_TARGET);
+  const tier = difficultyTier(progressFrac);
 
-  speed = 2.8 + score*0.01;
-  score += 0.35 * (boosting ? 2 : 1);
+  speed = 2.6 + distance*0.0035;
+  const scoreMult = comboLevel * (scoreBoostTimer>0 ? 2 : 1);
+  score += 0.3 * (boosting?1.8:1) * scoreMult;
+  distance += curSpeed * 0.12;
+
   document.getElementById('score').textContent = Math.floor(score);
+  document.getElementById('dist').textContent = Math.floor(distance) + 'm';
+  const pct = Math.min(100, progressFrac*100);
+  document.getElementById('fpFill').style.width = pct + '%';
+  document.getElementById('fpPlane').style.left = pct + '%';
 
-  plane.vy += (targetY - plane.y) * 0.06;
-  plane.vy *= 0.8;
+  if(boosting && frameCount % 40 === 0){
+    score += 500*scoreMult; addFloat(plane.x+10, plane.y-20, 'TURBO ZİNCİRİ +500', '#3dd6ff');
+  }
+
+  shakeMag = Math.max(shakeMag*0.85, boosting?0.9:0);
+  flashAlpha = Math.max(0, flashAlpha - 0.05);
+  const sx = (Math.random()-0.5)*shakeMag, sy = (Math.random()-0.5)*shakeMag;
+
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  ctx.translate(sx,sy);
+  const zoom = boosting ? 1.03 : 1;
+  if(zoom!==1){ ctx.translate(W/2,H/2); ctx.scale(zoom,zoom); ctx.translate(-W/2,-H/2); }
+
+  drawBackground(curSpeed);
+
+  // ---- uçak fiziği ----
+  plane.vy += (targetY - plane.y) * 0.07;
+  plane.vy *= 0.82;
   plane.y += plane.vy;
   plane.y = Math.max(20, Math.min(H-20, plane.y));
-  plane.tilt = Math.max(-0.3, Math.min(0.3, plane.vy*0.05));
+  plane.tilt += ((Math.max(-0.32, Math.min(0.32, plane.vy*0.055))) - plane.tilt) * 0.25;
+  plane.pitch += ((Math.max(-1,Math.min(1,plane.vy*0.08))) - plane.pitch) * 0.2;
 
-  if(boosting){
-    particles.push({x:plane.x-16, y:plane.y+(Math.random()-0.5)*8, vx:-4-Math.random()*2, vy:(Math.random()-0.5)*1, life:14, maxLife:14, size:4+Math.random()*3, color: Math.random()<0.5?'#3dd6ff':'#7bff6b'});
+  // sürekli motor egzoz parçacığı (hıza göre)
+  if(frameCount % (boosting?1:2) === 0){
+    particles.push({ x:plane.x-18, y:plane.y+(Math.random()-0.5)*6, vx:-3-Math.random()*2-(boosting?2:0), vy:(Math.random()-0.5)*0.8,
+      life:16, maxLife:16, size:2.5+Math.random()*2, color: boosting ? (Math.random()<0.5?'#3dd6ff':'#e8fbff') : 'rgba(120,180,255,.5)' });
   }
 
+  // ---- engel/collectible üretimi ----
   spawnTimer -= 1;
-  if(spawnTimer<=0){ spawnObstacle(); spawnTimer = Math.max(32, 68 - score*0.15); }
+  if(spawnTimer<=0){ spawnObstacle(tier); spawnTimer = Math.max(20, tier.spawnBase - Math.random()*10); }
 
-  ctx.font = '28px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   for(let i=obstacles.length-1;i>=0;i--){
     const o = obstacles[i];
-    o.x -= curSpeed + 1.5;
-    if(o.isNitro){ ctx.save(); ctx.shadowColor='#3dd6ff'; ctx.shadowBlur=10; ctx.fillText(o.emoji,o.x,o.y); ctx.restore(); }
-    else ctx.fillText(o.emoji, o.x, o.y);
-    const dist = Math.hypot(o.x-plane.x, o.y-plane.y);
-    if(dist < o.r + plane.r - 6){
-      if(o.isStar){ score+=20; playTone(750,0.1,'triangle',0.15); obstacles.splice(i,1); continue; }
-      if(o.isNitro){ nitro=Math.min(100,nitro+45); playTone(850,0.15,'triangle',0.18); obstacles.splice(i,1); continue; }
-      endGame(); return;
+    const spdMult = o.isCollectible ? 1 : tier.speedMult;
+    o.x -= (curSpeed+1.3) * spdMult;
+    if(o.pattern==='sine'){ o.phase += 0.06; o.y = o.baseY + Math.sin(o.phase)*26; }
+    else if(o.pattern==='diagonal'){ o.y += o.drift; if(o.y<24||o.y>H-24) o.drift*=-1; }
+    if(o.type==='asteroid'||o.type==='gate') o.rot += 0.03;
+
+    drawObstacle(o);
+
+    // ---- çarpışma / yakın-geçiş tespiti ----
+    let hit = false, isBarrier = o.type==='barrier';
+    if(isBarrier){
+      const half = o.barrierLen/2;
+      hit = Math.abs(o.x-plane.x) < o.r+plane.r-4 && plane.y > o.y-half-plane.r && plane.y < o.y+half+plane.r;
+    } else {
+      const dist2 = Math.hypot(o.x-plane.x, o.y-plane.y);
+      hit = dist2 < o.r+plane.r-6;
     }
-    if(o.x < -40) obstacles.splice(i,1);
+
+    if(hit){
+      if(o.type==='star'){ score += 20*scoreMult; comboCount++; Audio_.pickupStar(); burstParticles(o.x,o.y,8,'#ffd23f'); obstacles.splice(i,1); registerCombo(); continue; }
+      if(o.type==='turbo'){ nitro=Math.min(100,nitro+45); Audio_.pickupTurbo(); burstParticles(o.x,o.y,8,'#3dd6ff'); obstacles.splice(i,1); continue; }
+      if(o.type==='shield'){ shieldActive=true; shieldTimer=360; Audio_.pickupShield(); burstParticles(o.x,o.y,8,'#7bff6b'); obstacles.splice(i,1); continue; }
+      if(o.type==='life'){ lives=Math.min(1,lives+1); Audio_.pickupLife(); burstParticles(o.x,o.y,10,'#ff5c9e'); obstacles.splice(i,1); continue; }
+      if(o.type==='gate'){ score += 250*scoreMult; comboCount++; Audio_.dangerPass(); addFloat(o.x,o.y,'ENERJİ KAPISI +250','#c96bff'); burstParticles(o.x,o.y,10,'#c96bff'); obstacles.splice(i,1); registerCombo(); continue; }
+
+      // tehlikeli engel
+      if(shieldActive){ shieldActive=false; shieldTimer=0; Audio_.shieldBlock(); burstParticles(o.x,o.y,10,'#7bff6b'); obstacles.splice(i,1); continue; }
+      if(lives>0){
+        lives--; Audio_.shieldBlock(); burstParticles(plane.x,plane.y,14,'#ff5c9e'); shakeMag=10; flashAlpha=0.4;
+        obstacles.splice(i,1); continue;
+      }
+      shakeMag = 18; flashAlpha = 0.55;
+      burstParticles(plane.x,plane.y,20,'#ff5c5c');
+      Audio_.crash();
+      ctx.restore();
+      endGame(distance >= DIFFICULTY_TARGET);
+      return;
+    } else if(!o.isCollectible && !o.passed && o.x < plane.x){
+      o.passed = true;
+      const gapY = Math.abs(o.y-plane.y);
+      const closeDist = Math.hypot(o.x-plane.x, o.y-plane.y);
+      if(closeDist < o.r+plane.r+14){
+        score += 250*scoreMult; comboCount++; Audio_.dangerPass();
+        addFloat(plane.x, plane.y-18, 'TEHLİKELİ GEÇİŞ +250', '#ff3d9e');
+        registerCombo();
+      } else if(closeDist < o.r+plane.r+34){
+        score += 100*scoreMult; comboCount++; Audio_.nearMiss();
+        addFloat(plane.x, plane.y-18, 'YAKIN GEÇİŞ +100', '#3dd6ff');
+        registerCombo();
+      }
+    }
+
+    if(o.x < -60) obstacles.splice(i,1);
   }
 
+  if(particles.length>150) particles.splice(0, particles.length-150);
   for(let i=particles.length-1;i>=0;i--){
     const p = particles[i]; p.x+=p.vx; p.y+=p.vy; p.life--;
     const a = Math.max(0,p.life/p.maxLife);
@@ -169,18 +728,55 @@ function loop(){
     if(p.life<=0) particles.splice(i,1);
   }
 
-  drawPlane(plane.x, plane.y, plane.tilt, boosting);
+  for(let i=floats.length-1;i>=0;i--){
+    const f = floats[i]; f.y -= 0.6; f.life--;
+    const a = Math.max(0, f.life/f.maxLife);
+    ctx.save(); ctx.globalAlpha=a; ctx.fillStyle=f.color; ctx.font='800 11px Nunito, sans-serif'; ctx.textAlign='center';
+    ctx.fillText(f.text, f.x, f.y); ctx.restore();
+    if(f.life<=0) floats.splice(i,1);
+  }
 
+  drawPlane(plane.x, plane.y, plane.tilt, boosting, plane.pitch);
+  if(shieldActive){
+    ctx.save(); ctx.globalAlpha = 0.5+Math.sin(frameCount*0.2)*0.2;
+    ctx.strokeStyle='#7bff6b'; ctx.lineWidth=2; ctx.shadowColor='#7bff6b'; ctx.shadowBlur=10;
+    ctx.beginPath(); ctx.arc(plane.x,plane.y,22,0,Math.PI*2); ctx.stroke(); ctx.restore();
+  }
+
+  // yüksek hızda kenar speed-lines
+  if(curSpeed > 6.5){
+    ctx.save(); ctx.globalAlpha = Math.min(0.35,(curSpeed-6.5)*0.08); ctx.strokeStyle='#7ce9ff'; ctx.lineWidth=1.4;
+    for(let i=0;i<6;i++){ const yy = Math.random()*H; ctx.beginPath(); ctx.moveTo(W,yy); ctx.lineTo(W-20-Math.random()*40,yy); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  drawVignette();
+  if(flashAlpha>0){ ctx.fillStyle=`rgba(255,255,255,${flashAlpha})`; ctx.fillRect(0,0,W,H); }
+
+  const speedRatio = Math.min(1, curSpeed/12);
+  Audio_.updateEngine(speedRatio, boosting);
+
+  ctx.restore();
   raf = requestAnimationFrame(loop);
 }
 
-let targetY = H/2;
+function registerCombo(){
+  comboTimer = 90;
+  comboLevel = Math.min(4, 1+Math.floor(comboCount/3));
+  if(comboLevel>1){
+    document.getElementById('comboStat').style.display='flex';
+    document.getElementById('comboVal').textContent = 'x'+comboLevel;
+    Audio_.comboTone(comboLevel);
+  }
+}
+
 function setTargetY(clientY){
   const rect = canvas.getBoundingClientRect();
   targetY = (clientY - rect.top) * (H/rect.height);
 }
 canvas.addEventListener('mousemove', e=>setTargetY(e.clientY));
 canvas.addEventListener('touchmove', e=>{ e.preventDefault(); setTargetY(e.touches[0].clientY); }, {passive:false});
+canvas.addEventListener('touchstart', e=>{ setTargetY(e.touches[0].clientY); }, {passive:true});
 
 function setNitro(on){ if(!running) return; nitroActive = on && nitro>4; }
 const nitroBtn = document.getElementById('nitroBtn');
@@ -190,6 +786,20 @@ nitroBtn.addEventListener('touchstart', e=>{ e.preventDefault(); setNitro(true);
 nitroBtn.addEventListener('touchend', e=>{ e.preventDefault(); setNitro(false); }, {passive:false});
 window.addEventListener('keydown', e=>{ if(e.key==='Shift') setNitro(true); });
 window.addEventListener('keyup', e=>{ if(e.key==='Shift') setNitro(false); });
+
+const muteBtn = document.getElementById('muteBtn');
+muteBtn.textContent = Audio_.isMuted() ? '🔇' : '🔊';
+muteBtn.addEventListener('click', ()=>{
+  Audio_.setMuted(!Audio_.isMuted());
+  muteBtn.textContent = Audio_.isMuted() ? '🔇' : '🔊';
+  if(!Audio_.isMuted() && running){ Audio_.startEngine(); Audio_.startMusic(); }
+});
+['touchstart','click','keydown'].forEach(evt=> window.addEventListener(evt, ()=>Audio_.unlock(), {once:true, passive:true}));
+
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ if(raf) cancelAnimationFrame(raf); Audio_.stopEngine(); Audio_.stopMusic(); }
+  else if(running){ Audio_.startEngine(); Audio_.startMusic(); loop(); }
+});
 
 startGame();
 </script>
