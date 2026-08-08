@@ -41,6 +41,7 @@
     <div id="overlay">
       <div class="big">😿</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
@@ -73,7 +74,7 @@ const buttons = Array.from(document.querySelectorAll('.pad-btn'));
 
 function updateProgress(){
   const pct = Math.min(100, Math.round((round / goalRounds) * 100));
-  document.getElementById('progressFill').style.width = pct + '%';
+  updateProgressBar(document.getElementById('progressFill'), pct);
 }
 
 function startGame(){
@@ -124,12 +125,12 @@ function handleClick(i){
   } else {
     accepting = false;
     playError();
-    document.querySelector('.panel').classList.add('shake');
-    setTimeout(()=>document.querySelector('.panel').classList.remove('shake'), 350);
+    triggerWrongFx(document.querySelector('.panel'));
     const finalRound = round - 1;
     document.getElementById('overMsg').textContent = `${finalRound}. tura kadar hatırladın!`;
+    renderResultGrid('resultGrid', [['TUR', finalRound], ['SEVİYE', LEVEL_NAMES[level]]]);
     document.getElementById('stars').textContent = starRating(finalRound, goalRounds);
-    document.getElementById('overlay').style.display = 'flex';
+    showOverlay('overlay');
   }
 }
 

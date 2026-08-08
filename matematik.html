@@ -35,7 +35,11 @@
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1 id="title">🔢 Matematik Yarışı</h1>
-  <div id="hud"><span>🏆 Skor: <span id="score">0</span></span><span>❌ Yanlış: <span id="wrong">0</span>/3</span></div>
+  <div id="hud">
+    <span>🏆 Skor: <span id="score">0</span></span>
+    <span id="comboBadge" class="combo-badge" style="display:none;"></span>
+    <span>❌ Yanlış: <span id="wrong">0</span>/3</span>
+  </div>
   <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
   <div class="panel">
     <div id="banner"></div>
@@ -45,6 +49,7 @@
     <div id="overlay">
       <div class="big">😿</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
@@ -61,6 +66,12 @@ document.getElementById('banner').textContent = theme.emojis[0];
 const goalRounds = 8 + level * 2;
 const timePerQ = [null, 10, 8, 7, 6][level]; // saniye
 let score = 0, wrong = 0, round = 0, running = true, timeLeft, timerInterval, correctAnswer, answered;
+let streak = 0, comboLevel = 1;
+
+function updateCombo(){
+  comboLevel = Math.min(4, 1 + Math.floor(streak/2));
+  renderComboBadge('comboBadge', comboLevel);
+}
 
 function genProblem(){
   let a, b, op, answer;
@@ -85,14 +96,15 @@ function genProblem(){
 }
 
 function updateProgress(){
-  document.getElementById('progressFill').style.width = Math.min(100, Math.round((round/goalRounds)*100)) + '%';
+  updateProgressBar(document.getElementById('progressFill'), Math.min(100, Math.round((round/goalRounds)*100)));
 }
 
 function startGame(){
-  score = 0; wrong = 0; round = 0; running = true;
+  score = 0; wrong = 0; round = 0; running = true; streak = 0; comboLevel = 1;
   document.getElementById('score').textContent = 0;
   document.getElementById('wrong').textContent = 0;
   document.getElementById('overlay').style.display = 'none';
+  renderComboBadge('comboBadge', 1);
   updateProgress();
   nextRound();
 }
@@ -145,19 +157,33 @@ function handleAnswer(opt, btn){
     else if(c === btn) c.classList.add('wrong');
   });
   if(isCorrect){
-    score++;
+    streak++;
+    updateCombo();
+    const gained = 1 * comboLevel;
+    score += gained;
     document.getElementById('score').textContent = score;
     playSuccess();
+    if(comboLevel > 1){ playCombo(comboLevel); }
+    if(btn){
+      const r = btn.getBoundingClientRect(), pr = document.querySelector('.panel').getBoundingClientRect();
+      showFloatingPoints(document.querySelector('.panel'), r.left-pr.left+r.width/2, r.top-pr.top,
+        comboLevel>1 ? `🔥 COMBO x${comboLevel} +${gained}` : `+${gained}`, comboLevel>1 ? '#FF9F43' : '#2EC4B6');
+    }
     setTimeout(nextRound, 600);
   } else {
+    streak = 0; updateCombo();
     wrong++;
     document.getElementById('wrong').textContent = wrong;
     playError();
+    triggerWrongFx(document.getElementById('problem'));
     if(wrong >= 3){
       setTimeout(()=>{
-        document.getElementById('overMsg').textContent = `${score} soruyu doğru bildin!`;
+        document.getElementById('overMsg').textContent = `${score} puan topladın!`;
+        renderResultGrid('resultGrid', [
+          ['DOĞRU', round-wrong], ['SKOR', score], ['TUR', round], ['EN İYİ COMBO', 'x'+comboLevel]
+        ]);
         document.getElementById('stars').textContent = starRating(score, goalRounds);
-        document.getElementById('overlay').style.display = 'flex';
+        showOverlay('overlay');
       }, 700);
     } else {
       setTimeout(nextRound, 900);

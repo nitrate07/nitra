@@ -59,6 +59,73 @@ function playTone(freq, duration = 0.15, type = 'sine', vol = 0.18){
 function playSuccess(){ playTone(523,0.12); setTimeout(()=>playTone(659,0.12),110); setTimeout(()=>playTone(784,0.18),220); }
 function playError(){ playTone(180,0.25,'sawtooth',0.15); }
 function playClick(freq=440){ playTone(freq,0.09,'triangle',0.14); }
+function playCombo(level){ playTone(500+Math.min(level,6)*90, 0.1, 'triangle', 0.13); }
+function playLevelUp(){ [523,659,784,1046].forEach((f,i)=> setTimeout(()=>playTone(f,0.18,'triangle',0.15), i*90)); }
+function playWordFound(){ playTone(700,0.09,'triangle',0.14); setTimeout(()=>playTone(1050,0.13,'triangle',0.13),60); }
+function playCelebration(){ [523,659,784,1046,1318].forEach((f,i)=> setTimeout(()=>playTone(f,0.2,'triangle',0.15), i*90)); }
+
+// ---- Ortak sonuç ekranı (Game Over / Victory) ----
+// rows: [[label, value], ...]  -> #result-grid tarzı bir konteynere basılır
+function renderResultGrid(elId, rows){
+  const el = typeof elId === 'string' ? document.getElementById(elId) : elId;
+  if(!el) return;
+  el.innerHTML = rows.map(([k,v],i)=>
+    `<div style="animation-delay:${i*0.08}s"><div class="rk">${k}</div><div class="rv">${v}</div></div>`
+  ).join('');
+}
+
+// ---- Overlay'i animasyonlu göster/gizle (geriye dönük uyumlu: style.display de çalışır) ----
+function showOverlay(elOrId){
+  const el = typeof elOrId === 'string' ? document.getElementById(elOrId) : elOrId;
+  if(!el) return;
+  el.style.display = '';
+  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+}
+function hideOverlay(elOrId){
+  const el = typeof elOrId === 'string' ? document.getElementById(elOrId) : elOrId;
+  if(!el) return;
+  el.classList.remove('show'); el.style.display = 'none';
+}
+
+// ---- Doğru/Yanlış görsel geri bildirimi (herhangi bir elemente uygulanabilir) ----
+function triggerCorrectFx(el){ if(!el) return; el.classList.remove('glow'); void el.offsetWidth; el.classList.add('glow'); }
+function triggerWrongFx(el){ if(!el) return; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); setTimeout(()=>el.classList.remove('shake'), 380); }
+
+// ---- Yüzen puan metni (ör. "+100 YAKIN GEÇİŞ") ----
+function showFloatingPoints(container, x, y, text, color){
+  const el = document.createElement('div');
+  el.className = 'float-points';
+  el.textContent = text;
+  el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.color = color || 'var(--purple)';
+  container.appendChild(el);
+  setTimeout(()=> el.remove(), 950);
+}
+
+// ---- Combo rozeti oluştur/güncelle ----
+function renderComboBadge(elId, level){
+  const el = typeof elId === 'string' ? document.getElementById(elId) : elId;
+  if(!el) return;
+  if(level <= 1){ el.style.display = 'none'; return; }
+  el.style.display = 'inline-flex';
+  el.classList.remove('combo-badge'); void el.offsetWidth; el.classList.add('combo-badge');
+  el.textContent = `🔥 COMBO x${level}`;
+}
+
+// ---- İlerleme çubuğu: milestone'larda (25/50/75/100%) küçük kutlama tetikler ----
+const _progressMilestones = new WeakMap();
+function updateProgressBar(fillEl, pct){
+  if(!fillEl) return;
+  pct = Math.max(0, Math.min(100, pct));
+  const prevTier = _progressMilestones.get(fillEl) || 0;
+  const tier = pct>=100 ? 4 : pct>=75 ? 3 : pct>=50 ? 2 : pct>=25 ? 1 : 0;
+  fillEl.style.width = pct + '%';
+  if(tier > prevTier){
+    _progressMilestones.set(fillEl, tier);
+    fillEl.classList.remove('milestone'); void fillEl.offsetWidth; fillEl.classList.add('milestone');
+    if(tier >= 4){ fillEl.classList.add('complete'); playLevelUp(); }
+    else { playTone(500+tier*120, 0.12, 'triangle', 0.12); }
+  }
+}
 
 // ---- Konfeti efekti ----
 function fireConfetti(container){

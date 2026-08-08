@@ -39,6 +39,7 @@
     <div id="overlay">
       <div class="big">🎉</div>
       <div class="msg">Tüm kelimeleri buldun!</div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="init()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
@@ -175,11 +176,15 @@ function endSelect(){
     match.found = true;
     foundWords++;
     document.getElementById('foundCount').textContent = foundWords;
-    document.getElementById('chip-'+words.indexOf(match)).classList.add('found');
-    playSuccess();
+    const chip = document.getElementById('chip-'+words.indexOf(match));
+    chip.classList.add('found');
+    playWordFound();
+    const cr = chip.getBoundingClientRect(), pr = document.querySelector('.panel').getBoundingClientRect();
+    showFloatingPoints(document.querySelector('.panel'), cr.left-pr.left+cr.width/2, cr.top-pr.top, '✨ BULUNDU! +100', '#2EC4B6');
     if(foundWords === words.length){
+      renderResultGrid('resultGrid', [['BULUNAN', words.length], ['KELİME', words.length], ['SKOR', words.length*100]]);
       document.getElementById('stars').textContent = starRating(words.length, words.length);
-      document.getElementById('overlay').style.display = 'flex';
+      showOverlay('overlay');
       fireConfetti(document.querySelector('.panel'));
     }
   } else {

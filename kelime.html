@@ -46,6 +46,7 @@
     <div id="overlay">
       <div class="big" id="overIcon">🎉</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="location.reload()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
@@ -136,11 +137,13 @@ function checkAnswers(){
   const success = correct === wordCount;
   if(success) playSuccess(); else playError();
   setTimeout(()=>{
-    const overlay = document.getElementById('overlay');
     document.getElementById('overIcon').textContent = success ? '🎉' : '💪';
     document.getElementById('overMsg').textContent = `${wordCount} kelimeden ${correct} tanesini doğru hatırladın!`;
+    renderResultGrid('resultGrid', [
+      ['DOĞRU', correct+'/'+wordCount], ['SEVİYE', LEVEL_NAMES[level]]
+    ]);
     document.getElementById('stars').textContent = starRating(correct, wordCount);
-    overlay.style.display = 'flex';
+    showOverlay('overlay');
     if(success) fireConfetti(document.querySelector('.panel'));
   }, 900);
 }
