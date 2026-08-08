@@ -107,6 +107,53 @@
   .color-opt{ width:30px; height:30px; border-radius:50%; cursor:pointer; border:3px solid transparent; }
   .color-opt.selected{ border-color:var(--ink); transform:scale(1.15); }
 
+  /* Poki tarzı yatay kaydırmalı raylar */
+  .rails{ max-width:1100px; margin:0 auto; padding:6px 20px 0; position:relative; z-index:1; }
+  .rail{ margin-bottom:26px; }
+  .rail-track{
+    display:flex; gap:14px; overflow-x:auto; padding:4px 2px 14px; scroll-snap-type:x proximity;
+    -webkit-overflow-scrolling:touch; scrollbar-width:thin;
+  }
+  .rail-track::-webkit-scrollbar{ height:8px; }
+  .rail-track::-webkit-scrollbar-thumb{ background:rgba(108,78,245,.25); border-radius:99px; }
+  .rail-track .game-card{ flex:0 0 128px; scroll-snap-align:start; }
+  .rail-empty{
+    background:var(--card); border-radius:16px; padding:18px 20px; font-weight:700; font-size:.9rem;
+    box-shadow:0 4px 0 #e4e0f7; display:flex; align-items:center; gap:10px;
+  }
+  .rail-empty a{ color:var(--purple); text-decoration:underline; }
+
+  /* Rastgele oyun butonu */
+  .random-btn{
+    display:inline-flex; align-items:center; gap:10px; margin-top:16px; padding:14px 26px;
+    background:linear-gradient(135deg,#FFD23F,#FF9F5A); color:#1B1B3A; border:none; border-radius:999px;
+    font-family:'Baloo 2','Nunito',sans-serif; font-weight:800; font-size:1.05rem; cursor:pointer;
+    box-shadow:0 5px 0 #c9762a; transition:transform .15s, box-shadow .15s; text-decoration:none;
+  }
+  .random-btn:hover{ transform:translateY(-3px); box-shadow:0 8px 0 #c9762a; }
+  .random-btn:active{ transform:translateY(0); box-shadow:0 3px 0 #c9762a; }
+  .random-btn .dice{ font-size:1.3rem; display:inline-block; animation:diceSpin 3s ease-in-out infinite; }
+  @keyframes diceSpin{ 0%,80%,100%{ transform:rotate(0);} 85%{ transform:rotate(-18deg);} 90%{ transform:rotate(14deg);} 95%{ transform:rotate(-8deg);} }
+
+  /* Maskot hikaye modalı */
+  #patiStoryModal{
+    position:fixed; inset:0; background:rgba(20,14,50,.55); z-index:200; display:none;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  #patiStoryModal.show{ display:flex; }
+  .pati-story-box{
+    background:var(--card); border-radius:24px; padding:28px 26px; max-width:380px; text-align:center;
+    box-shadow:0 10px 0 #e4e0f7, 0 20px 40px rgba(0,0,0,.25); position:relative;
+  }
+  .pati-story-box .p-emoji{ font-size:3.4rem; display:block; margin-bottom:10px; animation:mascotIdle 2.2s ease-in-out infinite; }
+  .pati-story-box h3{ font-family:'Fredoka',sans-serif; font-size:1.25rem; margin:0 0 10px; }
+  .pati-story-box p{ font-size:.92rem; line-height:1.5; opacity:.85; margin:0 0 18px; }
+  .pati-story-box button{
+    background:linear-gradient(135deg,#6C4EF5,#9C7BFF); color:#fff; border:none; border-radius:999px;
+    padding:11px 24px; font-weight:800; font-family:'Baloo 2',sans-serif; font-size:.95rem; cursor:pointer;
+    box-shadow:0 4px 0 #4a34c9;
+  }
+
   /* Dünya Haritası */
   #worldMap{ max-width:1100px; margin:0 auto 20px; padding:0 20px; position:relative; z-index:1; }
   #worldMapGrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:14px; }
@@ -391,8 +438,27 @@
   .game-card{
     background:var(--card); border-radius:16px; padding:8px; text-align:center; text-decoration:none; color:var(--ink);
     box-shadow:0 4px 0 #e4e0f7; transition:transform .15s, box-shadow .15s; position:relative; overflow:hidden;
+    --accent:#C9BBFF; --glow:rgba(108,78,245,.18);
   }
-  .game-card:hover{ transform:translateY(-4px) scale(1.03); box-shadow:0 8px 0 #e4e0f7, 0 14px 20px rgba(108,78,245,.18); }
+  .game-card::after{
+    content:''; position:absolute; top:0; left:16%; right:16%; height:4px; z-index:6;
+    background:var(--accent); border-radius:0 0 8px 8px; opacity:.9;
+  }
+  .game-card:hover{ transform:translateY(-4px) scale(1.03); box-shadow:0 8px 0 #e4e0f7, 0 14px 22px var(--glow); }
+  .game-card[data-cat~="hafiza"]{ --accent:#6C4EF5; --glow:rgba(108,78,245,.3); }
+  .game-card[data-cat~="bulmaca"]{ --accent:#FF6B9E; --glow:rgba(255,107,158,.3); }
+  .game-card[data-cat~="yaris"]{ --accent:#4a34c9; --glow:rgba(74,52,201,.3); }
+  .game-card[data-cat~="spor"]{ --accent:#4a9a4a; --glow:rgba(74,154,74,.3); }
+  .game-card[data-cat~="yaratici"]{ --accent:#FFB03D; --glow:rgba(255,176,61,.3); }
+  .game-card[data-cat~="zeka"]{ --accent:#2EC4B6; --glow:rgba(46,196,182,.3); }
+  .game-card[data-cat~="macera"]{ --accent:#22B8AA; --glow:rgba(34,184,170,.3); }
+  .game-card[data-cat~="hareket"]{ --accent:#3DD6FF; --glow:rgba(61,214,255,.3); }
+  .game-card[data-cat~="mutfak"]{ --accent:#ff9f5a; --glow:rgba(255,159,90,.3); }
+  .game-card[data-cat~="aksiyon"]{ --accent:#FF3D6E; --glow:rgba(255,61,110,.3); }
+  .thumb .ic{ display:inline-block; transition:transform .28s cubic-bezier(.34,1.56,.64,1); }
+  .game-card:hover .ic{ transform:scale(1.18) rotate(-6deg); }
+  @keyframes cardIn{ from{ opacity:0; transform:translateY(14px) scale(.96); } to{ opacity:1; transform:translateY(0) scale(1); } }
+  .game-card.reveal{ animation:cardIn .45s ease both; }
   .game-card::before{
     content:''; position:absolute; top:0; left:-120%; width:60%; height:100%;
     background:linear-gradient(115deg, transparent, rgba(255,255,255,.55), transparent);
@@ -430,7 +496,12 @@
   .t3{ background:linear-gradient(135deg,#CFF3F0,#8FE4DB); }
   .t4{ background:linear-gradient(135deg,#FFD9D9,#FFB3B3); }
   .game-card h3{ font-size:.8rem; font-weight:800; margin:0; line-height:1.2; }
-  .game-card .tag{ display:none; }
+  .game-card .tag{
+    display:block; position:absolute; top:8px; right:8px; z-index:7;
+    background:rgba(20,14,50,.55); color:#fff; font-size:.6rem; font-weight:800;
+    padding:2px 7px; border-radius:999px; backdrop-filter:blur(2px); letter-spacing:.2px;
+  }
+  .rail-track .game-card .tag{ font-size:.55rem; padding:1px 6px; }
   .badge-new{
     position:absolute; top:8px; left:8px; background:var(--coral); color:#fff; font-size:.65rem; font-weight:800;
     padding:3px 8px; border-radius:999px;
@@ -452,6 +523,9 @@
     .hero-text h1{ font-size:2rem; }
     .hero-art{ font-size:5rem; }
     nav.links{ display:none; }
+    .random-btn{ width:100%; justify-content:center; padding:13px 20px; }
+    .rail-track .game-card{ flex-basis:108px; }
+    .rails{ padding:6px 14px 0; }
   }
 </style>
 </head>
@@ -585,16 +659,36 @@
         <span class="badge">🚫 İndirme Gerektirmez</span>
         <span class="badge">🛡️ Çocuk Dostu</span>
       </div>
+      <button class="random-btn" id="randomGameBtn"><span class="dice">🎲</span> Rastgele Oyun</button>
     </div>
     <div class="hero-art">
       <span class="mascot">🐱</span>
-      <span class="float f1">🐟</span>
-      <span class="float f2">🧩</span>
-      <span class="float f3">⭐</span>
-      <span class="float f4">🎈</span>
-      <span class="float f5">🎵</span>
+      <span class="float f1">🏠</span>
+      <span class="float f2">🌲</span>
+      <span class="float f3">🏜️</span>
+      <span class="float f4">🚀</span>
+      <span class="float f5">🏰</span>
     </div>
   </section>
+
+  <div class="rails" id="rails">
+    <div class="rail">
+      <div class="section-band band-aksiyon">🔥 Bugün Popüler</div>
+      <div class="rail-track" id="railPopular"></div>
+    </div>
+    <div class="rail">
+      <div class="section-band band-yaris">⭐ Editörün Seçimi</div>
+      <div class="rail-track" id="railEditor"></div>
+    </div>
+    <div class="rail">
+      <div class="section-band band-featured">🆕 Yeni Eklenenler</div>
+      <div class="rail-track" id="railNew"></div>
+    </div>
+    <div class="rail">
+      <div class="section-band band-hafiza">🎮 Son Oynananlar</div>
+      <div class="rail-track" id="railRecent"></div>
+    </div>
+  </div>
 
   <div id="worldMap">
     <div id="achTitle">🗺️ Dünya Haritası</div>
@@ -926,6 +1020,15 @@
     <div id="mascotBubble"></div>
   </div>
 
+  <div id="patiStoryModal">
+    <div class="pati-story-box">
+      <span class="p-emoji">🐱</span>
+      <h3>Merhaba, ben Pati!</h3>
+      <p>Ben Oyun Kutusu'nun koruyucu kedisiyim 🐾 Dünyalar arasında dolaşıp kayıp yıldızları topluyorum. Bana katılır mısın? Birlikte Ev, Orman, Çöl, Uzay ve Kale dünyalarını keşfedip yeni oyunlar oynayacağız!</p>
+      <button id="patiStoryCloseBtn">Hadi Başlayalım! 🚀</button>
+    </div>
+  </div>
+
 <!-- Ebeveyn hesabı sistemi (Firebase yapılandırılmadıysa sessizce devre dışı kalır) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -1052,6 +1155,61 @@
     if(grid && cnt) cnt.textContent = grid.children.length + ' oyun';
   });
 
+  // ---- Poki tarzı raylar: Popüler / Editörün Seçimi / Yeni / Son Oynananlar ----
+  const cardByHref = {};
+  templateCards.forEach(c=>{ cardByHref[c.getAttribute('href')] = c; });
+
+  function fillRail(elId, hrefs, emptyMsg){
+    const track = document.getElementById(elId);
+    if(!track) return;
+    let added = 0;
+    hrefs.forEach(href=>{
+      const src = cardByHref[href];
+      if(!src) return;
+      track.appendChild(src.cloneNode(true));
+      added++;
+    });
+    if(!added && emptyMsg){
+      track.outerHTML = `<div class="rail-empty" id="${elId}">🐱 ${emptyMsg}</div>`;
+    }
+  }
+
+  // Editörün Seçimi: sabit, elle seçilmiş favoriler
+  const EDITOR_PICKS = [
+    'araba-yarisi.html','futbol-simsek.html','labirent.html','tekne-yarisi.html',
+    'pizza.html','ucak-oyunu.html','serbest-vurus.html','kaykay-yarisi.html',
+    'sandvic.html','ipatlama.html'
+  ];
+  fillRail('railEditor', EDITOR_PICKS);
+
+  // Yeni Eklenenler: "Yeni" rozetli kartlar + birkaç taze oyun
+  const newBadged = templateCards.filter(c=> c.querySelector('.badge-new')).map(c=>c.getAttribute('href'));
+  const NEW_GAMES = [...new Set([...newBadged, 'yakalama.html','denge.html','merdiven.html','at-yarisi.html','bisiklet-yarisi.html','paten.html'])];
+  fillRail('railNew', NEW_GAMES);
+
+  // Bugün Popüler: gerçek oynama sayıları varsa onlarla, yoksa güne göre sabit bir sıralama
+  const allFeaturedHrefs = templateCards.map(c=>c.getAttribute('href'));
+  const realCounts = allFeaturedHrefs
+    .map(href=>({ href, count: parseInt(localStorage.getItem('ok_stat_plays_'+href.split('?')[0])||'0',10) }))
+    .filter(x=>x.count>0)
+    .sort((a,b)=> b.count-a.count)
+    .map(x=>x.href);
+  let popularList = realCounts;
+  if(popularList.length < 10){
+    const seed = new Date().toISOString().slice(0,10).split('-').reduce((a,c)=>a+parseInt(c,10),0);
+    const shuffled = [...allFeaturedHrefs].sort((a,b)=> ((a.charCodeAt(0)+seed)%7) - ((b.charCodeAt(0)+seed)%7));
+    popularList = [...new Set([...popularList, ...shuffled])];
+  }
+  fillRail('railPopular', popularList.slice(0,12));
+
+  // Son Oynananlar: gerçek localStorage geçmişinden
+  let recentPlayed = [];
+  try{ recentPlayed = JSON.parse(localStorage.getItem('ok_stat_recent')||'[]'); }catch(e){}
+  const recentHrefs = recentPlayed.filter(r=>r.path!=='index.html').map(r=>r.path);
+  fillRail('railRecent', [...new Set(recentHrefs)].slice(0,12), 'Henüz oyun oynamadın. Rastgele Oyun butonuna basıp başlayabilirsin!');
+
+  // ---- Rastgele Oyun butonu (Pati konuşarak yönlendirir) ----
+
   const search = document.getElementById('searchInput');
   const cats = document.querySelectorAll('.cat-pill');
   let activeCat = 'all';
@@ -1059,14 +1217,41 @@
   function applyFilter(){
     const q = search.value.trim().toLowerCase();
     const cards = document.querySelectorAll('.game-card');
+    const filtering = q.length > 0 || activeCat !== 'all';
     cards.forEach(card=>{
       const name = card.dataset.name || '';
       const catList = (card.dataset.cat || '').split(' ');
       const matchesCat = activeCat === 'all' || catList.includes(activeCat);
       const matchesSearch = name.includes(q);
-      card.style.display = (matchesCat && matchesSearch) ? '' : 'none';
+      if(filtering){
+        card.style.display = (matchesCat && matchesSearch) ? '' : 'none';
+      } else {
+        card.style.display = card.hasAttribute('data-lazy') ? 'none' : '';
+      }
     });
   }
+
+  const CAT_TIPS = {
+    hafiza:`🐱 Hafıza oyunları beynini süper güçlü yapar!`,
+    bulmaca:`🐱 Bulmacalarda acele etme, parçalar sırayla yerine oturur.`,
+    yaris:`🐱 Uzay Dünyası'nda hız senin dostun, direksiyonu sıkı tut!`,
+    spor:`🐱 Kale Dünyası seni bekliyor, topu file ile buluştur!`,
+    yaratici:`🐱 Çöl Dünyası'nda istediğin rengi seçebilirsin, sınır yok!`,
+    zeka:`🐱 Sayılarla oynamak matematiği eğlenceli yapar!`,
+    all:`🐱 Hepsine birden bakalım mı? Kaydırmaya devam et!`
+  };
+
+  document.getElementById('randomGameBtn').addEventListener('click', function(e){
+    e.preventDefault();
+    showMascotTip('🐱 Pati senin için bir oyun seçiyor... 🎲');
+    playClick(600);
+    setTimeout(()=>{
+      const allCards = Array.from(document.querySelectorAll('.game-card'));
+      if(!allCards.length) return;
+      const pick = allCards[Math.floor(Math.random()*allCards.length)];
+      window.location.href = pick.getAttribute('href');
+    }, 550);
+  });
 
   search.addEventListener('input', applyFilter);
   cats.forEach(btn=>{
@@ -1075,8 +1260,66 @@
       btn.classList.add('active');
       activeCat = btn.dataset.cat;
       applyFilter();
+      const tip = CAT_TIPS[activeCat];
+      if(tip) showMascotTip(tip);
     });
   });
+
+  // Bölüme ilk kez gelince Pati selam versin
+  const sectionGreetings = {
+    'band-macera':`🐱 Uzay Dünyası'na hoş geldin, maceralar seni bekliyor!`,
+    'band-hareket':`🐱 Koşmaya, zıplamaya hazır mısın?`,
+    'band-yaris':`🐱 Motorunu çalıştır, yarış başlıyor!`,
+    'band-spor':`🐱 Kale Dünyası'nda top senin ayaklarında!`,
+    'band-mutfak':`🐱 Mmm, ne pişiriyoruz bugün?`,
+    'band-aksiyon':`🐱 Reflekslerini test etmeye hazır mısın?`,
+    'band-hafiza':`🐱 Orman Dünyası'nda hafızanı zorlayalım mı?`,
+    'band-bulmaca':`🐱 Parçaları birleştirip resmi tamamlayalım!`,
+    'band-yaratici':`🐱 Fırçanı al, Çöl Dünyası'nda renklere boyanalım!`,
+    'band-zeka':`🐱 Sayı avına çıkalım mı?`
+  };
+  const seenSections = new Set();
+  const bandObserver = new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      if(!entry.isIntersecting) return;
+      const cls = Array.from(entry.target.classList).find(c=> sectionGreetings[c]);
+      if(cls && !seenSections.has(cls)){
+        seenSections.add(cls);
+        showMascotTip(sectionGreetings[cls]);
+      }
+    });
+  }, { threshold:0.6 });
+  document.querySelectorAll('.section-band').forEach(band=> bandObserver.observe(band));
+  applyFilter();
+
+  // ---- Poki tarzı gerçek sonsuz kaydırma: büyük kataloglar parça parça açılır ----
+  const LAZY_GRIDS = ['hafizaGrid','bulmacaGrid','zekaGrid'];
+  const LAZY_BATCH = 16;
+  const lazyState = {};
+  LAZY_GRIDS.forEach(gridId=>{
+    const grid = document.getElementById(gridId);
+    if(!grid) return;
+    const cards = Array.from(grid.children);
+    lazyState[gridId] = { cards, revealed: LAZY_BATCH };
+    cards.forEach((c,i)=>{ if(i >= LAZY_BATCH) c.setAttribute('data-lazy','1'); });
+    const sentinel = document.createElement('div');
+    sentinel.className = 'lazy-sentinel';
+    sentinel.style.cssText = 'width:100%;height:4px;';
+    grid.insertAdjacentElement('afterend', sentinel);
+    const obs = new IntersectionObserver(entries=>{
+      entries.forEach(entry=>{
+        if(!entry.isIntersecting) return;
+        const st = lazyState[gridId];
+        const next = st.cards.slice(st.revealed, st.revealed + LAZY_BATCH);
+        next.forEach(c=>{ c.removeAttribute('data-lazy'); c.classList.add('reveal'); });
+        st.revealed += LAZY_BATCH;
+        applyFilter();
+        if(st.revealed >= st.cards.length){ obs.disconnect(); sentinel.remove(); }
+      });
+    }, { rootMargin:'400px' });
+    obs.observe(sentinel);
+  });
+  applyFilter();
 
   // ---- Karşılama müziği (özgün, neşeli 16 nota + armoni katmanı) ----
   const MELODY = [
@@ -1171,6 +1414,18 @@
     mascotTipIndex = (mascotTipIndex+1) % MASCOT_TIPS.length;
     showMascotTip(MASCOT_TIPS[mascotTipIndex]);
     playClick(520);
+  });
+
+  // ---- Pati'nin Hikayesi: ilk ziyarette tanıtım ----
+  const patiStoryModal = document.getElementById('patiStoryModal');
+  if(!localStorage.getItem('ok_pati_intro_seen')){
+    setTimeout(()=> patiStoryModal.classList.add('show'), 500);
+  }
+  document.getElementById('patiStoryCloseBtn').addEventListener('click', ()=>{
+    patiStoryModal.classList.remove('show');
+    localStorage.setItem('ok_pati_intro_seen', '1');
+    playSuccess();
+    showMascotTip('Harika! Hadi ilk oyununu seçelim 🎮');
   });
 
   // sayfa açılışında ve ardından periyodik olarak ipucu göster
@@ -1298,13 +1553,16 @@
 
   // ---- Dünya Haritası ----
   const REGIONS = [
-    { name:'Neşe Adası', emoji:'🏠', cats:[], color1:'#7bc94a', color2:'#4a9a3a', always:true, href:'#oyunlar' },
-    { name:'Bilgelik Ormanı', emoji:'🧠', cats:['hafiza','bulmaca'], color1:'#2d9d6f', color2:'#1b6b4a', href:'#hafizaCount' },
-    { name:'Çöl Diyarı', emoji:'🎨', cats:['yaratici','zeka'], color1:'#e8b04d', color2:'#c9822a', href:'#oyunlar' },
-    { name:'Buz Ülkesi', emoji:'🗺️', cats:['macera','hareket'], color1:'#5cc9ff', color2:'#1c7ea8', href:'#oyunlar' },
-    { name:'Uzay Üssü', emoji:'🏎️', cats:['yaris'], color1:'#6C4EF5', color2:'#2b2456', href:'#oyunlar' },
-    { name:'Volkan Adası', emoji:'⚡', cats:['spor','aksiyon'], color1:'#ff7a3d', color2:'#c9302c', href:'#oyunlar' },
-    { name:'Lezzet Vadisi', emoji:'🍕', cats:['mutfak'], color1:'#ff9f5a', color2:'#ffb85c', href:'#oyunlar' }
+    { name:'Ev Dünyası', emoji:'🏠', cats:[], color1:'#7bc94a', color2:'#4a9a3a', always:true, href:'#oyunlar',
+      story:'Pati\'nin sıcacık yuvası. Her maceraya buradan başlıyoruz!' },
+    { name:'Orman Dünyası', emoji:'🌲', cats:['hafiza','bulmaca'], color1:'#2d9d6f', color2:'#1b6b4a', href:'#hafizaCount',
+      story:'Ağaçların arasında hafızanı ve zekânı sınayan gizemli bulmacalar seni bekliyor.' },
+    { name:'Çöl Dünyası', emoji:'🏜️', cats:['yaratici','zeka'], color1:'#e8b04d', color2:'#c9822a', href:'#oyunlar',
+      story:'Kum tepelerinde hayal gücünü konuştur: boyama ve matematik vahaları burada!' },
+    { name:'Uzay Dünyası', emoji:'🚀', cats:['macera','yaris','hareket'], color1:'#6C4EF5', color2:'#2b2456', href:'#oyunlar',
+      story:'Yıldızlar arası yarışlar ve büyük maceralar için roketine atla!' },
+    { name:'Kale Dünyası', emoji:'🏰', cats:['spor','mutfak','aksiyon'], color1:'#ff7a3d', color2:'#c9302c', href:'#oyunlar',
+      story:'Şövalyelerin arenası: spor, mutfak ve aksiyon meydan okumaları burada.' }
   ];
   const worldMapGrid = document.getElementById('worldMapGrid');
   REGIONS.forEach(r=>{
@@ -1315,6 +1573,8 @@
     a.style.background = `linear-gradient(150deg, ${r.color1}, ${r.color2})`;
     a.innerHTML = `<span class="r-emoji">${r.emoji}</span><div class="r-name">${r.name}</div>
       <div class="r-badge">${discovered ? '✓ Keşfedildi' : '🔒 Keşfedilmedi'}</div>`;
+    a.addEventListener('mouseenter', ()=> showMascotTip(`🐱 ${r.story}`));
+    a.addEventListener('click', ()=> showMascotTip(`🐱 ${r.story}`));
     worldMapGrid.appendChild(a);
   });
 
