@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Basketbol Atışı — Oyun Kutusu</title>
 <meta name="description" content="Potaya doğru nişan al ve sayı yap! Eğlenceli basketbol atış oyunu, çocuklar için güvenli ve ücretsiz.">
 <meta name="robots" content="index, follow">
@@ -19,7 +19,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
+  body{ padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); }
   canvas{background:#c98a4a; touch-action:none; border-radius:16px; box-shadow:0 12px 30px rgba(120,70,20,.35);}
+  #muteCtl{ width:44px; height:44px; border:none; border-radius:12px; background:#fff; color:var(--ink); font-size:1.1rem; box-shadow:0 3px 0 #ddd; cursor:pointer; margin-top:10px; }
+  #muteCtl:active{transform:translateY(2px);}
   #powerBar{ position:absolute; left:10px; bottom:16px; width:14px; height:120px; background:rgba(0,0,0,.25); border-radius:8px; overflow:hidden; display:none; }
   #powerFill{ position:absolute; bottom:0; width:100%; background:linear-gradient(0deg,#ff3d6e,#ffd23f); height:0%; }
   #wrap{ position:relative; }
@@ -36,14 +39,17 @@
     <canvas id="c" width="400" height="560"></canvas>
     <div id="powerBar"><div id="powerFill"></div></div>
     <div id="comboText"></div>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">🏀</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
+  <button id="muteCtl">🔊</button>
   <p class="hint">Topu tut, potaya doğru yukarı sürükle, sonra bırak! Noktalı çizgi nereye gideceğini gösterir.</p>
 
 <script src="common.js"></script>
@@ -74,8 +80,14 @@ function resetBall(){
   ballSpin = 0;
 }
 
+let muted = localStorage.getItem('ok_basketbol_muted') === '1';
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = muted ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{ muted=!muted; localStorage.setItem('ok_basketbol_muted', muted?'1':'0'); muteCtl.textContent = muted?'🔇':'🔊'; });
+function snd(fn){ if(!muted) fn(); }
+
 function startGame(){
-  score = 0; streak = 0; timeLeft = 45; running = true; dragging = false; scored=false; netFlash=0; armSwing=0;
+  score = 0; streak = 0; timeLeft = 45; running = false; dragging = false; scored=false; netFlash=0; armSwing=0;
   particles = [];
   resetBall();
   hoop = newHoop();
@@ -84,12 +96,17 @@ function startGame(){
   document.getElementById('time').textContent = timeLeft;
   document.getElementById('overlay').style.display = 'none';
   if(timerInt) clearInterval(timerInt);
-  timerInt = setInterval(()=>{
-    timeLeft--;
-    document.getElementById('time').textContent = timeLeft;
-    if(timeLeft<=0) endGame();
-  }, 1000);
-  loop();
+  ctx.clearRect(0,0,W,H);
+  drawCourt(); drawHoop(); drawPlayer(); drawBall(ball.x, ball.y);
+  runCountdown(document.getElementById('countdownOverlay'), ()=>{
+    running = true;
+    timerInt = setInterval(()=>{
+      timeLeft--;
+      document.getElementById('time').textContent = timeLeft;
+      if(timeLeft<=0) endGame();
+    }, 1000);
+    loop();
+  });
 }
 
 function endGame(){
@@ -99,8 +116,11 @@ function endGame(){
   if(score > bestScore){ bestScore = score; localStorage.setItem('ok_basketbol_best3', bestScore); }
   document.getElementById('best').textContent = bestScore;
   document.getElementById('overMsg').textContent = `${score} sayı yaptın!`;
+  renderResultGrid('resultGrid', [['SKOR', score], ['EN İYİ SERİ', streak], ['REKOR', bestScore]]);
   document.getElementById('stars').textContent = starRating(score, 15);
-  document.getElementById('overlay').style.display = 'flex';
+  showOverlay('overlay');
+  if(score >= 100) fireConfetti(document.getElementById('wrap'));
+  snd(playSuccess);
 }
 
 function showCombo(text, color){
@@ -244,7 +264,7 @@ function loop(){
     const bb = drawBackboardBounds();
     if(ball.y > bb.yTop-ball.r && ball.y < bb.yBot+ball.r && Math.abs(ball.x - hoop.x) - hoop.w*0.42 < ball.r*0.4 && ball.vx !== 0){
       if((ball.vx>0 && ball.x < hoop.x) || (ball.vx<0 && ball.x > hoop.x)){
-        ball.vx *= -0.55; playTone(340,0.08,'triangle',0.1);
+        ball.vx *= -0.55; snd(()=>playTone(340,0.08,'triangle',0.1));
       }
     }
 
@@ -255,7 +275,7 @@ function loop(){
       score += 10 + bonus;
       document.getElementById('score').textContent = score;
       document.getElementById('streak').textContent = streak;
-      playSuccess();
+      snd(playSuccess);
       netFlash = 14;
       spawnConfettiAt(hoop.x, hoop.y);
       showCombo(streak>=3 ? `🔥 ${streak} SERİ! +${10+bonus}` : 'SEPET! +10', streak>=3 ? '#ff6b6b' : '#ffd23f');
@@ -335,7 +355,7 @@ function release(){
   ball.vy = dy * SHOT_POWER;
   ball.flying = true;
   armSwing = 1;
-  playClick(500);
+  snd(()=>playClick(500));
 }
 canvas.addEventListener('mouseup', release);
 canvas.addEventListener('mouseleave', release);

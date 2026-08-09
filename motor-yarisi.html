@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Gece Motor Yarışı — Oyun Kutusu</title>
 <meta name="description" content="Gece pistinde tam gaz! Ücretsiz motor yarışı oyunu, indirme gerektirmez.">
 <meta name="robots" content="index, follow">
@@ -19,7 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  body{ background:radial-gradient(circle at 50% 0%, #3a2416, #140d08 70%); }
+  body{ background:radial-gradient(circle at 50% 0%, #3a2416, #140d08 70%); padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); }
   h1{ color:#fff; text-shadow:0 0 14px #ffb04d; font-family:'Orbitron','Baloo 2',sans-serif; }
   a.back{ color:#ffcf9b; }
   #hud span{ background:rgba(30,18,10,.85); color:#fff; box-shadow:0 0 0 1px rgba(255,176,77,.3), 0 3px 0 #000; font-family:'Fredoka',sans-serif; }
@@ -35,19 +35,28 @@
   #nitroBar{ width:100%; max-width:280px; height:12px; background:#2a1c0e; border-radius:999px; overflow:hidden; margin:0 auto 10px; box-shadow:inset 0 0 0 1px rgba(255,176,77,.3); }
   #nitroFill{ height:100%; background:linear-gradient(90deg,#ff9f3d,#ffd23f); border-radius:999px; transition:width .1s linear; }
   #overlay{ background:rgba(20,13,8,.95); }
+  #muteCtl{ width:48px; height:54px; border:none; border-radius:14px; background:#3a2a14; color:#ffcf9b; font-size:1.2rem; box-shadow:0 0 0 1px rgba(255,176,77,.35), 0 4px 0 #000; cursor:pointer; }
+  #muteCtl:active{transform:translateY(3px);}
   p.hint{ font-size:.82rem; opacity:.6; margin-top:8px; text-align:center; max-width:340px; color:#e0c7ae;}
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>🏍️ Gece Motor Yarışı</h1>
-  <div id="hud"><span>📍 <span id="score">0</span> m</span><span>⚡ <span id="speedNum">0</span> km/s</span><span>🏆 <span id="best">0</span> m</span></div>
+  <div id="hud">
+    <span>📍 <span id="score">0</span> m</span>
+    <span id="comboBadge" class="combo-badge" style="display:none;"></span>
+    <span>⚡ <span id="speedNum">0</span> km/s</span>
+    <span>🏆 <span id="best">0</span> m</span>
+  </div>
   <div id="nitroBar"><div id="nitroFill" style="width:100%"></div></div>
   <div id="wrap">
     <canvas id="c" width="380" height="600"></canvas>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">💥</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
@@ -57,6 +66,7 @@
     <button class="ctl" id="leftBtn">◀</button>
     <button class="ctl" id="jumpBtn">⬆</button>
     <button class="ctl" id="rightBtn">▶</button>
+    <button id="muteCtl">🔊</button>
   </div>
   <button class="btn alt" id="nitroBtn" style="margin-top:10px;">🔥 NİTRO</button>
   <p class="hint">Şerit değiştir, taşlara zıpla, yağdan kaç, ⚡ toplayıp NİTRO ile fırla!</p>
@@ -124,6 +134,11 @@ function drawBike(x,y,tilt=0,boost=false,jumping=false){
 }
 
 let player, obstacles, particles, dust, score, speed, running, spawnTimer, roadOffset, raf, nitro, nitroActive, shakeMag, torches, duneOffset;
+let combo, muted = localStorage.getItem('ok_motor_muted') === '1';
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = muted ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{ muted=!muted; localStorage.setItem('ok_motor_muted', muted?'1':'0'); muteCtl.textContent = muted?'🔇':'🔊'; });
+function snd(fn){ if(!muted) fn(); }
 
 function makeTorches(){
   const arr = [];
@@ -135,12 +150,14 @@ function makeTorches(){
 function startGame(){
   player = { lane: 1, x: laneX(1), y: groundY, jumping: false, jumpV: 0, tilt:0, targetTilt:0 };
   obstacles = []; particles = []; dust = [];
-  score = 0; speed = 3.8; running = true; roadOffset = 0; spawnTimer = 0; duneOffset = 0;
-  nitro = 100; nitroActive = false; shakeMag = 0;
+  score = 0; speed = 3.8; running = false; roadOffset = 0; spawnTimer = 0; duneOffset = 0;
+  nitro = 100; nitroActive = false; shakeMag = 0; combo = createCombo();
   torches = makeTorches();
   document.getElementById('score').textContent = 0;
   document.getElementById('overlay').style.display = 'none';
-  loop();
+  document.getElementById('comboBadge').style.display = 'none';
+  ctx.clearRect(0,0,W,H);
+  runCountdown(document.getElementById('countdownOverlay'), ()=>{ running = true; loop(); });
 }
 
 function spawnObstacle(){
@@ -152,13 +169,16 @@ function spawnObstacle(){
 
 function endGame(){
   running = false;
+  cancelAnimationFrame(raf);
   const distance = Math.floor(score);
   if(distance > bestScore){ bestScore = distance; localStorage.setItem('ok_motor_best_v3', bestScore); }
   document.getElementById('best').textContent = bestScore;
   document.getElementById('overMsg').textContent = `${distance} metre gidebildin!`;
+  renderResultGrid('resultGrid', [['MESAFE', distance+' m'], ['REKOR', bestScore+' m'], ['EN İYİ SERİ', 'x'+combo.level]]);
   document.getElementById('stars').textContent = starRating(distance, 900);
-  document.getElementById('overlay').style.display = 'flex';
-  playError();
+  showOverlay('overlay');
+  if(distance >= 600) fireConfetti(document.getElementById('wrap'));
+  snd(playError);
 }
 
 function drawSky(){
@@ -184,6 +204,7 @@ function drawSky(){
 
 function loop(){
   if(!running) return;
+  combo.tick();
   const boosting = nitroActive && nitro > 0;
   if(boosting) nitro = Math.max(0, nitro-1.4); else { nitro = Math.min(100, nitro+0.22); nitroActive=false; }
   document.getElementById('nitroFill').style.width = nitro+'%';
@@ -231,7 +252,7 @@ function loop(){
     if(playerY >= groundY){
       playerY = groundY; player.jumping=false; player.jumpV=0;
       for(let i=0;i<8;i++) dust.push({ x: player.x+(Math.random()-0.5)*14, y: groundY+16, vx:(Math.random()-0.5)*2, vy:-1-Math.random(), life:16, maxLife:16 });
-      playTone(220,0.1,'triangle',0.12);
+      snd(()=>playTone(220,0.1,'triangle',0.12));
     }
   }
   player.renderY = playerY;
@@ -258,8 +279,24 @@ function loop(){
     const closeEnough = Math.abs(o.x - player.x) < 28 && Math.abs(o.y - playerY) < 38;
     const clearedByJump = o.type==='rock' && player.jumping && player.renderY < groundY - 28;
     if(closeEnough){
-      if(o.type==='nitro'){ nitro=Math.min(100,nitro+40); playTone(850,0.15,'triangle',0.18); obstacles.splice(i,1); continue; }
-      if(!clearedByJump){ shakeMag=16; endGame(); ctx.restore(); return; }
+      if(o.type==='nitro'){
+        const level = combo.register();
+        renderComboBadge('comboBadge', level);
+        const gained = 25*level;
+        score += gained;
+        nitro=Math.min(100,nitro+40); snd(()=>playTone(850,0.15,'triangle',0.18));
+        if(level>1) snd(()=>playCombo(level));
+        spawnParticles(particles, o.x, o.y, 8, ['#3dd6ff','#FFD23F']);
+        const pr = document.getElementById('wrap').getBoundingClientRect(), r = canvas.getBoundingClientRect();
+        showFloatingPoints(document.getElementById('wrap'), (r.left-pr.left)+o.x*(r.width/W), (r.top-pr.top)+o.y*(r.height/H),
+          level>1 ? `🔥 x${level} +${gained}` : `+${gained}`, '#3dd6ff');
+        obstacles.splice(i,1); continue;
+      }
+      if(!clearedByJump){
+        shakeMag=16;
+        spawnParticles(particles, player.x, playerY, 12, ['#ff6b6b','#c94b4b'], {speed:3.5, life:18});
+        endGame(); ctx.restore(); return;
+      }
     }
     if(o.y > H+50) obstacles.splice(i,1);
   }
@@ -291,12 +328,12 @@ function moveLane(dir){
   player.x = laneX(player.lane);
   player.targetTilt = dir*0.3;
   setTimeout(()=>{ player.targetTilt=0; }, 200);
-  playClick(500);
+  snd(()=>playClick(500));
 }
 function doJump(){
   if(!running || player.jumping) return;
   player.jumping = true; player.jumpV = 16;
-  playTone(600,0.12,'triangle',0.15);
+  snd(()=>playTone(600,0.12,'triangle',0.15));
 }
 function setNitro(on){ if(!running) return; nitroActive = on && nitro>4; if(on) shakeMag=Math.max(shakeMag,3); }
 
