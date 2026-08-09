@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>İp Atlama — Oyun Kutusu</title>
 <meta name="description" content="Ritmi yakala, ipi atla! Eğlenceli ve ücretsiz ip atlama oyunu, çocuklar için güvenli.">
 <meta name="robots" content="index, follow">
@@ -19,7 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  body{ background:radial-gradient(circle at 50% 0%, #ffe0f0, #ffc2e0 70%); }
+  body{ background:radial-gradient(circle at 50% 0%, #ffe0f0, #ffc2e0 70%); padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); }
   h1{ font-family:'Fredoka',sans-serif; color:var(--ink); }
   canvas{background:linear-gradient(#fff3d6,#ffe0a3); touch-action:none; cursor:pointer;}
   #zoneBar{ width:100%; max-width:280px; height:14px; background:#e8d8b0; border-radius:999px; overflow:hidden; margin:0 auto 10px; position:relative; }
@@ -31,13 +31,20 @@
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>🤸 İp Atlama</h1>
-  <div id="hud"><span>🔢 Atlama: <span id="score">0</span></span><span>❌ Kaçırılan: <span id="misses">0</span>/3</span><span>🏆 <span id="best">0</span></span></div>
+  <div id="hud">
+    <span>🔢 Atlama: <span id="score">0</span></span>
+    <span id="comboBadge" class="combo-badge" style="display:none;"></span>
+    <span>❌ Kaçırılan: <span id="misses">0</span>/3</span>
+    <span>🏆 <span id="best">0</span></span>
+  </div>
   <div id="zoneBar"><div id="zoneSafe"></div><div id="zoneMarker"></div></div>
-  <div class="panel" style="display:flex; flex-direction:column; align-items:center;">
+  <div class="panel" style="display:flex; flex-direction:column; align-items:center; position:relative;">
     <canvas id="c" width="320" height="360"></canvas>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">😿</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
@@ -53,6 +60,7 @@ const W = canvas.width, H = canvas.height;
 const GROUND_Y = H - 80;
 
 let score, misses, running, cyclePos, cycleSpeed, jumping, jumpV, charY, judged, best;
+let particles, shaker, combo;
 best = parseInt(localStorage.getItem('ok_ipatlama_best') || '0', 10);
 document.getElementById('best').textContent = best;
 
@@ -61,13 +69,16 @@ document.getElementById('best').textContent = best;
 const SAFE_START = 0.84, SAFE_END = 1.0;
 
 function startGame(){
-  score = 0; misses = 0; running = true; cyclePos = 0; cycleSpeed = 0.0095; jumping=false; jumpV=0; charY=0; judged=false;
+  score = 0; misses = 0; running = false; cyclePos = 0; cycleSpeed = 0.0095; jumping=false; jumpV=0; charY=0; judged=false;
+  particles = []; shaker = createShaker(); combo = createCombo(150);
   document.getElementById('score').textContent = 0;
   document.getElementById('misses').textContent = 0;
   document.getElementById('overlay').style.display = 'none';
+  document.getElementById('comboBadge').style.display = 'none';
   document.getElementById('zoneSafe').style.left = (SAFE_START*100)+'%';
   document.getElementById('zoneSafe').style.width = ((SAFE_END-SAFE_START)*100)+'%';
-  loop();
+  drawScene();
+  runCountdown(document.getElementById('countdownOverlay'), ()=>{ running = true; loop(); });
 }
 
 function endGame(){
@@ -75,19 +86,22 @@ function endGame(){
   if(score > best){ best = score; localStorage.setItem('ok_ipatlama_best', best); }
   document.getElementById('best').textContent = best;
   document.getElementById('overMsg').textContent = `${score} kere üst üste atladın!`;
+  renderResultGrid('resultGrid', [['ATLAMA', score], ['REKOR', best], ['EN İYİ SERİ', 'x'+combo.level]]);
   document.getElementById('stars').textContent = starRating(score, 20);
-  document.getElementById('overlay').style.display = 'flex';
+  showOverlay('overlay');
+  if(score >= 15) fireConfetti(document.querySelector('.panel'));
 }
 
 function drawScene(){
+  const sh = shaker.tick();
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle = '#fff3d6'; ctx.fillRect(0,0,W,H);
+  ctx.save(); ctx.translate(sh.x, sh.y);
+  ctx.fillStyle = '#fff3d6'; ctx.fillRect(-4,-4,W+8,H+8);
   ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(0,GROUND_Y+26); ctx.lineTo(W,GROUND_Y+26); ctx.stroke();
 
   // ip: cyclePos 0->1 boyunca yayın en üstten (uzakta) yere (yakında) inişini gösterir
-  // görsel olarak: ip yüksekteyken ince/yukarıda bir yay, yere değerken düz bir çizgi gibi alçalır
-  const ropeHeight = 110 * (1 - Math.pow(Math.abs(cyclePos-0.5)*2, 1)); // 0.5'te en yüksek, 0 ve 1'de yerde
+  const ropeHeight = 110 * (1 - Math.pow(Math.abs(cyclePos-0.5)*2, 1));
   const ropeY = GROUND_Y + 10 - ropeHeight;
   ctx.strokeStyle = '#8a5a2a'; ctx.lineWidth = 5; ctx.lineCap='round';
   ctx.beginPath();
@@ -103,7 +117,9 @@ function drawScene(){
   ctx.font='44px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText('🧒', W/2, GROUND_Y-16+charY);
 
-  // gösterge çubuğunu güncelle
+  updateParticles(ctx, particles);
+  ctx.restore();
+
   document.getElementById('zoneMarker').style.left = `calc(${cyclePos*100}% - 7px)`;
 }
 
@@ -111,20 +127,11 @@ function loop(){
   if(!running) return;
   cyclePos += cycleSpeed;
 
-  const inSafeZone = cyclePos >= SAFE_START && cyclePos <= SAFE_END;
-  const isAirborne = charY < -12; // karakter yeterince yukarıdaysa ipten kurtulmuş sayılır
-
   if(cyclePos >= 1){
-    // tur tamamlandı - o turda doğru zamanlama yapıldı mı kontrol et
-    if(!judged){
-      // hiç zıplanmadıysa veya yanlış zamanda zıplandıysa kaçırıldı sayılır
-      registerMiss();
-    }
+    if(!judged){ registerMiss(); }
     cyclePos = 0;
     judged = false;
-    cycleSpeed = Math.min(0.019, cycleSpeed + 0.0006); // giderek zorlaşır
-  } else if(inSafeZone && !judged){
-    // güvenli bölgedeyken karakter havadaysa BAŞARILI sayılır (otomatik değerlendirme penceresi kapanınca)
+    cycleSpeed = Math.min(0.019, cycleSpeed + 0.0006);
   }
 
   drawScene();
@@ -134,28 +141,38 @@ let raf;
 
 function registerMiss(){
   misses++;
+  combo.reset();
+  document.getElementById('comboBadge').style.display = 'none';
   document.getElementById('misses').textContent = misses;
+  shaker.trigger(8);
+  spawnParticles(particles, W/2, GROUND_Y-16, 8, ['#ff6b6b','#c94b4b'], {speed:3, life:16});
   playError();
   if(misses >= 3){ endGame(); }
 }
 
 function registerSuccess(){
+  const level = combo.register();
+  renderComboBadge('comboBadge', level);
   score++;
   document.getElementById('score').textContent = score;
   playTone(600 + Math.min(400, score*8), 0.09, 'triangle', 0.14);
+  if(level>1) playCombo(level);
+  spawnParticles(particles, W/2, GROUND_Y-16, 8, ['#7bff6b','#FFD23F'], {speed:2.8, life:16});
+  if(level>1){
+    const r = canvas.getBoundingClientRect(), pr = document.querySelector('.panel').getBoundingClientRect();
+    showFloatingPoints(document.querySelector('.panel'), (r.left-pr.left)+W/2, (r.top-pr.top)+GROUND_Y-40, `🔥 x${level}`, '#FF9F43');
+  }
 }
 
 function doJump(){
   if(!running || jumping) return;
   jumping = true; jumpV = -12.5;
 
-  // zıplama anında ip nerede? doğru pencerede mi?
   const inSafeZone = cyclePos >= SAFE_START - 0.06 && cyclePos <= SAFE_END + 0.03;
   if(inSafeZone && !judged){
     judged = true;
     registerSuccess();
   } else if(!judged){
-    // çok erken zıpladı - ip henüz gelmemişken zıpladı, bu turun sonunda tekrar değerlendirilmeyecek
     judged = true;
     registerMiss();
   }

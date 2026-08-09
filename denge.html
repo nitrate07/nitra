@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Denge Ustası — Oyun Kutusu</title>
 <meta name="description" content="Dengede kal, düşmeden ilerle! Refleks ve denge oyunu, tamamen ücretsiz ve tarayıcıda oynanır.">
 <meta name="robots" content="index, follow">
@@ -19,7 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  body{ background:radial-gradient(circle at 50% 0%, #bdefff, #eafcff 70%); }
+  body{ background:radial-gradient(circle at 50% 0%, #bdefff, #eafcff 70%); padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); }
   h1{ font-family:'Fredoka',sans-serif; color:var(--ink); }
   canvas{background:linear-gradient(#7fc8f8,#cdeeff); touch-action:none;}
   p.hint{font-size:.85rem; opacity:.7; margin-top:10px; text-align:center; max-width:340px;}
@@ -28,12 +28,18 @@
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>🎪 Denge Ustası</h1>
-  <div id="hud"><span>⭐ Puan: <span id="score">0</span></span><span>🏆 <span id="best">0</span></span></div>
+  <div id="hud">
+    <span>⭐ Puan: <span id="score">0</span></span>
+    <span id="comboBadge" class="combo-badge" style="display:none;"></span>
+    <span>🏆 <span id="best">0</span></span>
+  </div>
   <div id="wrap">
     <canvas id="c" width="360" height="440"></canvas>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">💥</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
@@ -54,20 +60,24 @@ document.getElementById('best').textContent = bestScore;
 function drawWalker(x,tilt){
   ctx.save(); ctx.translate(x,ROPE_Y); ctx.rotate(tilt);
   ctx.strokeStyle='#2b2b40'; ctx.lineWidth=3; ctx.lineCap='round';
-  ctx.beginPath(); ctx.moveTo(-16,-6); ctx.lineTo(16,-6); ctx.stroke(); // denge çubuğu
+  ctx.beginPath(); ctx.moveTo(-16,-6); ctx.lineTo(16,-6); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(0,-4); ctx.lineTo(0,14); ctx.stroke();
   ctx.fillStyle='#ff6ec7'; ctx.beginPath(); ctx.arc(0,-14,9,0,Math.PI*2); ctx.fill();
   ctx.restore();
 }
 
-let walkerX, targetX, obstacles, score, speed, running, spawnTimer, raf;
+let walkerX, targetX, obstacles, score, speed, running, spawnTimer, raf, particles, shaker, combo;
 
 function startGame(){
   walkerX = W/2; targetX = W/2;
-  obstacles=[]; score=0; speed=2.4; running=true; spawnTimer=0;
+  obstacles=[]; score=0; speed=2.4; running=false; spawnTimer=0;
+  particles = []; shaker = createShaker(); combo = createCombo(150);
   document.getElementById('score').textContent=0;
   document.getElementById('overlay').style.display='none';
-  loop();
+  document.getElementById('comboBadge').style.display='none';
+  ctx.clearRect(0,0,W,H);
+  drawWalker(walkerX, 0);
+  runCountdown(document.getElementById('countdownOverlay'), ()=>{ running = true; loop(); });
 }
 function spawnObstacle(){
   const isFlag = Math.random()<0.25;
@@ -79,18 +89,22 @@ function endGame(){
   if(s>bestScore){ bestScore=s; localStorage.setItem('ok_denge_best', bestScore); }
   document.getElementById('best').textContent=bestScore;
   document.getElementById('overMsg').textContent=`${s} puan topladın!`;
+  renderResultGrid('resultGrid', [['PUAN', s], ['REKOR', bestScore], ['EN İYİ SERİ', 'x'+combo.level]]);
   document.getElementById('stars').textContent=starRating(s,350);
-  document.getElementById('overlay').style.display='flex';
+  showOverlay('overlay');
+  if(s >= 220) fireConfetti(document.getElementById('wrap'));
   playError();
 }
 function loop(){
   if(!running) return;
+  combo.tick();
+  const sh = shaker.tick();
   ctx.clearRect(0,0,W,H);
+  ctx.save(); ctx.translate(sh.x, sh.y);
   speed = 2.4 + score*0.008;
   score += 0.3;
   document.getElementById('score').textContent = Math.floor(score);
 
-  // ip
   ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=5;
   ctx.beginPath(); ctx.moveTo(10,ROPE_Y+16); ctx.lineTo(W-10,ROPE_Y+16); ctx.stroke();
   ctx.fillStyle='rgba(0,0,0,.12)'; ctx.fillRect(0,ROPE_Y+16,W,H-ROPE_Y-16);
@@ -107,13 +121,30 @@ function loop(){
     ctx.fillText(o.emoji,o.x,o.y);
     const dist = Math.hypot(o.x-walkerX, o.y-ROPE_Y);
     if(dist<24){
-      if(o.isFlag){ score+=25; playTone(750,0.1,'triangle',0.15); obstacles.splice(i,1); continue; }
+      if(o.isFlag){
+        const level = combo.register();
+        renderComboBadge('comboBadge', level);
+        const gained = 25*level;
+        score+=gained; playTone(750,0.1,'triangle',0.15);
+        if(level>1) playCombo(level);
+        spawnParticles(particles, o.x, o.y, 9, ['#FFD23F','#7bff6b'], {speed:3.5, life:20});
+        const pr = document.getElementById('wrap').getBoundingClientRect(), r = canvas.getBoundingClientRect();
+        showFloatingPoints(document.getElementById('wrap'), (r.left-pr.left)+o.x*(r.width/W), (r.top-pr.top)+o.y*(r.height/H),
+          level>1 ? `🔥 x${level} +${gained}` : `+${gained}`, '#FFD23F');
+        obstacles.splice(i,1); continue;
+      }
+      shaker.trigger(14);
+      spawnParticles(particles, walkerX, ROPE_Y, 14, ['#ff6b6b','#c94b4b'], {speed:4, life:20});
+      updateParticles(ctx, particles);
+      ctx.restore();
       endGame(); return;
     }
     if(o.y>H+30) obstacles.splice(i,1);
   }
 
   drawWalker(walkerX, tilt);
+  updateParticles(ctx, particles);
+  ctx.restore();
   raf = requestAnimationFrame(loop);
 }
 function setTargetX(clientX){ const rect=canvas.getBoundingClientRect(); targetX=(clientX-rect.left)*(W/rect.width); }
