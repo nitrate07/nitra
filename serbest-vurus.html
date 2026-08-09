@@ -15,19 +15,23 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Serbest Vuruş — Efsane Frikik">
 <meta name="twitter:description" content="Duvarı aş, filelerle buluş! Serbest vuruş - Efsane Frikik oyunu ücretsiz, indirme gerektirmez.">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
 <style>
   :root{
     --bg-dark:#05060f; --accent:#3ddc84; --accent2:#ffb703; --panel:#12142b; --text:#f4f1ea;
   }
   *{box-sizing:border-box;}
   html,body{
-    margin:0;min-height:100%;
+    margin:0;min-height:100svh;
     background:
       radial-gradient(ellipse 900px 500px at 50% -10%, #1b3f2a 0%, transparent 60%),
       radial-gradient(circle at 50% 100%, #0f1a14 0%, var(--bg-dark) 70%);
-    font-family:'Segoe UI', Tahoma, sans-serif; color:var(--text);
-    display:flex;flex-direction:column;align-items:center; overflow-x:hidden; user-select:none;
+    font-family:'Nunito','Segoe UI', Tahoma, sans-serif; color:var(--text);
+    display:flex;flex-direction:column;align-items:center; justify-content:flex-start;
+    overflow-x:hidden; user-select:none;
+    padding:max(10px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom));
   }
   h1{
     margin:12px 0 2px; font-size:28px; font-weight:900; letter-spacing:3px; font-style:italic;
@@ -100,6 +104,7 @@
 
 <div id="msg"></div>
 
+<script src="common.js"></script>
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -120,9 +125,9 @@ const keeper = { x: W-66, y: FIELD_TOP+FIELD_H/2, r:16, targetY: FIELD_TOP+FIELD
 let wall = [];
 let wallSide = 1;
 
-// ---- Ses Motoru (dış dosya gerekmez) ----
+// ---- Ses Motoru (common.js'teki paylaşılan AudioContext kullanılır) ----
 let audioCtx;
-function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume(); }
+function ensureAudio(){ audioCtx = _ctx(); if(audioCtx.state==='suspended') audioCtx.resume(); }
 function playTone(freq, duration, type='sine', startGain=0.25, delay=0){
   ensureAudio();
   const t0 = audioCtx.currentTime + delay;

@@ -2,6 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Şimşek FC — Efsane Şut</title>
 <meta name="description" content="Efsane şutlarla kaleyi sars! Şimşek FC futbol oyunu ücretsiz, indirme gerektirmez.">
 <meta name="robots" content="index, follow">
@@ -15,6 +16,8 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Şimşek FC — Efsane Şut">
 <meta name="twitter:description" content="Efsane şutlarla kaleyi sars! Şimşek FC futbol oyunu ücretsiz, indirme gerektirmez.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
 <style>
   :root{
     --bg-dark:#05060f;
@@ -25,15 +28,16 @@
   }
   *{box-sizing:border-box;}
   html,body{
-    margin:0;height:100%;
+    margin:0;min-height:100svh;
     background:
       radial-gradient(ellipse 900px 500px at 50% -10%, #2a2f6b 0%, transparent 60%),
       radial-gradient(circle at 50% 100%, #1a1330 0%, var(--bg-dark) 70%);
-    font-family:'Segoe UI', Tahoma, sans-serif;
+    font-family:'Nunito','Segoe UI', Tahoma, sans-serif;
     color:var(--text);
-    display:flex;flex-direction:column;align-items:center;
-    overflow:hidden;
+    display:flex;flex-direction:column;align-items:center; justify-content:flex-start;
+    overflow-x:hidden;
     user-select:none;
+    padding:max(10px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom));
   }
   h1{
     margin:12px 0 2px;
@@ -138,6 +142,7 @@
 
 <div id="msg"></div>
 
+<script src="common.js"></script>
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -167,10 +172,10 @@ const keeper = {
   diving:false, diveDir:1, diveT:0
 };
 
-// ---- Ses Motoru: Web Audio API ile anlık sentezlenen efektler (dış dosya gerekmez) ----
+// ---- Ses Motoru: common.js'teki paylaşılan AudioContext kullanılır ----
 let audioCtx;
 function ensureAudio(){
-  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  audioCtx = _ctx();
   if(audioCtx.state === 'suspended') audioCtx.resume();
 }
 function playTone(freq, duration, type='sine', startGain=0.25, delay=0){

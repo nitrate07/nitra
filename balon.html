@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Balon Patlatma — Oyun Kutusu</title>
 <meta name="description" content="Renkli balonları patlat, reflekslerini test et! Ücretsiz balon patlatma oyunu, kayıt gerekmez.">
 <meta name="robots" content="index, follow">
@@ -19,6 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
+  body{ padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); }
   canvas{background:linear-gradient(#bfe9ff,#eafcff); touch-action:none; cursor:pointer;}
   p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
 </style>
@@ -26,12 +27,19 @@
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>🎈 Balon Patlatma</h1>
-  <div id="hud"><span>🎈 Skor: <span id="score">0</span></span><span>⏱️ <span id="time">30</span> sn</span><span>🏆 <span id="best">0</span></span></div>
+  <div id="hud">
+    <span>🎈 Skor: <span id="score">0</span></span>
+    <span id="comboBadge" class="combo-badge" style="display:none;"></span>
+    <span>⏱️ <span id="time">30</span> sn</span>
+    <span>🏆 <span id="best">0</span></span>
+  </div>
   <div id="wrap">
     <canvas id="c" width="320" height="440"></canvas>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">🎈</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
@@ -50,6 +58,7 @@ let bestScore = parseInt(localStorage.getItem('ok_balon_best') || '0', 10);
 document.getElementById('best').textContent = bestScore;
 
 let balloons, score, timeLeft, running, spawnTimer, timerInt, raf;
+let particles, shaker, combo;
 
 function spawnBalloon(){
   const isBomb = Math.random() < 0.16;
@@ -63,17 +72,23 @@ function spawnBalloon(){
 }
 
 function startGame(){
-  balloons = []; score = 0; timeLeft = 30; running = true; spawnTimer = 0;
+  balloons = []; score = 0; timeLeft = 30; running = false; spawnTimer = 0;
+  particles = []; shaker = createShaker(); combo = createCombo();
   document.getElementById('score').textContent = 0;
   document.getElementById('time').textContent = timeLeft;
   document.getElementById('overlay').style.display = 'none';
+  document.getElementById('comboBadge').style.display = 'none';
   if(timerInt) clearInterval(timerInt);
-  timerInt = setInterval(()=>{
-    timeLeft--;
-    document.getElementById('time').textContent = timeLeft;
-    if(timeLeft<=0) endGame();
-  }, 1000);
-  loop();
+  ctx.clearRect(0,0,W,H);
+  runCountdown(document.getElementById('countdownOverlay'), ()=>{
+    running = true;
+    timerInt = setInterval(()=>{
+      timeLeft--;
+      document.getElementById('time').textContent = timeLeft;
+      if(timeLeft<=0) endGame();
+    }, 1000);
+    loop();
+  });
 }
 
 function endGame(){
@@ -83,13 +98,21 @@ function endGame(){
   if(score > bestScore){ bestScore = score; localStorage.setItem('ok_balon_best', bestScore); }
   document.getElementById('best').textContent = bestScore;
   document.getElementById('overMsg').textContent = `${score} puan topladın!`;
+  renderResultGrid('resultGrid', [['PUAN', score], ['REKOR', bestScore], ['EN İYİ COMBO', 'x'+combo.level]]);
   document.getElementById('stars').textContent = starRating(score, 400);
-  document.getElementById('overlay').style.display = 'flex';
+  showOverlay('overlay');
+  if(score >= 250) fireConfetti(document.getElementById('wrap'));
+  playSuccess();
 }
 
 function loop(){
   if(!running) return;
+  combo.tick();
+  const sh = shaker.tick();
   ctx.clearRect(0,0,W,H);
+  ctx.save();
+  ctx.translate(sh.x, sh.y);
+
   ctx.fillStyle = 'rgba(255,255,255,.4)';
   [[50,60],[240,140],[150,300]].forEach(([cx,cy])=>{
     ctx.beginPath(); ctx.ellipse(cx,cy,22,11,0,0,Math.PI*2); ctx.fill();
@@ -113,6 +136,8 @@ function loop(){
     if(b.y < -40) balloons.splice(i,1);
   }
 
+  updateParticles(ctx, particles);
+  ctx.restore();
   raf = requestAnimationFrame(loop);
 }
 
@@ -125,9 +150,21 @@ function handleTap(cx, cy){
       if(b.bomb){
         playError();
         score = Math.max(0, score-15);
+        combo.reset();
+        document.getElementById('comboBadge').style.display = 'none';
+        shaker.trigger(9);
+        spawnParticles(particles, b.x, b.y, 10, ['#666','#333'], {speed:4, life:20});
       } else {
+        const level = combo.register();
+        renderComboBadge('comboBadge', level);
+        const gained = 10 * level;
         playTone(600+Math.random()*300,0.1,'triangle',0.15);
-        score += 10;
+        if(level>1) playCombo(level);
+        score += gained;
+        spawnParticles(particles, b.x, b.y, 10, ['#FFD23F','#FF6EC7','#3dd6ff','#7bff6b'], {speed:3.5, life:22});
+        const pr = document.getElementById('wrap').getBoundingClientRect(), r = canvas.getBoundingClientRect();
+        showFloatingPoints(document.getElementById('wrap'), (r.left-pr.left)+b.x*(r.width/W), (r.top-pr.top)+b.y*(r.height/H),
+          level>1 ? `🔥 x${level} +${gained}` : `+${gained}`, level>1 ? '#FF9F43' : '#2EC4B6');
       }
       document.getElementById('score').textContent = score;
       b.popped = true; b.popT = 0;

@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Zıpla Zıpla — Oyun Kutusu</title>
 <meta name="description" content="Zamanla zıpla, engelleri aş! Ücretsiz refleks oyunu Zıpla Zıpla, indirme gerektirmez.">
 <meta name="robots" content="index, follow">
@@ -19,6 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
+  body{ padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); }
   canvas{background:linear-gradient(#bfe9ff,#eafcff); border-radius:20px; box-shadow:0 10px 30px rgba(46,196,182,.25); touch-action:none;}
   #wrap{position:relative;}
   p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
@@ -27,12 +28,18 @@
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>🐸 Zıpla Zıpla</h1>
-  <div id="hud"><span>📏 Yükseklik: <span id="score">0</span> m</span><span>🏆 Rekor: <span id="best">0</span> m</span></div>
+  <div id="hud">
+    <span>📏 Yükseklik: <span id="score">0</span> m</span>
+    <span id="comboBadge" class="combo-badge" style="display:none;"></span>
+    <span>🏆 Rekor: <span id="best">0</span> m</span>
+  </div>
   <div id="wrap">
     <canvas id="c" width="320" height="480"></canvas>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">💥</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
@@ -51,7 +58,7 @@ const JUMP_V = -10.5;
 let bestScore = parseInt(localStorage.getItem('ok_zipla_best') || '0', 10);
 document.getElementById('best').textContent = bestScore;
 
-let player, platforms, score, running, targetX, raf;
+let player, platforms, score, running, targetX, raf, particles, shaker, combo;
 
 function makePlatform(y){
   return {
@@ -69,10 +76,14 @@ function startGame(){
     platforms.push(makePlatform(y));
     y -= 55 + Math.random()*25;
   }
-  score = 0; running = true;
+  score = 0; running = false;
+  particles = []; shaker = createShaker(); combo = createCombo(70);
   document.getElementById('score').textContent = 0;
   document.getElementById('overlay').style.display = 'none';
-  loop();
+  document.getElementById('comboBadge').style.display = 'none';
+  ctx.clearRect(0,0,W,H);
+  drawCat(player.x, player.y);
+  runCountdown(document.getElementById('countdownOverlay'), ()=>{ running = true; loop(); });
 }
 
 function endGame(){
@@ -81,8 +92,10 @@ function endGame(){
   if(s > bestScore){ bestScore = s; localStorage.setItem('ok_zipla_best', bestScore); }
   document.getElementById('best').textContent = bestScore;
   document.getElementById('overMsg').textContent = `${s} metre yükseldin!`;
+  renderResultGrid('resultGrid', [['YÜKSEKLİK', s+' m'], ['REKOR', bestScore+' m'], ['EN İYİ SERİ', 'x'+combo.level]]);
   document.getElementById('stars').textContent = starRating(s, 300);
-  document.getElementById('overlay').style.display = 'flex';
+  showOverlay('overlay');
+  if(s >= 250) fireConfetti(document.getElementById('wrap'));
   playError();
 }
 
@@ -93,7 +106,10 @@ function drawCat(x,y){
 
 function loop(){
   if(!running) return;
+  combo.tick();
+  const sh = shaker.tick();
   ctx.clearRect(0,0,W,H);
+  ctx.save(); ctx.translate(sh.x, sh.y);
 
   // arka plan bulutlar
   ctx.fillStyle = 'rgba(255,255,255,.6)';
@@ -114,10 +130,19 @@ function loop(){
          player.x > p.x-10 && player.x < p.x+p.w+10){
         player.vy = JUMP_V;
         playClick(480);
+        spawnParticles(particles, player.x, p.y, 5, ['#7bc94a','#fff'], {speed:2, life:14});
         if(p.star){
-          score += 80;
+          const level = combo.register();
+          renderComboBadge('comboBadge', level);
+          const gained = 80 * level;
+          score += gained;
           p.star = false;
           playTone(700,0.1,'triangle',0.15);
+          if(level>1) playCombo(level);
+          spawnParticles(particles, p.x+p.w/2, p.y-10, 10, ['#FFD23F','#FF9F5A'], {speed:3.5, life:20});
+          const pr = document.getElementById('wrap').getBoundingClientRect(), r = canvas.getBoundingClientRect();
+          showFloatingPoints(document.getElementById('wrap'), (r.left-pr.left)+(p.x+p.w/2)*(r.width/W), (r.top-pr.top)+p.y*(r.height/H),
+            level>1 ? `🔥 x${level}` : '⭐', '#FFD23F');
         }
         break;
       }
@@ -151,8 +176,10 @@ function loop(){
   });
 
   drawCat(player.x, player.y);
+  updateParticles(ctx, particles);
+  ctx.restore();
 
-  if(player.y > H+30){ endGame(); return; }
+  if(player.y > H+30){ shaker.trigger(12); endGame(); return; }
 
   raf = requestAnimationFrame(loop);
 }

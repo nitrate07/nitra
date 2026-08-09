@@ -2,64 +2,62 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Balık Yakalama</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Balık Yakalama — Oyun Kutusu</title>
 <meta name="description" content="Balıkları yakala, puan topla! Çocuklar için ücretsiz ve eğlenceli balık yakalama oyunu.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://SITE-ADRESIN-BURAYA.com/yakalama.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Balık Yakalama">
+<meta property="og:title" content="Balık Yakalama — Oyun Kutusu">
 <meta property="og:description" content="Balıkları yakala, puan topla! Çocuklar için ücretsiz ve eğlenceli balık yakalama oyunu.">
 <meta property="og:url" content="https://SITE-ADRESIN-BURAYA.com/yakalama.html">
 <meta property="og:site_name" content="Oyun Kutusu">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Balık Yakalama">
+<meta name="twitter:title" content="Balık Yakalama — Oyun Kutusu">
 <meta name="twitter:description" content="Balıkları yakala, puan topla! Çocuklar için ücretsiz ve eğlenceli balık yakalama oyunu.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
 <style>
-  :root{ --bg:#F7F5FF; --ink:#1B1B3A; --purple:#6C4EF5; --coral:#FF6B6B; --yellow:#FFD23F; --teal:#2EC4B6; }
-  *{box-sizing:border-box;}
-  body{
-    margin:0; min-height:100svh; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
-    background:radial-gradient(circle at 20% 80%, #DFF8F6, var(--bg) 60%);
-    font-family:'Nunito',system-ui,sans-serif; color:var(--ink);
-    padding:max(14px, env(safe-area-inset-top)) 16px max(14px, env(safe-area-inset-bottom));
-  }
-  h1{font-size:1.6rem; margin:0 0 8px;}
-  a.back{color:var(--purple); font-weight:800; text-decoration:none; align-self:flex-start; margin-bottom:6px;}
-  #hud{display:flex; gap:16px; margin-bottom:10px; font-weight:800;}
-  #hud span{background:#fff; padding:6px 14px; border-radius:999px; box-shadow:0 3px 0 #ddd;}
-  #wrap{position:relative;}
-  canvas{background:linear-gradient(#bfe9ff,#eafcff); border-radius:20px; box-shadow:0 10px 30px rgba(46,196,182,.25); touch-action:none;
-    width:100%; max-width:600px; height:auto; display:block; margin:0 auto;}
-  #wrap{ width:100%; max-width:600px; margin:0 auto; }
-  #over{position:absolute; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; background:rgba(255,255,255,.95); border-radius:20px; text-align:center;}
-  #over button{margin-top:10px; background:var(--coral); border:none; color:#fff; font-weight:800; padding:10px 22px; border-radius:999px; font-size:1rem; cursor:pointer; box-shadow:0 4px 0 #c94b4b;}
-  p.hint{font-size:.85rem; opacity:.7; margin-top:8px;}
+  body{ background:radial-gradient(circle at 20% 80%, #DFF8F6, var(--bg) 60%); }
+  canvas{ background:linear-gradient(#bfe9ff,#eafcff); box-shadow:0 10px 30px rgba(46,196,182,.25); }
+  #wrap{ position:relative; }
+  p.hint{ font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px; }
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>🐟 Balık Yakalama</h1>
-  <div id="hud"><span>🐱 Puan: <span id="score">0</span></span><span>⏱️ <span id="time">30</span> sn</span></div>
+  <div id="hud">
+    <span>🐱 Puan: <span id="score">0</span></span>
+    <span>⏱️ <span id="time">30</span> sn</span>
+    <span>🏆 <span id="best">0</span></span>
+  </div>
   <div id="wrap">
     <canvas id="c" width="360" height="480"></canvas>
-    <div id="over">
-      <div style="font-size:2.5rem;">🐟</div>
-      <div style="font-weight:900; font-size:1.3rem;">Süre Bitti!</div>
-      <div id="finalScore" style="margin-top:6px; font-weight:800;"></div>
-      <button onclick="startGame()">Tekrar Oyna</button>
+    <div id="overlay">
+      <div class="big">🐟</div>
+      <div class="msg" id="overMsg">Süre Bitti!</div>
+      <div class="result-grid" id="resultGrid"></div>
+      <div class="stars" id="stars"></div>
+      <button class="btn" onclick="startGame()">Tekrar Oyna</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
   <p class="hint">Fareyi/parmağını sağa sola hareket ettirerek kediyi yönet, balıkları yakala!</p>
 
+<script src="common.js"></script>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
+let bestScore = parseInt(localStorage.getItem('ok_yakalama_best') || '0', 10);
+document.getElementById('best').textContent = bestScore;
+
 let cat = {x: W/2, w: 60, h: 40};
 let items = [];
 let score = 0, timeLeft = 30, running = false, raf;
+let combo = 0, comboLevel = 1;
 
 function spawnItem(){
   const isBad = Math.random() < 0.2;
@@ -68,26 +66,25 @@ function spawnItem(){
     y: -20,
     speed: 2 + Math.random()*2 + timeLeft*-0.02,
     emoji: isBad ? '🦴' : (Math.random()<0.5 ? '🐟' : '🍣'),
-    bad: isBad
+    bad: isBad,
+    caught: false, life: 0
   });
 }
 
 let spawnTimer, tickTimer;
 
 function startGame(){
-  score = 0; timeLeft = 30; items = []; running = true;
+  score = 0; timeLeft = 30; items = []; running = true; combo = 0; comboLevel = 1;
   document.getElementById('score').textContent = score;
   document.getElementById('time').textContent = timeLeft;
-  document.getElementById('over').style.display = 'none';
+  document.getElementById('overlay').style.display = 'none';
   if(spawnTimer) clearInterval(spawnTimer);
   if(tickTimer) clearInterval(tickTimer);
   spawnTimer = setInterval(spawnItem, 700);
   tickTimer = setInterval(()=>{
     timeLeft--;
     document.getElementById('time').textContent = timeLeft;
-    if(timeLeft<=0){
-      endGame();
-    }
+    if(timeLeft<=0) endGame();
   }, 1000);
   loop();
 }
@@ -97,30 +94,51 @@ function endGame(){
   clearInterval(spawnTimer);
   clearInterval(tickTimer);
   cancelAnimationFrame(raf);
-  document.getElementById('finalScore').textContent = `Toplam puan: ${score}`;
-  document.getElementById('over').style.display = 'flex';
+  if(score > bestScore){ bestScore = score; localStorage.setItem('ok_yakalama_best', bestScore); }
+  document.getElementById('best').textContent = bestScore;
+  document.getElementById('overMsg').textContent = 'Süre Bitti!';
+  renderResultGrid('resultGrid', [['PUAN', score], ['REKOR', bestScore]]);
+  document.getElementById('stars').textContent = starRating(score, 20);
+  showOverlay('overlay');
+  if(score >= 20) fireConfetti(document.getElementById('wrap'));
+  playSuccess();
 }
 
 function loop(){
   ctx.clearRect(0,0,W,H);
-  // items
   for(let i=items.length-1;i>=0;i--){
     const it = items[i];
+    if(it.caught){
+      it.life++;
+      ctx.save(); ctx.globalAlpha = Math.max(0,1-it.life/14); ctx.font = (28+it.life*2)+'px serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(it.emoji, it.x, it.y - it.life);
+      ctx.restore();
+      if(it.life>14) items.splice(i,1);
+      continue;
+    }
     it.y += it.speed;
     ctx.font = '28px serif';
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(it.emoji, it.x, it.y);
-    // collision with cat
     if(it.y > H-70 && it.y < H-20 && Math.abs(it.x - cat.x) < cat.w/2+10){
-      if(it.bad){ score = Math.max(0, score-1); } else { score++; }
+      if(it.bad){
+        score = Math.max(0, score-1); combo = 0; comboLevel = 1;
+        playError();
+        items.splice(i,1);
+      } else {
+        combo++; comboLevel = Math.min(4, 1+Math.floor(combo/3));
+        score += comboLevel;
+        playClick(600+comboLevel*60);
+        it.caught = true;
+      }
       document.getElementById('score').textContent = score;
-      items.splice(i,1);
       continue;
     }
-    if(it.y > H+20) items.splice(i,1);
+    if(it.y > H+20){ items.splice(i,1); combo = 0; comboLevel = 1; }
   }
-  // cat
   ctx.font = '48px serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText('🐱', cat.x, H-40);
 
   if(running) raf = requestAnimationFrame(loop);
@@ -134,6 +152,7 @@ function setCatX(clientX){
 
 canvas.addEventListener('mousemove', (e)=> setCatX(e.clientX));
 canvas.addEventListener('touchmove', (e)=>{ e.preventDefault(); setCatX(e.touches[0].clientX); }, {passive:false});
+canvas.addEventListener('touchstart', (e)=>{ setCatX(e.touches[0].clientX); }, {passive:true});
 
 startGame();
 </script>

@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Pizza Fırını — Oyun Kutusu</title>
 <meta name="description" content="Sipariş gelsin, pizzanı hazırla! Çocuklar için eğlenceli ve ücretsiz pizza fırını oyunu.">
 <meta name="robots" content="index, follow">
@@ -19,6 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
+  body{ padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); }
   canvas{background:linear-gradient(#3a2416,#1c1208); border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,.3); touch-action:none; cursor:pointer;}
   #wrap{position:relative;}
   #stageText{ font-weight:800; margin-bottom:8px; font-size:1.1rem; color:var(--ink); }
@@ -28,13 +29,20 @@
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>🍕 Pizza Fırını</h1>
-  <div id="hud"><span>🍕 Skor: <span id="score">0</span></span><span>🏆 Mükemmel: <span id="perfect">0</span></span></div>
+  <div id="hud">
+    <span>🍕 Skor: <span id="score">0</span></span>
+    <span id="comboBadge" class="combo-badge" style="display:none;"></span>
+    <span>🏆 Mükemmel: <span id="perfect">0</span></span>
+    <span>⭐ Rekor: <span id="best">0</span></span>
+  </div>
   <div id="stageText">Hazırlanıyor...</div>
   <div id="wrap">
     <canvas id="c" width="300" height="120"></canvas>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">🍕</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
@@ -54,7 +62,11 @@ const STAGES = [
   { name: 'Fırında pişir 🔥', emoji: '🔥' }
 ];
 
+let bestScore = parseInt(localStorage.getItem('ok_pizza_best') || '0', 10);
+document.getElementById('best').textContent = bestScore;
+
 let score = 0, perfect = 0, pizzaCount = 0, stageIdx = 0, needleX, dir, zoneStart, zoneW, running, raf;
+let particles, shaker, combo;
 
 function newZone(){
   zoneW = Math.max(30, 70 - pizzaCount*3);
@@ -62,12 +74,15 @@ function newZone(){
 }
 
 function startGame(){
-  score = 0; perfect = 0; pizzaCount = 0; stageIdx = 0; running = true;
+  score = 0; perfect = 0; pizzaCount = 0; stageIdx = 0; running = false;
+  particles = []; shaker = createShaker(); combo = createCombo();
   document.getElementById('score').textContent = 0;
   document.getElementById('perfect').textContent = 0;
   document.getElementById('overlay').style.display = 'none';
+  document.getElementById('comboBadge').style.display = 'none';
   startStage();
-  loop();
+  ctx.clearRect(0,0,W,H);
+  runCountdown(document.getElementById('countdownOverlay'), ()=>{ running = true; loop(); });
 }
 
 function startStage(){
@@ -79,15 +94,22 @@ function startStage(){
 function endGame(){
   running = false;
   cancelAnimationFrame(raf);
+  if(score > bestScore){ bestScore = score; localStorage.setItem('ok_pizza_best', bestScore); }
+  document.getElementById('best').textContent = bestScore;
   document.getElementById('overMsg').textContent = `${score} puan, ${perfect} mükemmel pizza!`;
+  renderResultGrid('resultGrid', [['PUAN', score], ['MÜKEMMEL', perfect+'/8'], ['REKOR', bestScore]]);
   document.getElementById('stars').textContent = starRating(perfect, 8);
-  document.getElementById('overlay').style.display = 'flex';
+  showOverlay('overlay');
+  if(perfect >= 6) fireConfetti(document.getElementById('wrap'));
+  playSuccess();
 }
 
 function loop(){
   if(!running) return;
+  const sh = shaker.tick();
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle = '#241608'; ctx.fillRect(0,0,W,H);
+  ctx.save(); ctx.translate(sh.x, sh.y);
+  ctx.fillStyle = '#241608'; ctx.fillRect(-4,-4,W+8,H+8);
 
   const barY = H/2;
   ctx.fillStyle = '#4a3220'; ctx.fillRect(10, barY-10, W-20, 20);
@@ -103,6 +125,8 @@ function loop(){
   ctx.font = '22px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText(STAGES[stageIdx].emoji, W/2, 24);
 
+  updateParticles(ctx, particles);
+  ctx.restore();
   raf = requestAnimationFrame(loop);
 }
 
@@ -110,11 +134,23 @@ function handleTap(){
   if(!running) return;
   const inZone = needleX >= zoneStart && needleX <= zoneStart+zoneW;
   const centerDist = Math.abs(needleX - (zoneStart+zoneW/2));
+  const pr = document.getElementById('wrap').getBoundingClientRect(), r = canvas.getBoundingClientRect();
+  const fx = (r.left-pr.left)+needleX*(r.width/W), fy = (r.top-pr.top)+(H/2)*(r.height/H);
   if(inZone){
     const isPerfect = centerDist < zoneW*0.25;
-    score += isPerfect ? 15 : 8;
+    const level = combo.register();
+    renderComboBadge('comboBadge', level);
+    const gained = (isPerfect ? 15 : 8) * (isPerfect ? level : 1);
+    score += gained;
+    spawnParticles(particles, needleX, H/2, isPerfect?10:6, isPerfect?['#FFD23F','#7bff6b']:['#7bff6b'], {speed:3.5, life:20});
+    showFloatingPoints(document.getElementById('wrap'), fx, fy, `+${gained}${isPerfect?' 🎯':''}`, isPerfect?'#FFD23F':'#7bff6b');
     if(isPerfect) playTone(750,0.12,'triangle',0.15); else playTone(600,0.1,'triangle',0.13);
+    if(level>1 && isPerfect) playCombo(level);
   } else {
+    combo.reset();
+    document.getElementById('comboBadge').style.display = 'none';
+    shaker.trigger(7);
+    spawnParticles(particles, needleX, H/2, 6, ['#8a5a3a'], {speed:2.5, life:14});
     playError();
   }
   document.getElementById('score').textContent = score;
@@ -122,7 +158,6 @@ function handleTap(){
   stageIdx++;
   if(stageIdx >= STAGES.length){
     pizzaCount++;
-    const allGood = true; // basitleştirilmiş: her pizza tamamlanır
     if(inZone) perfect++;
     document.getElementById('perfect').textContent = perfect;
     playSuccess();

@@ -127,6 +127,83 @@ function updateProgressBar(fillEl, pct){
   }
 }
 
+// ================= GAME FEEL: paylaşılan yardımcılar (canvas oyunları için) =================
+
+// ---- Parçacık sistemi: spawnParticles ile üret, updateParticles ile her karede çiz/temizle ----
+function spawnParticles(arr, x, y, n, colors, opts){
+  opts = opts || {};
+  const speed = opts.speed || 3.5, life = opts.life || 24, size = opts.size || 3;
+  colors = Array.isArray(colors) ? colors : [colors || '#FFD23F'];
+  for(let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2, sp = (speed*0.4)+Math.random()*speed;
+    arr.push({
+      x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp - (opts.upBias||0),
+      life, maxLife:life, size:size*0.6+Math.random()*size,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      gravity: opts.gravity || 0
+    });
+  }
+  if(arr.length > (opts.cap || 140)) arr.splice(0, arr.length - (opts.cap || 140));
+}
+function updateParticles(ctx, arr){
+  for(let i=arr.length-1;i>=0;i--){
+    const p = arr[i];
+    p.x += p.vx; p.y += p.vy; p.vy += p.gravity||0; p.life--;
+    const a = Math.max(0, p.life/p.maxLife);
+    ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.5,p.size*a), 0, Math.PI*2); ctx.fill(); ctx.restore();
+    if(p.life<=0) arr.splice(i,1);
+  }
+}
+
+// ---- Ekran sarsıntısı: basit decay tabanlı ----
+function createShaker(){
+  return {
+    mag: 0,
+    trigger(m){ this.mag = Math.max(this.mag, m); },
+    tick(){ this.mag *= 0.85; if(this.mag<0.05) this.mag=0; return { x:(Math.random()-0.5)*this.mag, y:(Math.random()-0.5)*this.mag }; }
+  };
+}
+
+// ---- Combo/seri takipçisi: register() her başarılı olayda çağrılır, pencere dolunca sıfırlanır ----
+function createCombo(windowFrames, maxLevel){
+  windowFrames = windowFrames || 90; maxLevel = maxLevel || 4;
+  return {
+    count:0, level:1, timer:0,
+    register(){ this.count++; this.timer = windowFrames; this.level = Math.min(maxLevel, 1+Math.floor(this.count/3)); return this.level; },
+    tick(){ if(this.timer>0){ this.timer--; } else if(this.count>0){ this.count=0; this.level=1; } },
+    reset(){ this.count=0; this.level=1; this.timer=0; }
+  };
+}
+
+// ---- Canvas üstünde 3-2-1-GO! geri sayımı (DOM overlay elementi ister) ----
+// overlayEl: içi boş bir <div> (position:absolute; inset:0; ile canvas'ın üstünde durmalı)
+function runCountdown(overlayEl, onDone, opts){
+  opts = opts || {};
+  const seq = opts.seq || ['3','2','1','GO!'];
+  overlayEl.style.cssText += 'display:flex; align-items:center; justify-content:center; position:absolute; inset:0; pointer-events:none; z-index:9;';
+  let i = 0;
+  function step(){
+    if(i < seq.length){
+      const label = seq[i];
+      overlayEl.textContent = label;
+      overlayEl.style.fontFamily = "'Fredoka','Baloo 2',sans-serif";
+      overlayEl.style.fontWeight = '900';
+      overlayEl.style.fontSize = label==='GO!' ? '3rem' : '4.5rem';
+      overlayEl.style.color = label==='GO!' ? '#FFD23F' : '#fff';
+      overlayEl.style.textShadow = label==='GO!' ? '0 0 30px #FFD23F, 0 0 70px rgba(255,210,63,.7)' : '0 0 20px rgba(108,78,245,.8)';
+      overlayEl.style.animation = 'none'; void overlayEl.offsetWidth; overlayEl.style.animation = 'pop-in .45s cubic-bezier(.34,1.56,.64,1)';
+      if(label==='GO!') playTone(880,0.3,'sawtooth',0.16); else playTone(440,0.12,'square',0.14);
+      i++;
+      setTimeout(step, label==='GO!' ? 350 : 550);
+    } else {
+      overlayEl.style.display = 'none';
+      onDone && onDone();
+    }
+  }
+  step();
+}
+
 // ---- Konfeti efekti ----
 function fireConfetti(container){
   const colors = ['#FF6B6B','#FFD23F','#2EC4B6','#6C4EF5','#FF9F43'];

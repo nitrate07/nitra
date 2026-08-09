@@ -145,9 +145,17 @@ a.back{color:var(--purple); font-weight:800; text-decoration:none; align-self:fl
 
 .stars{ font-size:1.6rem; letter-spacing:3px; margin:2px 0; }
 
-/* Duyarlı oyun ekranı: masaüstünde büyük, mobilde otomatik sığar */
-canvas{ width:100%; max-width:600px; height:auto; display:block; margin:0 auto; }
-#wrap{ width:100%; max-width:600px; margin:0 auto; }
+/* Duyarlı oyun ekranı: masaüstünde büyük, mobilde ekran yüksekliğini asla aşmaz.
+   width:100% + height:auto native oranı korur; max-height ekstra kısıtlayıcı olarak
+   devreye girip yükseklik taşmasını (ve dolayısıyla sayfa kaydırmayı) önler.
+   Tek bir oyunun farklı bir chrome yüksekliği varsa, o oyun kendi <style> bloğunda
+   canvas{ max-height:calc(100svh - Npx); } ile bu genel değeri override edebilir. */
+canvas{
+  width:100%; max-width:600px; height:auto; display:block; margin:0 auto;
+  max-height:max(220px, calc(100vh - 260px));
+  max-height:max(220px, calc(100svh - 260px));
+}
+#wrap{ width:100%; max-width:600px; margin:0 auto; position:relative; }
 .panel{ width:100%; max-width:600px; margin:0 auto; box-sizing:border-box; }
 
 /* İlerleme çubuğu (milestone pulse destekli) */
