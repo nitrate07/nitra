@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Labirent Macerası — Oyun Kutusu</title>
 <meta name="description" content="Labirentte kayıp olma, çıkışı bul! Ücretsiz labirent macerası oyunu, birçok tema seçeneğiyle.">
 <meta name="robots" content="index, follow">
@@ -19,28 +19,55 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  body{ background:radial-gradient(circle at 50% 0%, var(--s-bg1,#fff3d6), var(--s-bg2,#ffe0a3) 70%); }
+  body{
+    background:radial-gradient(circle at 50% 0%, var(--s-bg1,#fff3d6), var(--s-bg2,#ffe0a3) 70%);
+    padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom));
+  }
   h1{ font-family:'Fredoka',sans-serif; text-shadow:0 2px 6px rgba(180,120,20,.25); }
-  #hud span{ background:#fff; box-shadow:0 3px 0 #e0c48a; font-family:'Fredoka',sans-serif; }
-  canvas{ background:var(--s-canvasbg,#3a2b1a); border-radius:20px; box-shadow:0 0 0 6px var(--s-border,#8a6a3a), 0 18px 40px rgba(120,80,20,.35); touch-action:none;}
+  #hud span{ background:#fff; box-shadow:0 3px 0 #e0c48a; font-family:'Fredoka',sans-serif; transition:box-shadow .2s; }
+  #hud span.gem-glow{ box-shadow:0 0 0 1px #FFD23F, 0 0 12px rgba(255,210,63,.7), 0 3px 0 #e0c48a; }
+  canvas{
+    background:var(--s-canvasbg,#3a2b1a); border-radius:20px;
+    box-shadow:0 0 0 6px var(--s-border,#8a6a3a), 0 18px 40px rgba(120,80,20,.35); touch-action:none;
+  }
   #wrap{position:relative;}
-  .controls{display:grid; grid-template-columns:64px 64px 64px; grid-template-rows:64px 64px 64px; gap:8px; margin-top:16px;}
+  #levelIntro{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column;
+    background:rgba(0,0,0,.45); border-radius:20px; z-index:8; pointer-events:none;
+  }
+  #levelIntro span{
+    font-family:'Fredoka',sans-serif; font-weight:700; color:#fff; font-size:2rem;
+    text-shadow:0 0 20px rgba(255,210,63,.8); animation:liPop .6s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes liPop{ from{opacity:0; transform:scale(.7);} to{opacity:1; transform:scale(1);} }
+  .controls{display:grid; grid-template-columns:64px 64px 64px; grid-template-rows:64px 64px 64px; gap:8px; margin-top:16px; align-items:center;}
   .ctl{border:none; border-radius:18px; background:linear-gradient(180deg,var(--s-btn1,#ffb85c),var(--s-btn2,#e8912e)); color:#fff; font-size:1.6rem;
-    box-shadow:0 4px 0 var(--s-border,#a86a1a); cursor:pointer;}
+    box-shadow:0 4px 0 var(--s-border,#a86a1a); cursor:pointer; -webkit-tap-highlight-color:transparent;}
   .ctl:active{transform:translateY(3px); box-shadow:0 1px 0 var(--s-border,#a86a1a);}
   #up{grid-column:2; grid-row:1;} #left{grid-column:1; grid-row:2;} #down{grid-column:2; grid-row:2;} #right{grid-column:3; grid-row:2;}
+  #muteCtl{
+    grid-column:3; grid-row:1; border:none; border-radius:18px; background:#fff; color:var(--ink); font-size:1.2rem;
+    box-shadow:0 4px 0 #e0c48a; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  #muteCtl:active{transform:translateY(3px); box-shadow:0 1px 0 #e0c48a;}
   p.hint{ font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:340px;}
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1 id="title">🌀 Labirent Macerası</h1>
-  <div id="hud"><span>⏱️ <span id="time">0</span> sn</span><span>🎯 Bölüm <span id="level">1</span></span><span>⭐ <span id="gems">0</span></span></div>
+  <div id="hud">
+    <span>⏱️ <span id="time">0</span> sn</span>
+    <span>🎯 Bölüm <span id="level">1</span></span>
+    <span id="gemStat">⭐ <span id="gems">0</span></span>
+  </div>
   <div id="wrap">
     <canvas id="c" width="440" height="440"></canvas>
+    <div id="levelIntro"><span id="levelIntroText">Bölüm 1</span></div>
     <div id="overlay">
       <div class="big">🎉</div>
-      <div class="msg">Harika! Çıkışı buldun!</div>
+      <div class="msg" id="overMsg">Harika! Çıkışı buldun!</div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="starsEl"></div>
       <button class="btn" id="nextBtn">Sonraki Bölüm</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
@@ -48,22 +75,23 @@
   </div>
   <div class="controls">
     <button class="ctl" id="up">↑</button>
+    <button id="muteCtl">🔊</button>
     <button class="ctl" id="left">←</button>
     <button class="ctl" id="down">↓</button>
     <button class="ctl" id="right">→</button>
   </div>
-  <p class="hint">Ok tuşları veya butonlarla kediyi çıkışa yönlendir, yolda ⭐ topla!</p>
+  <p class="hint">Ok tuşları veya butonlarla kediyi çıkışa yönlendir, yolda ⭐ topla! Fenerin ışığı seni takip eder.</p>
 
 <script src="common.js"></script>
 <script>
 const STYLES = {
-  altin: { name:'Altın', bg1:'#fff3d6', bg2:'#ffe0a3', canvasbg:'#3a2b1a', border:'#8a6a3a', wall:'#ffb85c', btn1:'#ffb85c', btn2:'#e8912e', floorA:'#3a2b1a', floorB:'#362715', player:'🐱', goal:'🏁', gem:'⭐' },
-  buz:   { name:'Buzul', bg1:'#e0f7ff', bg2:'#b8e6ff', canvasbg:'#1a3a4a', border:'#3a8ab8', wall:'#8fe0ff', btn1:'#5cc9ff', btn2:'#2e94c9', floorA:'#1a3a4a', floorB:'#173241', player:'🐧', goal:'🏁', gem:'❄️' },
-  orman: { name:'Orman', bg1:'#eafce0', bg2:'#c2f0a8', canvasbg:'#1f3a1a', border:'#4a8a3a', wall:'#8fe07a', btn1:'#7bc94a', btn2:'#4a9a32', floorA:'#1f3a1a', floorB:'#1b3216', player:'🐰', goal:'🏁', gem:'🍃' },
-  uzay:  { name:'Uzay', bg1:'#241a4d', bg2:'#120c2e', canvasbg:'#0c0a1a', border:'#4a34c9', wall:'#9c7bff', btn1:'#6C4EF5', btn2:'#4a34c9', floorA:'#0c0a1a', floorB:'#100c22', player:'👽', goal:'🏁', gem:'⭐' },
-  col:   { name:'Çöl', bg1:'#fff0d6', bg2:'#ffd9a0', canvasbg:'#4a2f18', border:'#8a5a2a', wall:'#ffb04d', btn1:'#ff9f3d', btn2:'#c9762a', floorA:'#4a2f18', floorB:'#412911', player:'🐫', goal:'🏁', gem:'💎' },
-  magara:{ name:'Mağara', bg1:'#e8e0f0', bg2:'#c9bbd8', canvasbg:'#2b1f38', border:'#6a4a8a', wall:'#b89cd8', btn1:'#8a6ab8', btn2:'#5a3a8a', floorA:'#2b1f38', floorB:'#251a30', player:'🦇', goal:'🏁', gem:'💰' },
-  bulut: { name:'Bulut', bg1:'#eafcff', bg2:'#bdefff', canvasbg:'#3a5a7a', border:'#5a8ab0', wall:'#cdeeff', btn1:'#7bc4e8', btn2:'#4a94b8', floorA:'#3a5a7a', floorB:'#345170', player:'🐰', goal:'🏁', gem:'✨' }
+  altin: { name:'Altın', bg1:'#fff3d6', bg2:'#ffe0a3', canvasbg:'#3a2b1a', border:'#8a6a3a', wall:'#ffb85c', btn1:'#ffb85c', btn2:'#e8912e', floorA:'#3a2b1a', floorB:'#362715', player:'🐱', goal:'🏁', gem:'⭐', ambient:130 },
+  buz:   { name:'Buzul', bg1:'#e0f7ff', bg2:'#b8e6ff', canvasbg:'#1a3a4a', border:'#3a8ab8', wall:'#8fe0ff', btn1:'#5cc9ff', btn2:'#2e94c9', floorA:'#1a3a4a', floorB:'#173241', player:'🐧', goal:'🏁', gem:'❄️', ambient:180 },
+  orman: { name:'Orman', bg1:'#eafce0', bg2:'#c2f0a8', canvasbg:'#1f3a1a', border:'#4a8a3a', wall:'#8fe07a', btn1:'#7bc94a', btn2:'#4a9a32', floorA:'#1f3a1a', floorB:'#1b3216', player:'🐰', goal:'🏁', gem:'🍃', ambient:110 },
+  uzay:  { name:'Uzay', bg1:'#241a4d', bg2:'#120c2e', canvasbg:'#0c0a1a', border:'#4a34c9', wall:'#9c7bff', btn1:'#6C4EF5', btn2:'#4a34c9', floorA:'#0c0a1a', floorB:'#100c22', player:'👽', goal:'🏁', gem:'⭐', ambient:70 },
+  col:   { name:'Çöl', bg1:'#fff0d6', bg2:'#ffd9a0', canvasbg:'#4a2f18', border:'#8a5a2a', wall:'#ffb04d', btn1:'#ff9f3d', btn2:'#c9762a', floorA:'#4a2f18', floorB:'#412911', player:'🐫', goal:'🏁', gem:'💎', ambient:150 },
+  magara:{ name:'Mağara', bg1:'#e8e0f0', bg2:'#c9bbd8', canvasbg:'#2b1f38', border:'#6a4a8a', wall:'#b89cd8', btn1:'#8a6ab8', btn2:'#5a3a8a', floorA:'#2b1f38', floorB:'#251a30', player:'🦇', goal:'🏁', gem:'💰', ambient:55 },
+  bulut: { name:'Bulut', bg1:'#eafcff', bg2:'#bdefff', canvasbg:'#3a5a7a', border:'#5a8ab0', wall:'#cdeeff', btn1:'#7bc4e8', btn2:'#4a94b8', floorA:'#3a5a7a', floorB:'#345170', player:'🐰', goal:'🏁', gem:'✨', ambient:200 }
 };
 const styleKey = (new URLSearchParams(location.search).get('style')) || 'altin';
 const S = STYLES[styleKey] || STYLES.altin;
@@ -76,11 +104,102 @@ document.documentElement.style.setProperty('--s-btn2', S.btn2);
 document.title = `${S.name} Labirenti — Oyun Kutusu`;
 document.getElementById('title').textContent = `🌀 ${S.name} Labirenti`;
 
+// ================= SES MOTORU (paylaşılan AudioContext, tema-tintli ambiyans) =================
+const Audio_ = (function(){
+  let muted = localStorage.getItem('ok_labirent_muted') === '1';
+  let noiseBuffer;
+  let ambientOsc, ambientOsc2, ambientGain, ambientFilter;
+
+  function getCtx(){ return _ctx(); }
+  function unlock(){ try{ getCtx().resume(); }catch(e){} }
+
+  function makeNoiseBuffer(){
+    if(noiseBuffer) return noiseBuffer;
+    const c = getCtx();
+    const len = Math.floor(c.sampleRate*0.3);
+    noiseBuffer = c.createBuffer(1, len, c.sampleRate);
+    const d = noiseBuffer.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    return noiseBuffer;
+  }
+
+  function tone(freq, dur=0.12, type='sine', vol=0.15, delay=0){
+    if(muted) return;
+    try{
+      const c = getCtx(); const t0 = c.currentTime+delay;
+      const osc = c.createOscillator(); const gain = c.createGain();
+      osc.type = type; osc.frequency.setValueAtTime(freq, t0);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(Math.max(vol,0.001), t0+0.015);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+      osc.connect(gain); gain.connect(c.destination);
+      osc.start(t0); osc.stop(t0+dur+0.03);
+    }catch(e){}
+  }
+  function noiseBurst(dur=0.15, vol=0.15, filterFreq=500, type='lowpass'){
+    if(muted) return;
+    try{
+      const c = getCtx(); const t0 = c.currentTime;
+      const src = c.createBufferSource(); src.buffer = makeNoiseBuffer();
+      const filt = c.createBiquadFilter(); filt.type = type; filt.frequency.setValueAtTime(filterFreq, t0);
+      const gain = c.createGain();
+      gain.gain.setValueAtTime(vol, t0);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+      src.connect(filt); filt.connect(gain); gain.connect(c.destination);
+      src.start(t0); src.stop(t0+dur+0.05);
+    }catch(e){}
+  }
+
+  function footstep(){ tone(170+Math.random()*35, 0.05, 'square', 0.055); }
+  function bump(){ noiseBurst(0.1, 0.1, 350, 'lowpass'); tone(100,0.08,'square',0.08); }
+  function gem(){ tone(750,0.08,'triangle',0.13); tone(1100,0.12,'triangle',0.12,0.05); }
+  function levelStart(){ tone(440,0.1,'triangle',0.12); tone(660,0.14,'triangle',0.12,0.08); }
+  function levelComplete(perfect){
+    [523,659,784,1046].forEach((f,i)=> tone(f,0.2,'triangle',0.15,i*0.1));
+    if(perfect) setTimeout(()=>{ [1046,1318].forEach((f,i)=> tone(f,0.2,'sine',0.14,i*0.1)); }, 420);
+  }
+
+  function startAmbient(){
+    if(muted || ambientOsc) return;
+    try{
+      const c = getCtx();
+      ambientOsc = c.createOscillator(); ambientOsc.type = 'sine';
+      ambientOsc2 = c.createOscillator(); ambientOsc2.type = 'sine';
+      ambientFilter = c.createBiquadFilter(); ambientFilter.type='lowpass'; ambientFilter.frequency.value = 500;
+      ambientGain = c.createGain(); ambientGain.gain.value = 0.0001;
+      ambientOsc.frequency.value = S.ambient;
+      ambientOsc2.frequency.value = S.ambient * 1.503;
+      ambientOsc.connect(ambientFilter); ambientOsc2.connect(ambientFilter);
+      ambientFilter.connect(ambientGain); ambientGain.connect(c.destination);
+      ambientOsc.start(); ambientOsc2.start();
+      ambientGain.gain.linearRampToValueAtTime(0.02, c.currentTime+1.2);
+    }catch(e){}
+  }
+  function stopAmbient(){
+    if(!ambientOsc) return;
+    try{
+      const c = getCtx();
+      ambientGain.gain.setTargetAtTime(0.0001, c.currentTime, 0.3);
+      const o1=ambientOsc, o2=ambientOsc2;
+      setTimeout(()=>{ try{o1.stop(); o2.stop();}catch(e){} }, 800);
+    }catch(e){}
+    ambientOsc = ambientOsc2 = ambientGain = ambientFilter = null;
+  }
+
+  function setMuted(v){
+    muted = v; localStorage.setItem('ok_labirent_muted', v?'1':'0');
+    if(muted) stopAmbient(); else startAmbient();
+  }
+  function isMuted(){ return muted; }
+
+  return { unlock, footstep, bump, gem, levelStart, levelComplete, startAmbient, stopAmbient, setMuted, isMuted };
+})();
+
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 let cols = 9, rows = 9, cell = canvas.width/cols;
 let level = 1, seconds = 0, timer = null, playing = true, gems = 0, totalGems = 0;
-let particles = [], pulse = 0;
+let particles = [], pulse = 0, shakeMag = 0;
 
 function genMaze(c, r){
   const grid = Array.from({length:r}, () => Array.from({length:c}, () => ({N:true,S:true,E:true,W:true,visited:false})));
@@ -111,7 +230,7 @@ function setup(){
   if(cols>15) cols=15; if(rows>15) rows=15;
   cell = canvas.width/cols;
   maze = genMaze(cols, rows);
-  player = {x:0,y:0, renderX:0, renderY:0};
+  player = {x:0,y:0, renderX:cell/2, renderY:cell/2};
   goal = {x:cols-1,y:rows-1};
   gems = 0; particles = [];
   gemList = [];
@@ -129,13 +248,28 @@ function setup(){
   document.getElementById('gems').textContent = `0/${totalGems}`;
   if(timer) clearInterval(timer);
   timer = setInterval(()=>{ if(playing){ seconds++; document.getElementById('time').textContent = seconds; } }, 1000);
+
+  Audio_.unlock();
+  Audio_.startAmbient();
+  Audio_.levelStart();
+  const intro = document.getElementById('levelIntro');
+  document.getElementById('levelIntroText').textContent = `Bölüm ${level}`;
+  intro.style.display = 'flex';
+  setTimeout(()=>{ intro.style.display = 'none'; }, 900);
+
   draw();
 }
 
 function draw(){
+  const sx = (Math.random()-0.5)*shakeMag, sy = (Math.random()-0.5)*shakeMag;
+  shakeMag *= 0.82; if(shakeMag<0.1) shakeMag=0;
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.translate(sx, sy);
+
   ctx.fillStyle = '#2b2013';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillRect(-6,-6,canvas.width+12,canvas.height+12);
 
   // zemin karoları (hafif desenli)
   for(let y=0;y<rows;y++) for(let x=0;x<cols;x++){
@@ -160,11 +294,14 @@ function draw(){
   }
   ctx.shadowBlur = 0;
 
-  // hedef (nabız gibi parlayan bayrak)
+  // hedef (nabız gibi parlayan bayrak + ışık halkası)
   pulse += 0.08;
   const pr = 1 + Math.sin(pulse)*0.12;
   ctx.save();
   ctx.translate(goal.x*cell+cell/2, goal.y*cell+cell/2);
+  const ringGrad = ctx.createRadialGradient(0,0,cell*0.15,0,0,cell*0.9);
+  ringGrad.addColorStop(0,'rgba(123,255,107,.35)'); ringGrad.addColorStop(1,'rgba(123,255,107,0)');
+  ctx.fillStyle = ringGrad; ctx.beginPath(); ctx.arc(0,0,cell*0.9,0,Math.PI*2); ctx.fill();
   ctx.scale(pr,pr);
   ctx.shadowColor = '#7bff6b'; ctx.shadowBlur = 16;
   ctx.font = `${cell*0.7}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -182,14 +319,7 @@ function draw(){
   });
 
   // hareket parçacıkları
-  for(let i=particles.length-1;i>=0;i--){
-    const p = particles[i];
-    p.x+=p.vx; p.y+=p.vy; p.life--;
-    const a = Math.max(0,p.life/p.maxLife);
-    ctx.save(); ctx.globalAlpha=a; ctx.fillStyle='#ffd23f';
-    ctx.beginPath(); ctx.arc(p.x,p.y,2.4*a+1,0,Math.PI*2); ctx.fill(); ctx.restore();
-    if(p.life<=0) particles.splice(i,1);
-  }
+  updateParticles(ctx, particles);
 
   // oyuncu (kedi) — yumuşak geçişli render pozisyonu
   player.renderX += (player.x*cell+cell/2 - player.renderX) * 0.35;
@@ -200,6 +330,14 @@ function draw(){
   ctx.fillText(S.player, player.renderX, player.renderY);
   ctx.restore();
 
+  // ---- fener ışığı: oyuncunun etrafı aydınlık, uzaklar karanlıkta (atmosfer) ----
+  const lightGrad = ctx.createRadialGradient(player.renderX, player.renderY, cell*1.3, player.renderX, player.renderY, cell*4.3);
+  lightGrad.addColorStop(0, 'rgba(0,0,0,0)');
+  lightGrad.addColorStop(1, 'rgba(0,0,0,.58)');
+  ctx.fillStyle = lightGrad;
+  ctx.fillRect(-6,-6,canvas.width+12,canvas.height+12);
+
+  ctx.restore();
   requestAnimationFrame(draw);
 }
 
@@ -211,23 +349,34 @@ function move(dx,dy){
   if(dx===-1 && !c.W){ player.x--; moved=true; }
   if(dy===1 && !c.S){ player.y++; moved=true; }
   if(dy===-1 && !c.N){ player.y--; moved=true; }
-  if(!moved) return;
-  playClick(480);
-  for(let i=0;i<4;i++){
-    particles.push({ x:player.renderX, y:player.renderY, vx:(Math.random()-0.5)*1.4, vy:(Math.random()-0.5)*1.4, life:14, maxLife:14 });
+  if(!moved){
+    shakeMag = 4;
+    Audio_.bump();
+    spawnParticles(particles, player.renderX+dx*cell*0.4, player.renderY+dy*cell*0.4, 4, '#ff6b6b', {speed:1.5, life:10});
+    return;
   }
+  Audio_.footstep();
+  spawnParticles(particles, player.renderX, player.renderY, 4, S.wall, {speed:1.2, life:14});
   const g = gemList.find(g=>!g.taken && g.x===player.x && g.y===player.y);
   if(g){
     g.taken = true; gems++;
     document.getElementById('gems').textContent = `${gems}/${totalGems}`;
-    playTone(750,0.1,'triangle',0.15);
+    const gs = document.getElementById('gemStat');
+    gs.classList.remove('gem-glow'); void gs.offsetWidth; gs.classList.add('gem-glow');
+    Audio_.gem();
   }
   if(player.x===goal.x && player.y===goal.y){
     playing = false;
-    playSuccess();
+    Audio_.stopAmbient();
+    const perfect = gems === totalGems;
+    Audio_.levelComplete(perfect);
     const score = gems*2 + Math.max(0, 10 - Math.floor(seconds/6));
+    document.getElementById('overMsg').textContent = perfect ? 'Mükemmel! Tüm yıldızları topladın!' : 'Harika! Çıkışı buldun!';
+    renderResultGrid('resultGrid', [
+      ['SÜRE', seconds+' sn'], ['YILDIZ', gems+'/'+totalGems], ['BÖLÜM', level], ['SKOR', score]
+    ]);
     document.getElementById('starsEl').textContent = starRating(score, totalGems*2+10);
-    document.getElementById('overlay').style.display='flex';
+    showOverlay('overlay');
     fireConfetti(document.querySelector('#wrap'));
   }
 }
@@ -243,6 +392,18 @@ window.addEventListener('keydown', (e)=>{
   if(e.key==='ArrowDown') move(0,1);
   if(e.key==='ArrowLeft') move(-1,0);
   if(e.key==='ArrowRight') move(1,0);
+});
+
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = Audio_.isMuted() ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{
+  Audio_.setMuted(!Audio_.isMuted());
+  muteCtl.textContent = Audio_.isMuted() ? '🔇' : '🔊';
+});
+
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) Audio_.stopAmbient();
+  else if(playing) Audio_.startAmbient();
 });
 
 setup();

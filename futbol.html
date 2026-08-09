@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Futbol Maçı — Oyun Kutusu</title>
 <meta name="description" content="Topu file ile buluştur! Ücretsiz futbol maçı oyunu, çocuklar için eğlenceli ve güvenli.">
 <meta name="robots" content="index, follow">
@@ -16,10 +16,13 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Futbol Maçı — Oyun Kutusu">
 <meta name="twitter:description" content="Topu file ile buluştur! Ücretsiz futbol maçı oyunu, çocuklar için eğlenceli ve güvenli.">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
+  body{ background:radial-gradient(circle at 50% 0%, #d6f5d6, #b8e8b8 70%); padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); }
+  h1{ font-family:'Fredoka',sans-serif; color:var(--ink); }
   canvas{background:#4fa84f; touch-action:none; cursor:pointer;}
+  #wrap{position:relative;}
   #stageLabel{ font-weight:800; margin-bottom:8px; text-align:center; }
   p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
 </style>
@@ -27,13 +30,19 @@
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>⚽ Futbol Maçı</h1>
-  <div id="hud"><span>⚽ Sen: <span id="myScore">0</span></span><span>🆚 Rakip: <span id="oppScore">0</span></span><span>🏃 Hücum: <span id="attackNum">1</span>/5</span></div>
+  <div id="hud">
+    <span>⚽ Sen: <span id="myScore">0</span></span>
+    <span>🆚 Rakip: <span id="oppScore">0</span></span>
+    <span>🏃 Hücum: <span id="attackNum">1</span>/5</span>
+  </div>
   <div id="stageLabel">Topu sürerek rakip yarı sahaya geç!</div>
   <div id="wrap">
     <canvas id="c" width="320" height="440"></canvas>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">🏆</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
@@ -54,17 +63,22 @@ const laneX = i => ROAD_MARGIN + laneW*i + laneW/2;
 const RUN_Y = H - 70;
 
 let phase, player, defenders, score, oppScore, attackNum, running, spawnTimer, fieldOffset, raf;
-let shotGoal, shotKeeperPos, animatingShot;
+let shotGoal, shotKeeperPos, animatingShot, particles, shaker;
 
 const TOTAL_ATTACKS = 5;
 
 function startGame(){
-  score = 0; oppScore = 0; attackNum = 0; running = true; fieldOffset = 0;
+  score = 0; oppScore = 0; attackNum = 0; running = false; fieldOffset = 0;
+  particles = []; shaker = createShaker();
   document.getElementById('myScore').textContent = 0;
   document.getElementById('oppScore').textContent = 0;
   document.getElementById('overlay').style.display = 'none';
-  startAttack();
-  loop();
+  ctx.fillStyle = '#4fa84f'; ctx.fillRect(0,0,W,H);
+  runCountdown(document.getElementById('countdownOverlay'), ()=>{
+    running = true;
+    startAttack();
+    loop();
+  });
 }
 
 function startAttack(){
@@ -85,12 +99,17 @@ function spawnDefender(){
 
 function endMatch(){
   running = false;
+  cancelAnimationFrame(raf);
+  const won = score > oppScore, draw = score === oppScore;
   document.getElementById('overMsg').textContent =
-    score > oppScore ? `Maçı kazandın! ${score} - ${oppScore}` :
-    score === oppScore ? `Berabere bitti: ${score} - ${oppScore}` :
+    won ? `Maçı kazandın! ${score} - ${oppScore}` :
+    draw ? `Berabere bitti: ${score} - ${oppScore}` :
     `Maçı kaybettin: ${score} - ${oppScore}`;
+  document.querySelector('#overlay .big').textContent = won ? '🏆' : draw ? '🤝' : '😿';
+  renderResultGrid('resultGrid', [['SEN', score], ['RAKİP', oppScore], ['HÜCUM', TOTAL_ATTACKS]]);
   document.getElementById('stars').textContent = starRating(score, TOTAL_ATTACKS);
-  document.getElementById('overlay').style.display = 'flex';
+  showOverlay('overlay');
+  if(won) fireConfetti(document.getElementById('wrap'));
 }
 
 function drawField(){
@@ -107,6 +126,8 @@ function drawField(){
 }
 
 function loopRun(){
+  const sh = shaker.tick();
+  ctx.save(); ctx.translate(sh.x, sh.y);
   drawField();
   player.tilt += (player.targetTilt - player.tilt) * 0.2;
 
@@ -114,27 +135,33 @@ function loopRun(){
   if(spawnTimer <= 0){ spawnDefender(); spawnTimer = 40; }
 
   ctx.font='32px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  let progressDone = false;
   for(let i=defenders.length-1;i>=0;i--){
     const d = defenders[i];
     d.y += 4.2;
     ctx.fillText('🧍', d.x, d.y);
     if(Math.abs(d.x-player.x) < 26 && Math.abs(d.y-RUN_Y) < 34){
       playError();
+      shaker.trigger(12);
+      spawnParticles(particles, player.x, RUN_Y, 12, ['#ff6b6b','#c94b4b'], {speed:3.5, life:18});
       oppScore++;
       document.getElementById('oppScore').textContent = oppScore;
       defenders.splice(i,1);
-      if(attackNum >= TOTAL_ATTACKS){ setTimeout(endMatch, 400); return; }
-      setTimeout(startAttack, 500);
+      updateParticles(ctx, particles);
+      ctx.restore();
+      if(attackNum >= TOTAL_ATTACKS){ setTimeout(endMatch, 500); return; }
+      setTimeout(startAttack, 600);
       return;
     }
     if(d.y > H+40) defenders.splice(i,1);
   }
   player.distance = (player.distance||0) + 1;
-  if(player.distance > 130){ startShotPhase(); return; }
+  if(player.distance > 130){ updateParticles(ctx, particles); ctx.restore(); startShotPhase(); return; }
 
   ctx.save(); ctx.translate(player.x, RUN_Y); ctx.rotate(player.tilt);
   ctx.font='40px serif'; ctx.fillText('⚽', 0, 0);
+  ctx.restore();
+
+  updateParticles(ctx, particles);
   ctx.restore();
 }
 
@@ -158,6 +185,7 @@ function loopShoot(){
   ctx.fillText('🧤', shotKeeperPos.x, shotKeeperPos.y);
   ctx.font = '30px serif';
   ctx.fillText('⚽', W/2, H-50);
+  updateParticles(ctx, particles);
 }
 
 function handleShotClick(cx, cy){
@@ -190,11 +218,19 @@ function handleShotClick(cx, cy){
     if(t < 1){ requestAnimationFrame(anim); }
     else {
       const saved = diveZi === zi;
-      if(saved){ playError(); document.getElementById('stageLabel').textContent = 'Kaleci kurtardı!'; }
+      const pr = document.getElementById('wrap').getBoundingClientRect(), r = canvas.getBoundingClientRect();
+      if(saved){
+        playError();
+        shaker.trigger(9);
+        spawnParticles(particles, target.x, target.y, 8, ['#fff','#ccc'], {speed:3, life:16});
+        document.getElementById('stageLabel').textContent = 'Kaleci kurtardı!';
+      }
       else {
         score++;
         document.getElementById('myScore').textContent = score;
         playSuccess();
+        spawnParticles(particles, target.x, target.y, 14, ['#FFD23F','#fff','#7bff6b'], {speed:4, life:24});
+        showFloatingPoints(document.getElementById('wrap'), (r.left-pr.left)+target.x*(r.width/W), (r.top-pr.top)+target.y*(r.height/H)-20, 'GOOOL! ⚽', '#FFD23F');
         document.getElementById('stageLabel').textContent = 'GOOOL! ⚽';
       }
       setTimeout(()=>{

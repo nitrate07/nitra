@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Uçurtma Uçurma — Oyun Kutusu</title>
 <meta name="description" content="Rüzgarı yakala, uçurtmanı uçur! Ücretsiz ve eğlenceli uçurtma uçurma oyunu.">
 <meta name="robots" content="index, follow">
@@ -19,7 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  body{ background:radial-gradient(circle at 50% 0%, #bdefff, #eafcff 70%); }
+  body{ background:radial-gradient(circle at 50% 0%, #bdefff, #eafcff 70%); padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); }
   h1{ font-family:'Fredoka',sans-serif; color:var(--ink); }
   canvas{background:linear-gradient(#7fc8f8,#cdeeff); touch-action:none;}
   #wrap{position:relative;}
@@ -29,12 +29,18 @@
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>🪁 Uçurtma Uçurma</h1>
-  <div id="hud"><span>⭐ Puan: <span id="score">0</span></span><span>🏆 <span id="best">0</span></span></div>
+  <div id="hud">
+    <span>⭐ Puan: <span id="score">0</span></span>
+    <span id="comboBadge" class="combo-badge" style="display:none;"></span>
+    <span>🏆 <span id="best">0</span></span>
+  </div>
   <div id="wrap">
     <canvas id="c" width="360" height="440"></canvas>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">💥</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
@@ -53,6 +59,7 @@ document.getElementById('best').textContent = bestScore;
 
 function drawKite(x,y,tilt){
   ctx.save(); ctx.translate(x,y); ctx.rotate(tilt);
+  ctx.shadowColor='rgba(255,107,107,.5)'; ctx.shadowBlur=10;
   ctx.fillStyle='#ff6b6b';
   ctx.beginPath(); ctx.moveTo(0,-16); ctx.lineTo(14,0); ctx.lineTo(0,16); ctx.lineTo(-14,0); ctx.closePath(); ctx.fill();
   ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=1.5;
@@ -63,13 +70,17 @@ function drawKite(x,y,tilt){
 }
 
 let kite, obstacles, score, speed, running, spawnTimer, raf, targetY;
+let particles, shaker, combo;
 
 function startGame(){
   kite = { x:70, y:H/2, vy:0, tilt:0 };
-  obstacles=[]; score=0; speed=2.6; running=true; spawnTimer=0; targetY=H/2;
+  obstacles=[]; score=0; speed=2.6; running=false; spawnTimer=0; targetY=H/2;
+  particles = []; shaker = createShaker(); combo = createCombo();
   document.getElementById('score').textContent=0;
   document.getElementById('overlay').style.display='none';
-  loop();
+  document.getElementById('comboBadge').style.display='none';
+  ctx.clearRect(0,0,W,H);
+  runCountdown(document.getElementById('countdownOverlay'), ()=>{ running = true; loop(); });
 }
 function spawnObstacle(){
   const isWind = Math.random()<0.25;
@@ -78,17 +89,23 @@ function spawnObstacle(){
 }
 function endGame(){
   running=false;
+  cancelAnimationFrame(raf);
   const s=Math.floor(score);
   if(s>bestScore){ bestScore=s; localStorage.setItem('ok_ucurtma_best', bestScore); }
   document.getElementById('best').textContent=bestScore;
   document.getElementById('overMsg').textContent=`${s} puan topladın!`;
+  renderResultGrid('resultGrid', [['PUAN', s], ['REKOR', bestScore], ['EN İYİ SERİ', 'x'+combo.level]]);
   document.getElementById('stars').textContent=starRating(s,400);
-  document.getElementById('overlay').style.display='flex';
+  showOverlay('overlay');
+  if(s >= 250) fireConfetti(document.getElementById('wrap'));
   playError();
 }
 function loop(){
   if(!running) return;
+  combo.tick();
+  const sh = shaker.tick();
   ctx.clearRect(0,0,W,H);
+  ctx.save(); ctx.translate(sh.x, sh.y);
   speed = 2.6 + score*0.01;
   score += 0.35;
   document.getElementById('score').textContent = Math.floor(score);
@@ -105,12 +122,29 @@ function loop(){
     ctx.fillText(o.emoji, o.x, o.y);
     const dist = Math.hypot(o.x-kite.x, o.y-kite.y);
     if(dist < o.r+16-6){
-      if(o.isWind){ score+=20; playTone(750,0.1,'triangle',0.15); obstacles.splice(i,1); continue; }
+      if(o.isWind){
+        const level = combo.register();
+        renderComboBadge('comboBadge', level);
+        const gained = 20*level;
+        score+=gained; playTone(750,0.1,'triangle',0.15);
+        if(level>1) playCombo(level);
+        spawnParticles(particles, o.x, o.y, 8, ['#3dd6ff','#fff'], {speed:3, life:18});
+        const pr = document.getElementById('wrap').getBoundingClientRect(), r = canvas.getBoundingClientRect();
+        showFloatingPoints(document.getElementById('wrap'), (r.left-pr.left)+o.x*(r.width/W), (r.top-pr.top)+o.y*(r.height/H),
+          level>1 ? `🔥 x${level} +${gained}` : `+${gained}`, '#3dd6ff');
+        obstacles.splice(i,1); continue;
+      }
+      shaker.trigger(12);
+      spawnParticles(particles, kite.x, kite.y, 12, ['#ff6b6b','#c94b4b'], {speed:4, life:20});
+      updateParticles(ctx, particles);
+      ctx.restore();
       endGame(); return;
     }
     if(o.x<-40) obstacles.splice(i,1);
   }
   drawKite(kite.x, kite.y, kite.tilt);
+  updateParticles(ctx, particles);
+  ctx.restore();
   raf = requestAnimationFrame(loop);
 }
 function setTargetY(clientY){ const rect=canvas.getBoundingClientRect(); targetY=(clientY-rect.top)*(H/rect.height); }

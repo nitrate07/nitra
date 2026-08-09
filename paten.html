@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Paten Kaçışı — Oyun Kutusu</title>
 <meta name="description" content="Engellerden kaç, patenle ilerle! Ücretsiz paten kaçışı refleks oyunu.">
 <meta name="robots" content="index, follow">
@@ -19,25 +19,34 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  body{ background:radial-gradient(circle at 50% 0%, #fff3d6, #ffe0a3 70%); }
+  body{ background:radial-gradient(circle at 50% 0%, #fff3d6, #ffe0a3 70%); padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); }
   h1{ font-family:'Fredoka',sans-serif; color:var(--ink); }
   canvas{background:#c9c9d4; touch-action:none;}
-  .controls{display:flex; gap:12px; margin-top:14px;}
+  #wrap{position:relative;}
+  .controls{display:flex; gap:12px; margin-top:14px; align-items:center; justify-content:center;}
   .ctl{width:64px; height:54px; border:none; border-radius:14px; background:#ff9f5a; color:#fff; font-size:1.5rem;
-    box-shadow:0 4px 0 #c9762a; cursor:pointer;}
+    box-shadow:0 4px 0 #c9762a; cursor:pointer; -webkit-tap-highlight-color:transparent;}
   .ctl:active{transform:translateY(3px);}
+  #muteCtl{ width:48px; height:54px; border:none; border-radius:14px; background:#fff; color:var(--ink); font-size:1.2rem; box-shadow:0 4px 0 #ddd; cursor:pointer; }
+  #muteCtl:active{transform:translateY(3px);}
   p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:340px;}
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>⛸️ Paten Kaçışı</h1>
-  <div id="hud"><span>📍 <span id="score">0</span> m</span><span>🏆 <span id="best">0</span> m</span></div>
+  <div id="hud">
+    <span>📍 <span id="score">0</span> m</span>
+    <span id="comboBadge" class="combo-badge" style="display:none;"></span>
+    <span>🏆 <span id="best">0</span> m</span>
+  </div>
   <div id="wrap">
     <canvas id="c" width="340" height="520"></canvas>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">💥</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
@@ -45,6 +54,7 @@
   </div>
   <div class="controls">
     <button class="ctl" id="leftBtn">◀</button>
+    <button id="muteCtl">🔊</button>
     <button class="ctl" id="rightBtn">▶</button>
   </div>
   <p class="hint">Şerit değiştirerek yayalardan ve çöp kutularından kaç, madalya topla!</p>
@@ -62,15 +72,24 @@ const laneX = i => ROAD_MARGIN + laneW*i + laneW/2;
 
 let bestScore = parseInt(localStorage.getItem('ok_paten_best') || '0', 10);
 document.getElementById('best').textContent = bestScore;
+let muted = localStorage.getItem('ok_paten_muted') === '1';
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = muted ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{ muted=!muted; localStorage.setItem('ok_paten_muted', muted?'1':'0'); muteCtl.textContent = muted?'🔇':'🔊'; });
+function snd(fn){ if(!muted) fn(); }
 
 let player, obstacles, score, speed, running, spawnTimer, roadOffset, raf;
+let particles, shaker, combo;
 
 function startGame(){
   player = { lane:1, x:laneX(1), tilt:0, targetTilt:0 };
-  obstacles=[]; score=0; speed=3.4; running=true; roadOffset=0; spawnTimer=0;
+  obstacles=[]; score=0; speed=3.4; running=false; roadOffset=0; spawnTimer=0;
+  particles = []; shaker = createShaker(); combo = createCombo();
   document.getElementById('score').textContent=0;
   document.getElementById('overlay').style.display='none';
-  loop();
+  document.getElementById('comboBadge').style.display='none';
+  ctx.clearRect(0,0,W,H);
+  runCountdown(document.getElementById('countdownOverlay'), ()=>{ running = true; loop(); });
 }
 function spawnObstacle(){
   const lane=Math.floor(Math.random()*laneCount); const isMedal=Math.random()<0.2;
@@ -78,21 +97,27 @@ function spawnObstacle(){
 }
 function endGame(){
   running=false;
+  cancelAnimationFrame(raf);
   const d=Math.floor(score);
   if(d>bestScore){ bestScore=d; localStorage.setItem('ok_paten_best', bestScore); }
   document.getElementById('best').textContent=bestScore;
   document.getElementById('overMsg').textContent=`${d} metre gidebildin!`;
+  renderResultGrid('resultGrid', [['MESAFE', d+' m'], ['REKOR', bestScore+' m'], ['EN İYİ SERİ', 'x'+combo.level]]);
   document.getElementById('stars').textContent=starRating(d,700);
-  document.getElementById('overlay').style.display='flex';
-  playError();
+  showOverlay('overlay');
+  if(d >= 500) fireConfetti(document.getElementById('wrap'));
+  snd(playError);
 }
 function loop(){
   if(!running) return;
+  combo.tick();
+  const sh = shaker.tick();
   speed = 3.4 + score*0.004;
   score += speed*0.08;
   document.getElementById('score').textContent = Math.floor(score);
   roadOffset = (roadOffset+speed)%38;
   ctx.clearRect(0,0,W,H);
+  ctx.save(); ctx.translate(sh.x, sh.y);
   ctx.fillStyle='#e8d8b0'; ctx.fillRect(0,0,ROAD_MARGIN,H); ctx.fillRect(W-ROAD_MARGIN,0,ROAD_MARGIN,H);
   ctx.fillStyle='#c9c9d4'; ctx.fillRect(ROAD_MARGIN,0,roadWidth,H);
   ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=3; ctx.setLineDash([16,16]);
@@ -107,19 +132,38 @@ function loop(){
     const o=obstacles[i]; o.y+=speed+1.2;
     ctx.fillText(o.emoji,o.x,o.y);
     if(Math.abs(o.x-player.x)<28 && Math.abs(o.y-(H-90))<40){
-      if(o.isMedal){ score+=25; playTone(700,0.1,'triangle',0.15); obstacles.splice(i,1); continue; }
+      if(o.isMedal){
+        const level = combo.register();
+        renderComboBadge('comboBadge', level);
+        const gained = 25*level;
+        score+=gained;
+        snd(()=>playTone(700,0.1,'triangle',0.15));
+        if(level>1) snd(()=>playCombo(level));
+        spawnParticles(particles, o.x, o.y, 9, ['#FFD23F','#FF9F5A'], {speed:3.5, life:20});
+        const pr = document.getElementById('wrap').getBoundingClientRect(), r = canvas.getBoundingClientRect();
+        showFloatingPoints(document.getElementById('wrap'), (r.left-pr.left)+o.x*(r.width/W), (r.top-pr.top)+o.y*(r.height/H),
+          level>1 ? `🔥 x${level} +${gained}` : `+${gained}`, '#FFD23F');
+        obstacles.splice(i,1); continue;
+      }
+      shaker.trigger(14);
+      spawnParticles(particles, player.x, H-90, 14, ['#ff6b6b','#c94b4b'], {speed:4, life:20});
+      updateParticles(ctx, particles);
+      ctx.restore();
       endGame(); return;
     }
     if(o.y>H+50) obstacles.splice(i,1);
   }
   ctx.save(); ctx.translate(player.x, H-90); ctx.rotate(player.tilt);
-  ctx.font='40px serif'; ctx.fillText('🧑‍🦽‍➡️'.length ? '🧑' : '🧑', 0, 0);
+  ctx.font='40px serif'; ctx.fillText('🧑', 0, 0);
   ctx.font='40px serif'; ctx.fillText('⛸️', 0, 14);
+  ctx.restore();
+
+  updateParticles(ctx, particles);
   ctx.restore();
   raf = requestAnimationFrame(loop);
 }
 function moveLane(dir){ if(!running) return; player.lane=Math.max(0,Math.min(laneCount-1,player.lane+dir)); player.x=laneX(player.lane);
-  player.targetTilt=dir*0.3; setTimeout(()=>{player.targetTilt=0;},200); playClick(500); }
+  player.targetTilt=dir*0.3; setTimeout(()=>{player.targetTilt=0;},200); snd(()=>playClick(500)); }
 document.getElementById('leftBtn').onclick=()=>moveLane(-1);
 document.getElementById('rightBtn').onclick=()=>moveLane(1);
 window.addEventListener('keydown',e=>{ if(e.key==='ArrowLeft') moveLane(-1); if(e.key==='ArrowRight') moveLane(1); });
