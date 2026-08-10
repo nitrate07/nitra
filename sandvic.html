@@ -2,70 +2,96 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sandviç Ustası — Oyun Kutusu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sandviç Ustası — WoogiGames</title>
 <meta name="description" content="Malzemeleri sırayla diz, sandviçini tamamla! Ücretsiz mutfak oyunu, çocuklar için güvenli.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://SITE-ADRESIN-BURAYA.com/sandvic.html">
+<link rel="canonical" href="https://woogigames.com/sandvic.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Sandviç Ustası — Oyun Kutusu">
+<meta property="og:title" content="Sandviç Ustası — WoogiGames">
 <meta property="og:description" content="Malzemeleri sırayla diz, sandviçini tamamla! Ücretsiz mutfak oyunu, çocuklar için güvenli.">
-<meta property="og:url" content="https://SITE-ADRESIN-BURAYA.com/sandvic.html">
-<meta property="og:site_name" content="Oyun Kutusu">
+<meta property="og:url" content="https://woogigames.com/sandvic.html">
+<meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Sandviç Ustası — Oyun Kutusu">
+<meta name="twitter:title" content="Sandviç Ustası — WoogiGames">
 <meta name="twitter:description" content="Malzemeleri sırayla diz, sandviçini tamamla! Ücretsiz mutfak oyunu, çocuklar için güvenli.">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
+  body{ background:radial-gradient(circle at 50% 0%, #fff3d6, #ffe0a3 70%); padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); }
   #recipeCard{ background:#fff3d6; border-radius:16px; padding:10px 16px; margin-bottom:14px; display:flex; gap:6px; align-items:center; box-shadow:0 3px 0 #e0c48a; }
   #recipeCard span{ font-size:.8rem; font-weight:800; color:#8a6a2a; }
   #recipeIcons{ display:flex; gap:4px; font-size:1.3rem; }
   #stackArea{ width:120px; min-height:200px; display:flex; flex-direction:column-reverse; align-items:center; justify-content:flex-start;
-    background:#fdf6ea; border-radius:16px; padding:8px; box-shadow:inset 0 0 0 3px #f0e0b8; margin-bottom:16px; }
+    background:#fdf6ea; border-radius:16px; padding:8px; box-shadow:inset 0 0 0 3px #f0e0b8; margin-bottom:16px; position:relative; }
   .stack-item{ font-size:2rem; margin:-6px 0; }
   #tray{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:300px; }
   .ing{ width:58px; height:58px; background:#fff; border-radius:14px; box-shadow:0 3px 0 #ddd; font-size:1.8rem;
     display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform .12s; }
   .ing:active{ transform:scale(.9); }
+  #muteCtl{
+    position:fixed; top:14px; right:14px; width:42px; height:42px; border:none; border-radius:12px;
+    background:#fff; color:var(--ink); font-size:1.1rem; box-shadow:0 3px 0 #ddd; cursor:pointer; z-index:5;
+  }
+  #muteCtl:active{ transform:translateY(2px); }
+  #countdownOverlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.85); border-radius:20px; z-index:9;
+  }
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>🥪 Sandviç Ustası</h1>
-  <div id="hud"><span>🏆 Sipariş: <span id="round">0</span></span><span>❌ Hata: <span id="wrong">0</span>/3</span></div>
+  <div id="hud">
+    <span>🏆 Sipariş: <span id="round">0</span></span>
+    <span id="comboBadge" class="combo-badge" style="display:none;"></span>
+    <span>❌ Hata: <span id="wrong">0</span>/3</span>
+  </div>
   <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
   <div id="recipeCard"><span>Sipariş:</span><div id="recipeIcons"></div></div>
-  <div class="panel" style="display:flex; flex-direction:column; align-items:center;">
+  <div class="panel" style="display:flex; flex-direction:column; align-items:center; position:relative;">
     <div id="stackArea"></div>
     <div id="tray"></div>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">😿</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
+  <button id="muteCtl">🔊</button>
   <p style="font-size:.85rem; opacity:.7; margin-top:10px; text-align:center;">Sipariş kartındaki sırayla malzemeleri tepsiden tıkla, sandviçi doğru sırayla inşa et!</p>
 
 <script src="common.js"></script>
 <script>
 const ALL_INGREDIENTS = ['🍞','🧀','🥬','🍅','🥓','🍳','🥒','🧅','🍔','🥕'];
 const goalRounds = 8;
-let round = 0, wrong = 0, recipe = [], built = [], running = true;
+let round = 0, wrong = 0, recipe = [], built = [], running = false, combo;
+
+let muted = localStorage.getItem('ok_sandvic_muted') === '1';
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = muted ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{ muted=!muted; localStorage.setItem('ok_sandvic_muted', muted?'1':'0'); muteCtl.textContent = muted?'🔇':'🔊'; });
+function snd(fn){ if(!muted) fn(); }
 
 function updateProgress(){
   document.getElementById('progressFill').style.width = Math.min(100, Math.round((round/goalRounds)*100)) + '%';
 }
 
 function startGame(){
-  round = 0; wrong = 0; running = true;
+  round = 0; wrong = 0; running = false; combo = createCombo();
   document.getElementById('wrong').textContent = 0;
   document.getElementById('overlay').style.display = 'none';
+  document.getElementById('comboBadge').style.display = 'none';
   updateProgress();
-  nextRound();
+  const cd = document.getElementById('countdownOverlay');
+  cd.style.display = 'flex';
+  runCountdown(cd, ()=>{ cd.style.display = 'none'; running = true; nextRound(); });
 }
 
 function nextRound(){
@@ -100,27 +126,32 @@ function handlePick(ic){
   const expected = recipe[built.length];
   if(ic === expected){
     built.push(ic);
-    playClick(500);
+    snd(()=>playClick(500));
     const el = document.createElement('div');
     el.className = 'stack-item pop';
     el.textContent = ic;
     document.getElementById('stackArea').appendChild(el);
     if(built.length === recipe.length){
-      playSuccess();
+      const level = combo.register();
+      renderComboBadge('comboBadge', level);
+      snd(playSuccess);
+      if(level>1) snd(()=>playCombo(level));
       fireConfetti(document.querySelector('.panel'));
       setTimeout(nextRound, 900);
     }
   } else {
     wrong++;
+    combo.reset();
+    document.getElementById('comboBadge').style.display = 'none';
     document.getElementById('wrong').textContent = wrong;
-    playError();
-    document.querySelector('.panel').classList.add('shake');
-    setTimeout(()=>document.querySelector('.panel').classList.remove('shake'), 350);
+    snd(playError);
+    triggerWrongFx(document.querySelector('.panel'));
     if(wrong >= 3){
       running = false;
       document.getElementById('overMsg').textContent = `${round-1} sipariş tamamladın!`;
+      renderResultGrid('resultGrid', [['SİPARİŞ', round-1], ['EN İYİ SERİ', 'x'+combo.level]]);
       document.getElementById('stars').textContent = starRating(round-1, goalRounds);
-      document.getElementById('overlay').style.display = 'flex';
+      showOverlay('overlay');
     }
   }
 }

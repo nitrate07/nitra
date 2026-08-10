@@ -2,69 +2,106 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Desen Tamamlama — Oyun Kutusu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Desen Tamamlama — WoogiGames</title>
 <meta name="description" content="Eksik desenleri tamamla, dikkatini test et! Ücretsiz desen tamamlama bulmaca oyunu.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://SITE-ADRESIN-BURAYA.com/desen.html">
+<link rel="canonical" href="https://woogigames.com/desen.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Desen Tamamlama — Oyun Kutusu">
+<meta property="og:title" content="Desen Tamamlama — WoogiGames">
 <meta property="og:description" content="Eksik desenleri tamamla, dikkatini test et! Ücretsiz desen tamamlama bulmaca oyunu.">
-<meta property="og:url" content="https://SITE-ADRESIN-BURAYA.com/desen.html">
-<meta property="og:site_name" content="Oyun Kutusu">
+<meta property="og:url" content="https://woogigames.com/desen.html">
+<meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Desen Tamamlama — Oyun Kutusu">
+<meta name="twitter:title" content="Desen Tamamlama — WoogiGames">
 <meta name="twitter:description" content="Eksik desenleri tamamla, dikkatini test et! Ücretsiz desen tamamlama bulmaca oyunu.">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
+  body{
+    background:radial-gradient(circle at 50% 0%, var(--th-bg1,#F7F5FF), var(--th-bg2,#EDE9FF) 70%);
+    padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom));
+  }
   #sequence{display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; justify-content:center; max-width:340px;}
   .seq-item{width:52px; height:52px; background:#fff; border-radius:12px; box-shadow:0 3px 0 #ddd; display:flex; align-items:center; justify-content:center; font-size:1.6rem;}
-  .seq-item.blank{background:#F1EEFF; border:3px dashed var(--purple); font-size:1.4rem; color:var(--purple); font-weight:900;}
+  .seq-item.blank{background:var(--th-bg2,#F1EEFF); border:3px dashed var(--th-1,var(--purple)); font-size:1.4rem; color:var(--th-2,var(--purple)); font-weight:900;}
   #choices{display:grid; grid-template-columns:repeat(2, 90px); gap:10px;}
   .choice{width:90px; height:70px; background:#fff; border:3px solid #E4DDFF; border-radius:14px; font-size:1.8rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .12s;}
   .choice:active{transform:scale(.94);}
   .choice.correct{background:var(--teal); border-color:var(--teal-dark);}
   .choice.wrong{background:var(--coral); border-color:var(--coral-dark);}
+  #muteCtl{
+    position:fixed; top:14px; right:14px; width:42px; height:42px; border:none; border-radius:12px;
+    background:#fff; color:var(--ink); font-size:1.1rem; box-shadow:0 3px 0 #ddd; cursor:pointer; z-index:5;
+  }
+  #muteCtl:active{ transform:translateY(2px); }
+  #countdownOverlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.85); border-radius:20px; z-index:9;
+  }
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1 id="title">🔮 Desen Tamamlama</h1>
-  <div id="hud"><span>🏆 Tur: <span id="round">0</span></span><span>📣 <span id="status">Örüntüyü bul!</span></span></div>
+  <div id="hud">
+    <span>🏆 Tur: <span id="round">0</span></span>
+    <span id="comboBadge" class="combo-badge" style="display:none;"></span>
+    <span>📣 <span id="status">Örüntüyü bul!</span></span>
+  </div>
   <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-  <div class="panel">
+  <div class="panel" style="position:relative;">
     <div id="sequence"></div>
     <div id="choices"></div>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">😿</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
+  <button id="muteCtl">🔊</button>
 
 <script src="common.js"></script>
 <script>
 const { theme, level } = getParams();
 setTitle('Desen Tamamlama');
 document.getElementById('title').textContent = `🔮 ${theme.name} Desen Tamamlama`;
+document.documentElement.style.setProperty('--th-1', theme.hue1);
+document.documentElement.style.setProperty('--th-2', theme.hue2);
+document.documentElement.style.setProperty('--th-bg1', theme.bg1);
+document.documentElement.style.setProperty('--th-bg2', theme.bg2);
+
+let muted = localStorage.getItem('ok_desen_muted') === '1';
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = muted ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{
+  muted = !muted; localStorage.setItem('ok_desen_muted', muted?'1':'0');
+  muteCtl.textContent = muted?'🔇':'🔊';
+});
+function snd(fn){ if(!muted) fn(); }
 
 const goalRounds = 5 + level * 2;
-let round = 0, cycleLen, palette, cycle, seqLen, correctAnswer, answered;
+let round = 0, cycleLen, palette, cycle, seqLen, correctAnswer, answered, combo, started=false;
 
 function updateProgress(){
   document.getElementById('progressFill').style.width = Math.min(100, Math.round((round/goalRounds)*100)) + '%';
 }
 
 function startGame(){
-  round = 0;
+  round = 0; started = false;
+  combo = createCombo();
   document.getElementById('round').textContent = 0;
   document.getElementById('overlay').style.display = 'none';
+  document.getElementById('comboBadge').style.display = 'none';
   updateProgress();
-  nextRound();
+  const cd = document.getElementById('countdownOverlay');
+  cd.style.display = 'flex';
+  runCountdown(cd, ()=>{ cd.style.display = 'none'; started = true; nextRound(); });
 }
 
 function nextRound(){
@@ -116,15 +153,24 @@ function handleAnswer(opt, btn){
     else if(c === btn) c.classList.add('wrong');
   });
   if(isCorrect){
-    playSuccess();
-    document.getElementById('status').textContent = 'Doğru!';
+    const level_ = combo.register();
+    renderComboBadge('comboBadge', level_);
+    snd(playSuccess);
+    if(level_>1) snd(()=>playCombo(level_));
+    document.getElementById('status').textContent = level_>1 ? `🔥 x${level_} Doğru!` : 'Doğru!';
+    const r = btn.getBoundingClientRect(), pr = document.querySelector('.panel').getBoundingClientRect();
+    showFloatingPoints(document.querySelector('.panel'), r.left-pr.left+r.width/2, r.top-pr.top, level_>1 ? `🔥 x${level_}` : '✓', theme.hue1);
     setTimeout(nextRound, 700);
   } else {
-    playError();
+    combo.reset();
+    document.getElementById('comboBadge').style.display = 'none';
+    snd(playError);
+    triggerWrongFx(document.querySelector('.panel'));
     const finalRound = round - 1;
     document.getElementById('overMsg').textContent = `${finalRound}. tura kadar doğru bildin!`;
+    renderResultGrid('resultGrid', [['TUR', finalRound], ['SEVİYE', LEVEL_NAMES[level]], ['EN İYİ SERİ', 'x'+combo.level]]);
     document.getElementById('stars').textContent = starRating(finalRound, goalRounds);
-    setTimeout(()=>{ document.getElementById('overlay').style.display = 'flex'; }, 500);
+    setTimeout(()=>{ showOverlay('overlay'); }, 500);
   }
 }
 

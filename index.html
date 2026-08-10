@@ -3,32 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Oyun Kutusu — Ücretsiz Çocuk Oyunları</title>
+<title>WoogiGames — Ücretsiz Çocuk Oyunları</title>
 <meta name="description" content="Çocuklar için ücretsiz, güvenli, tarayıcıda oynanan online oyunlar. İndirme yok, kayıt yok, sadece eğlence! Hafıza, bulmaca, yarış, spor ve daha fazlası.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://SITE-ADRESIN-BURAYA.com/">
+<link rel="canonical" href="https://woogigames.com/">
 <meta name="keywords" content="çocuk oyunları, ücretsiz online oyun, tarayıcı oyunu, hafıza oyunu, bulmaca oyunu, yarış oyunu, çocuklar için oyun, oyun kutusu">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Oyun Kutusu — Ücretsiz Çocuk Oyunları">
+<meta property="og:title" content="WoogiGames — Ücretsiz Çocuk Oyunları">
 <meta property="og:description" content="Çocuklar için ücretsiz, güvenli, tarayıcıda oynanan online oyunlar. İndirme yok, kayıt yok, sadece eğlence!">
-<meta property="og:url" content="https://SITE-ADRESIN-BURAYA.com/">
-<meta property="og:site_name" content="Oyun Kutusu">
+<meta property="og:url" content="https://woogigames.com/">
+<meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Oyun Kutusu — Ücretsiz Çocuk Oyunları">
+<meta name="twitter:title" content="WoogiGames — Ücretsiz Çocuk Oyunları">
 <meta name="twitter:description" content="Çocuklar için ücretsiz, güvenli, tarayıcıda oynanan online oyunlar.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%B1%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
+<link rel="apple-touch-icon" href="assets/favicon-180.png">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  "name": "Oyun Kutusu",
-  "url": "https://SITE-ADRESIN-BURAYA.com/",
+  "name": "WoogiGames",
+  "url": "https://woogigames.com/",
   "description": "Çocuklar için ücretsiz, güvenli, tarayıcıda oynanan online oyunlar.",
   "inLanguage": "tr",
   "potentialAction": {
     "@type": "SearchAction",
-    "target": "https://SITE-ADRESIN-BURAYA.com/?ara={search_term_string}",
+    "target": "https://woogigames.com/?ara={search_term_string}",
     "query-input": "required name=search_term_string"
   }
 }
@@ -362,6 +364,11 @@
   }
   @keyframes logoShine{ to{ background-position:200% center; } }
   .logo span{ display:inline-block; animation:logoWiggle 2.4s ease-in-out infinite; filter:drop-shadow(0 3px 4px rgba(108,78,245,.35)); }
+  .logo-mascot{
+    width:34px; height:34px; border-radius:50%; object-fit:cover; flex-shrink:0;
+    box-shadow:0 0 0 2px #fff, 0 0 0 3.5px var(--purple), 0 3px 6px rgba(108,78,245,.35);
+    animation:logoWiggle 2.4s ease-in-out infinite;
+  }
   @keyframes logoWiggle{ 0%,100%{ transform:rotate(-8deg) scale(1);} 50%{ transform:rotate(8deg) scale(1.08);} }
   nav.links{ display:flex; gap:6px; }
   nav.links a{
@@ -576,7 +583,7 @@
   <button id="sidebarToggle">☰</button>
   <div id="sidebarBackdrop"></div>
   <aside id="sidebar">
-    <div class="sb-logo">🐱 Oyun Kutusu</div>
+    <div class="sb-logo">🐼 WoogiGames</div>
     <a class="sb-item active" href="#"><span class="sb-icon">🏠</span> Ana Sayfa</a>
     <a class="sb-item" href="#oyunlar"><span class="sb-icon">🎮</span> Oyunlar</a>
     <a class="sb-item" href="#worldMap"><span class="sb-icon">🗺️</span> Dünyalar</a>
@@ -601,7 +608,7 @@
 
   <header>
     <div class="nav">
-      <div class="logo"><span>🐱</span> Oyun Kutusu</div>
+      <div class="logo"><img src="assets/mascot-round.png" alt="WoogiGames" class="logo-mascot"> WoogiGames</div>
       <div class="search-box">
         <span>🔍</span>
         <input id="searchInput" type="text" placeholder="Oyun ara...">
@@ -679,7 +686,7 @@
       <button class="random-btn" id="randomGameBtn"><span class="dice">🎲</span> Rastgele Oyun</button>
     </div>
     <div class="hero-art">
-      <span class="mascot">🐱</span>
+      <span class="mascot">🐼</span>
       <span class="float f1">🏠</span>
       <span class="float f2">🌲</span>
       <span class="float f3">🏜️</span>
@@ -689,7 +696,7 @@
 
   <div id="adventureBanner">
     <a id="adventureCard" href="#worldMap">
-      <span class="a-mascot">🐱</span>
+      <span class="a-mascot">🐼</span>
       <div class="a-text">
         <h3 id="adventureTitle">Macera Seni Bekliyor!</h3>
         <p id="adventureSub">Yeni bölgeler keşfet, yıldız topla!</p>
@@ -770,7 +777,7 @@
           <g stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".5" fill="none">
             <path d="M14 18 H48 M48 18 V46 M48 46 H84 M84 46 V78 M18 32 H62 M18 32 V60 M62 60 H36 M70 20 V36"/>
           </g>
-          <text x="52" y="62" font-size="32" text-anchor="middle">🐱</text>
+          <text x="52" y="62" font-size="32" text-anchor="middle">🐼</text>
           <text x="82" y="82" font-size="18" text-anchor="middle">🏁</text>
         </svg></div>
         <h3>Labirent Macerası</h3>
@@ -786,7 +793,7 @@
           </g>
           <text x="76" y="26" font-size="18" text-anchor="middle">🐟</text>
           <text x="24" y="40" font-size="16" text-anchor="middle">🐟</text>
-          <text x="50" y="62" font-size="34" text-anchor="middle">🐱</text>
+          <text x="50" y="62" font-size="34" text-anchor="middle">🐼</text>
         </svg></div>
         <h3>Balık Yakalama</h3>
         <div class="tag">Hareket</div>
@@ -1062,19 +1069,19 @@
       <a href="#">Gizlilik Politikası</a>
       <a href="#">İletişim</a>
     </div>
-    <div style="margin-top:10px;">© 2026 Oyun Kutusu</div>
+    <div style="margin-top:10px;">© 2026 WoogiGames</div>
   </footer>
 
   <div id="mascotWidget">
-    <span id="mascotChar">🐱</span>
+    <span id="mascotChar">🐼</span>
     <div id="mascotBubble"></div>
   </div>
 
   <div id="patiStoryModal">
     <div class="pati-story-box">
-      <span class="p-emoji">🐱</span>
-      <h3>Merhaba, ben Pati!</h3>
-      <p>Ben Oyun Kutusu'nun koruyucu kedisiyim 🐾 Dünyalar arasında dolaşıp kayıp yıldızları topluyorum. Bana katılır mısın? Birlikte Ev, Orman, Çöl, Uzay ve Kale dünyalarını keşfedip yeni oyunlar oynayacağız!</p>
+      <span class="p-emoji">🐼</span>
+      <h3>Merhaba, ben Woogi!</h3>
+      <p>Ben WoogiGames'in oyun dostu pandasıyım 🐾 Dünyalar arasında dolaşıp kayıp yıldızları topluyorum. Bana katılır mısın? Birlikte Ev, Orman, Çöl, Uzay ve Kale dünyalarını keşfedip yeni oyunlar oynayacağız!</p>
       <button id="patiStoryCloseBtn">Hadi Başlayalım! 🚀</button>
     </div>
   </div>
@@ -1220,7 +1227,7 @@
       added++;
     });
     if(!added && emptyMsg){
-      track.outerHTML = `<div class="rail-empty" id="${elId}">🐱 ${emptyMsg}</div>`;
+      track.outerHTML = `<div class="rail-empty" id="${elId}">🐼 ${emptyMsg}</div>`;
     }
   }
 
@@ -1258,7 +1265,7 @@
   const recentHrefs = recentPlayed.filter(r=>r.path!=='index.html').map(r=>r.path);
   fillRail('railRecent', [...new Set(recentHrefs)].slice(0,12), 'Henüz oyun oynamadın. Rastgele Oyun butonuna basıp başlayabilirsin!');
 
-  // ---- Rastgele Oyun butonu (Pati konuşarak yönlendirir) ----
+  // ---- Rastgele Oyun butonu (Woogi konuşarak yönlendirir) ----
 
   const search = document.getElementById('searchInput');
   const cats = document.querySelectorAll('.cat-pill');
@@ -1282,18 +1289,18 @@
   }
 
   const CAT_TIPS = {
-    hafiza:`🐱 Hafıza oyunları beynini süper güçlü yapar!`,
-    bulmaca:`🐱 Bulmacalarda acele etme, parçalar sırayla yerine oturur.`,
-    yaris:`🐱 Uzay Dünyası'nda hız senin dostun, direksiyonu sıkı tut!`,
-    spor:`🐱 Kale Dünyası seni bekliyor, topu file ile buluştur!`,
-    yaratici:`🐱 Çöl Dünyası'nda istediğin rengi seçebilirsin, sınır yok!`,
-    zeka:`🐱 Sayılarla oynamak matematiği eğlenceli yapar!`,
-    all:`🐱 Hepsine birden bakalım mı? Kaydırmaya devam et!`
+    hafiza:`🐼 Hafıza oyunları beynini süper güçlü yapar!`,
+    bulmaca:`🐼 Bulmacalarda acele etme, parçalar sırayla yerine oturur.`,
+    yaris:`🐼 Uzay Dünyası'nda hız senin dostun, direksiyonu sıkı tut!`,
+    spor:`🐼 Kale Dünyası seni bekliyor, topu file ile buluştur!`,
+    yaratici:`🐼 Çöl Dünyası'nda istediğin rengi seçebilirsin, sınır yok!`,
+    zeka:`🐼 Sayılarla oynamak matematiği eğlenceli yapar!`,
+    all:`🐼 Hepsine birden bakalım mı? Kaydırmaya devam et!`
   };
 
   document.getElementById('randomGameBtn').addEventListener('click', function(e){
     e.preventDefault();
-    showMascotTip('🐱 Pati senin için bir oyun seçiyor... 🎲');
+    showMascotTip('🐼 Woogi senin için bir oyun seçiyor... 🎲');
     playClick(600);
     setTimeout(()=>{
       const allCards = Array.from(document.querySelectorAll('.game-card'));
@@ -1315,18 +1322,18 @@
     });
   });
 
-  // Bölüme ilk kez gelince Pati selam versin
+  // Bölüme ilk kez gelince Woogi selam versin
   const sectionGreetings = {
-    'band-macera':`🐱 Uzay Dünyası'na hoş geldin, maceralar seni bekliyor!`,
-    'band-hareket':`🐱 Koşmaya, zıplamaya hazır mısın?`,
-    'band-yaris':`🐱 Motorunu çalıştır, yarış başlıyor!`,
-    'band-spor':`🐱 Kale Dünyası'nda top senin ayaklarında!`,
-    'band-mutfak':`🐱 Mmm, ne pişiriyoruz bugün?`,
-    'band-aksiyon':`🐱 Reflekslerini test etmeye hazır mısın?`,
-    'band-hafiza':`🐱 Orman Dünyası'nda hafızanı zorlayalım mı?`,
-    'band-bulmaca':`🐱 Parçaları birleştirip resmi tamamlayalım!`,
-    'band-yaratici':`🐱 Fırçanı al, Çöl Dünyası'nda renklere boyanalım!`,
-    'band-zeka':`🐱 Sayı avına çıkalım mı?`
+    'band-macera':`🐼 Uzay Dünyası'na hoş geldin, maceralar seni bekliyor!`,
+    'band-hareket':`🐼 Koşmaya, zıplamaya hazır mısın?`,
+    'band-yaris':`🐼 Motorunu çalıştır, yarış başlıyor!`,
+    'band-spor':`🐼 Kale Dünyası'nda top senin ayaklarında!`,
+    'band-mutfak':`🐼 Mmm, ne pişiriyoruz bugün?`,
+    'band-aksiyon':`🐼 Reflekslerini test etmeye hazır mısın?`,
+    'band-hafiza':`🐼 Orman Dünyası'nda hafızanı zorlayalım mı?`,
+    'band-bulmaca':`🐼 Parçaları birleştirip resmi tamamlayalım!`,
+    'band-yaratici':`🐼 Fırçanı al, Çöl Dünyası'nda renklere boyanalım!`,
+    'band-zeka':`🐼 Sayı avına çıkalım mı?`
   };
   const seenSections = new Set();
   const bandObserver = new IntersectionObserver(entries=>{
@@ -1438,7 +1445,7 @@
 
   // ---- Konuşan maskot ----
   const MASCOT_TIPS = [
-    'Merhaba! Ben Pati 🐾 Sana eşlik edeceğim!',
+    'Merhaba! Ben Woogi 🐾 Sana eşlik edeceğim!',
     'Bugün hangi oyunu deneyelim?',
     'Yeni oyunlar eklendi, bir göz at! ✨',
     'Hafıza oyunları beynini güçlendirir 🧠',
@@ -1466,7 +1473,7 @@
     playClick(520);
   });
 
-  // ---- Pati'nin Hikayesi: ilk ziyarette tanıtım ----
+  // ---- Woogi'nin Hikayesi: ilk ziyarette tanıtım ----
   const patiStoryModal = document.getElementById('patiStoryModal');
   if(!localStorage.getItem('ok_pati_intro_seen')){
     setTimeout(()=> patiStoryModal.classList.add('show'), 500);
@@ -1604,7 +1611,7 @@
   // ---- Dünya Haritası ----
   const REGIONS = [
     { name:'Ev Dünyası', emoji:'🏠', cats:[], color1:'#7bc94a', color2:'#4a9a3a', always:true, href:'#oyunlar',
-      story:'Pati\'nin sıcacık yuvası. Her maceraya buradan başlıyoruz!' },
+      story:'Woogi\'nin sıcacık yuvası. Her maceraya buradan başlıyoruz!' },
     { name:'Orman Dünyası', emoji:'🌲', cats:['hafiza','bulmaca'], color1:'#2d9d6f', color2:'#1b6b4a', href:'#hafizaCount',
       story:'Ağaçların arasında hafızanı ve zekânı sınayan gizemli bulmacalar seni bekliyor.' },
     { name:'Çöl Dünyası', emoji:'🏜️', cats:['yaratici','zeka'], color1:'#e8b04d', color2:'#c9822a', href:'#oyunlar',
@@ -1623,8 +1630,8 @@
     a.style.background = `linear-gradient(150deg, ${r.color1}, ${r.color2})`;
     a.innerHTML = `<span class="r-emoji">${r.emoji}</span><div class="r-name">${r.name}</div>
       <div class="r-badge">${discovered ? '✓ Keşfedildi' : '🔒 Keşfedilmedi'}</div>`;
-    a.addEventListener('mouseenter', ()=> showMascotTip(`🐱 ${r.story}`));
-    a.addEventListener('click', ()=> showMascotTip(`🐱 ${r.story}`));
+    a.addEventListener('mouseenter', ()=> showMascotTip(`🐼 ${r.story}`));
+    a.addEventListener('click', ()=> showMascotTip(`🐼 ${r.story}`));
     worldMapGrid.appendChild(a);
   });
 

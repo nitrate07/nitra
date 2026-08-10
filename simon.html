@@ -2,42 +2,57 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sıra Takibi — Oyun Kutusu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sıra Takibi — WoogiGames</title>
 <meta name="description" content="Sırayı ezberle, tekrar et! Ücretsiz hafıza ve dikkat oyunu, çocuklar için eğlenceli.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://SITE-ADRESIN-BURAYA.com/simon.html">
+<link rel="canonical" href="https://woogigames.com/simon.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Sıra Takibi — Oyun Kutusu">
+<meta property="og:title" content="Sıra Takibi — WoogiGames">
 <meta property="og:description" content="Sırayı ezberle, tekrar et! Ücretsiz hafıza ve dikkat oyunu, çocuklar için eğlenceli.">
-<meta property="og:url" content="https://SITE-ADRESIN-BURAYA.com/simon.html">
-<meta property="og:site_name" content="Oyun Kutusu">
+<meta property="og:url" content="https://woogigames.com/simon.html">
+<meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Sıra Takibi — Oyun Kutusu">
+<meta name="twitter:title" content="Sıra Takibi — WoogiGames">
 <meta name="twitter:description" content="Sırayı ezberle, tekrar et! Ücretsiz hafıza ve dikkat oyunu, çocuklar için eğlenceli.">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  #pad{display:grid; grid-template-columns:repeat(2, 100px); grid-template-rows:repeat(2, 100px); gap:10px;}
+  body{
+    background:radial-gradient(circle at 50% 0%, var(--th-bg1,#F7F5FF), var(--th-bg2,#EDE9FF) 70%);
+    padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom));
+  }
+  #pad{display:grid; grid-template-columns:repeat(2, 100px); grid-template-rows:repeat(2, 100px); gap:10px; position:relative;}
   .pad-btn{
-    width:100px; height:100px; border-radius:20px; font-size:2.4rem; opacity:.5;
+    width:100px; height:100px; border-radius:20px; font-size:2.4rem; opacity:.55;
     box-shadow:0 5px 0 rgba(0,0,0,.15); transition:opacity .12s, transform .12s;
   }
   .pad-btn.lit{opacity:1; transform:scale(1.08); box-shadow:0 2px 0 rgba(0,0,0,.15), 0 0 24px 4px rgba(108,78,245,.5);}
-  .pad-btn:nth-child(1){background:#FFD9D9;}
-  .pad-btn:nth-child(2){background:#D9F0FF;}
+  .pad-btn:nth-child(1){background:var(--th-1,#FFD9D9);}
+  .pad-btn:nth-child(2){background:var(--th-2,#D9F0FF);}
   .pad-btn:nth-child(3){background:#FFF3D6;}
   .pad-btn:nth-child(4){background:#DFF8F0;}
+  #muteCtl{
+    position:fixed; top:14px; right:14px; width:42px; height:42px; border:none; border-radius:12px;
+    background:#fff; color:var(--ink); font-size:1.1rem; box-shadow:0 3px 0 #ddd; cursor:pointer; z-index:5;
+  }
+  #muteCtl:active{ transform:translateY(2px); }
+  #countdownOverlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.85); border-radius:20px; z-index:9;
+  }
 </style>
 </head>
 <body>
+  <button id="muteCtl">🔊</button>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1 id="title">🔁 Sıra Takibi</h1>
   <div id="hud"><span>🏆 Tur: <span id="round">0</span></span><span>📣 Durum: <span id="status">Başla</span></span></div>
   <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
   <div class="panel">
     <div id="pad"></div>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">😿</div>
       <div class="msg" id="overMsg"></div>
@@ -54,6 +69,20 @@
 const { theme, level } = getParams();
 setTitle('Sıra Takibi');
 document.getElementById('title').textContent = `🔁 ${theme.name} Sıra Takibi`;
+document.documentElement.style.setProperty('--th-1', theme.hue1);
+document.documentElement.style.setProperty('--th-2', theme.hue2);
+document.documentElement.style.setProperty('--th-bg1', theme.bg1);
+document.documentElement.style.setProperty('--th-bg2', theme.bg2);
+
+let muted = localStorage.getItem('ok_simon_muted') === '1';
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = muted ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{
+  muted = !muted; localStorage.setItem('ok_simon_muted', muted?'1':'0');
+  muteCtl.textContent = muted?'🔇':'🔊';
+  if(muted) stopThemeAmbient(); else startThemeAmbient(theme.ambient, ()=>muted);
+});
+function snd(fn){ if(!muted) fn(); }
 
 const padEmojis = theme.emojis.slice(0,4);
 const tones = [392, 494, 587, 659]; // her tuşun kendi notası
@@ -83,7 +112,13 @@ function startGame(){
   document.getElementById('overlay').style.display = 'none';
   document.getElementById('startBtn').style.display = 'none';
   updateProgress();
-  nextRound();
+  const cd = document.getElementById('countdownOverlay');
+  cd.style.display = 'flex';
+  runCountdown(cd, ()=>{
+    cd.style.display = 'none';
+    snd(()=> startThemeAmbient(theme.ambient, ()=>muted));
+    nextRound();
+  });
 }
 
 function nextRound(){
@@ -101,7 +136,7 @@ async function playSequence(){
   await new Promise(r=>setTimeout(r,400));
   for(const idx of sequence){
     buttons[idx].classList.add('lit');
-    playTone(tones[idx], 0.2, 'sine', 0.15);
+    snd(()=>playTone(tones[idx], 0.2, 'sine', 0.15));
     await new Promise(r=>setTimeout(r,speed*0.6));
     buttons[idx].classList.remove('lit');
     await new Promise(r=>setTimeout(r,speed*0.4));
@@ -113,26 +148,47 @@ async function playSequence(){
 function handleClick(i){
   if(!accepting) return;
   buttons[i].classList.add('lit');
-  playTone(tones[i], 0.15, 'sine', 0.15);
+  snd(()=>playTone(tones[i], 0.15, 'sine', 0.15));
   setTimeout(()=>buttons[i].classList.remove('lit'), 200);
   if(i === sequence[userStep]){
     userStep++;
     if(userStep === sequence.length){
       accepting = false;
-      document.getElementById('status').textContent = 'Harika!';
+      document.getElementById('status').textContent = round >= 3 ? `🔥 ${round}. tur tamamlandı!` : 'Harika!';
+      const btnRect = buttons[i].getBoundingClientRect(), panelRect = document.querySelector('.panel').getBoundingClientRect();
+      const particles = [];
+      spawnParticles(particles, btnRect.left-panelRect.left+btnRect.width/2, btnRect.top-panelRect.top+btnRect.height/2, 10,
+        [theme.hue1, theme.hue2, '#FFD23F'], {speed:3.5, life:20});
+      renderDomParticles(document.querySelector('.panel'), particles);
       setTimeout(nextRound, 700);
     }
   } else {
     accepting = false;
-    playError();
+    stopThemeAmbient();
+    snd(playError);
     triggerWrongFx(document.querySelector('.panel'));
     const finalRound = round - 1;
     document.getElementById('overMsg').textContent = `${finalRound}. tura kadar hatırladın!`;
     renderResultGrid('resultGrid', [['TUR', finalRound], ['SEVİYE', LEVEL_NAMES[level]]]);
     document.getElementById('stars').textContent = starRating(finalRound, goalRounds);
     showOverlay('overlay');
+    if(finalRound >= goalRounds) fireConfetti(document.querySelector('.panel'));
   }
 }
+
+function renderDomParticles(container, particles){
+  particles.forEach(p=>{
+    const el = document.createElement('div');
+    el.style.cssText = `position:absolute; left:${p.x}px; top:${p.y}px; width:${p.size}px; height:${p.size}px; border-radius:50%; background:${p.color}; pointer-events:none; z-index:6; transition:transform .5s ease, opacity .5s ease; opacity:1;`;
+    container.appendChild(el);
+    requestAnimationFrame(()=>{ el.style.transform = `translate(${p.vx*12}px, ${p.vy*12}px)`; el.style.opacity = '0'; });
+    setTimeout(()=> el.remove(), 520);
+  });
+}
+
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) stopThemeAmbient();
+});
 
 document.getElementById('startBtn').onclick = startGame;
 document.getElementById('status').textContent = "Başlat'a bas";

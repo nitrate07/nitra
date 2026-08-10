@@ -2,29 +2,42 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Görsel Hafıza — Oyun Kutusu</title>
-<meta name="description" content="Görselleri hatırla, hafıza gücünü artır! Ücretsiz görsel hafıza oyunu Oyun Kutusu&#x27;nda.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Görsel Hafıza — WoogiGames</title>
+<meta name="description" content="Görselleri hatırla, hafıza gücünü artır! Ücretsiz görsel hafıza oyunu WoogiGames&#x27;nda.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://SITE-ADRESIN-BURAYA.com/gorsel.html">
+<link rel="canonical" href="https://woogigames.com/gorsel.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Görsel Hafıza — Oyun Kutusu">
-<meta property="og:description" content="Görselleri hatırla, hafıza gücünü artır! Ücretsiz görsel hafıza oyunu Oyun Kutusu&#x27;nda.">
-<meta property="og:url" content="https://SITE-ADRESIN-BURAYA.com/gorsel.html">
-<meta property="og:site_name" content="Oyun Kutusu">
+<meta property="og:title" content="Görsel Hafıza — WoogiGames">
+<meta property="og:description" content="Görselleri hatırla, hafıza gücünü artır! Ücretsiz görsel hafıza oyunu WoogiGames&#x27;nda.">
+<meta property="og:url" content="https://woogigames.com/gorsel.html">
+<meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Görsel Hafıza — Oyun Kutusu">
-<meta name="twitter:description" content="Görselleri hatırla, hafıza gücünü artır! Ücretsiz görsel hafıza oyunu Oyun Kutusu&#x27;nda.">
+<meta name="twitter:title" content="Görsel Hafıza — WoogiGames">
+<meta name="twitter:description" content="Görselleri hatırla, hafıza gücünü artır! Ücretsiz görsel hafıza oyunu WoogiGames&#x27;nda.">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  #grid{display:grid; gap:8px;}
-  .gcell{background:#EDE9FF; width:64px; height:64px; transition:background .2s, transform .15s;}
+  body{
+    background:radial-gradient(circle at 50% 0%, var(--th-bg1,#F7F5FF), var(--th-bg2,#EDE9FF) 70%);
+    padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom));
+  }
+  #grid{display:grid; gap:8px; max-width:100%;}
+  .gcell{background:var(--th-bg2,#EDE9FF); width:64px; height:64px; max-width:16vw; max-height:16vw; transition:background .2s, transform .15s;}
   .gcell.show{background:#fff; box-shadow:0 3px 0 #ddd;}
-  .gcell.picked{outline:3px solid var(--purple); transform:scale(1.05);}
+  .gcell.picked{outline:3px solid var(--th-1,var(--purple)); transform:scale(1.05);}
   .gcell.correct{background:var(--teal); color:#fff;}
   .gcell.wrong{background:var(--coral); color:#fff;}
+  #muteCtl{
+    position:fixed; top:14px; right:14px; width:42px; height:42px; border:none; border-radius:12px;
+    background:#fff; color:var(--ink); font-size:1.1rem; box-shadow:0 3px 0 #ddd; cursor:pointer; z-index:5;
+  }
+  #muteCtl:active{ transform:translateY(2px); }
+  #countdownOverlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.85); border-radius:20px; z-index:9;
+  }
 </style>
 </head>
 <body>
@@ -32,23 +45,39 @@
   <h1 id="title">👁️ Görsel Hafıza</h1>
   <div id="hud"><span>📣 <span id="status">Hazırlan...</span></span></div>
   <div class="progress-track"><div class="progress-fill" id="studyBar" style="width:100%"></div></div>
-  <div class="panel">
+  <div class="panel" style="position:relative;">
     <div id="grid"></div>
     <button class="btn" id="confirmBtn" style="margin-top:14px; display:none;">Onayla</button>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big" id="overIcon">🎉</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="location.reload()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
+  <button id="muteCtl">🔊</button>
 
 <script src="common.js"></script>
 <script>
 const { theme, level } = getParams();
 setTitle('Görsel Hafıza');
 document.getElementById('title').textContent = `👁️ ${theme.name} Görsel Hafıza`;
+document.documentElement.style.setProperty('--th-1', theme.hue1);
+document.documentElement.style.setProperty('--th-2', theme.hue2);
+document.documentElement.style.setProperty('--th-bg1', theme.bg1);
+document.documentElement.style.setProperty('--th-bg2', theme.bg2);
+
+let muted = localStorage.getItem('ok_gorsel_muted') === '1';
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = muted ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{
+  muted = !muted; localStorage.setItem('ok_gorsel_muted', muted?'1':'0');
+  muteCtl.textContent = muted?'🔇':'🔊';
+});
+function snd(fn){ if(!muted) fn(); }
 
 const size = [null,3,4,4,5][level];
 const totalCells = size*size;
@@ -74,30 +103,40 @@ positions.forEach((pos, idx)=>{
   cells[pos].textContent = itemIcons[idx];
   cells[pos].classList.add('show');
 });
-document.getElementById('status').textContent = `Ezberle! (${Math.round(studyTime/1000)} sn)`;
-
 let picked = new Set();
 let answered = false;
-const startTime = Date.now();
-const barTimer = setInterval(()=>{
-  const pct = Math.max(0, 100 - ((Date.now()-startTime)/studyTime)*100);
-  document.getElementById('studyBar').style.width = pct + '%';
-  if(pct<=0) clearInterval(barTimer);
-}, 50);
 
-setTimeout(()=>{
-  cells.forEach(c=>{ c.textContent=''; c.classList.remove('show'); });
-  document.getElementById('status').textContent = `Simge olan ${itemCount} kutuyu seç`;
-  document.getElementById('confirmBtn').style.display = 'inline-block';
-  cells.forEach((c,i)=>{
-    c.onclick = ()=>{
-      if(answered) return;
-      playClick(460);
-      if(picked.has(i)){ picked.delete(i); c.classList.remove('picked'); }
-      else { picked.add(i); c.classList.add('picked'); }
-    };
-  });
-}, studyTime);
+const cd = document.getElementById('countdownOverlay');
+cd.style.display = 'flex';
+document.getElementById('status').textContent = 'Hazırlan...';
+runCountdown(cd, ()=>{
+  cd.style.display = 'none';
+  beginStudyPhase();
+});
+
+function beginStudyPhase(){
+  document.getElementById('status').textContent = `Ezberle! (${Math.round(studyTime/1000)} sn)`;
+  const startTime = Date.now();
+  const barTimer = setInterval(()=>{
+    const pct = Math.max(0, 100 - ((Date.now()-startTime)/studyTime)*100);
+    document.getElementById('studyBar').style.width = pct + '%';
+    if(pct<=0) clearInterval(barTimer);
+  }, 50);
+
+  setTimeout(()=>{
+    cells.forEach(c=>{ c.textContent=''; c.classList.remove('show'); });
+    document.getElementById('status').textContent = `Simge olan ${itemCount} kutuyu seç`;
+    document.getElementById('confirmBtn').style.display = 'inline-block';
+    cells.forEach((c,i)=>{
+      c.onclick = ()=>{
+        if(answered) return;
+        snd(()=>playClick(460));
+        if(picked.has(i)){ picked.delete(i); c.classList.remove('picked'); }
+        else { picked.add(i); c.classList.add('picked'); }
+      };
+    });
+  }, studyTime);
+}
 
 document.getElementById('confirmBtn').onclick = ()=>{
   if(answered) return;
@@ -111,12 +150,13 @@ document.getElementById('confirmBtn').onclick = ()=>{
     else if(shouldPick && !wasPicked){ c.classList.add('wrong'); c.textContent='?'; }
   });
   const success = correct === itemCount;
-  if(success) playSuccess(); else playError();
+  snd(()=> success ? playSuccess() : playError());
   setTimeout(()=>{
     document.getElementById('overIcon').textContent = success ? '🎉' : '💪';
     document.getElementById('overMsg').textContent = `${itemCount} kutudan ${correct} tanesini doğru buldun!`;
+    renderResultGrid('resultGrid', [['DOĞRU', correct+'/'+itemCount], ['SEVİYE', LEVEL_NAMES[level]]]);
     document.getElementById('stars').textContent = starRating(correct, itemCount);
-    document.getElementById('overlay').style.display = 'flex';
+    showOverlay('overlay');
     if(success) fireConfetti(document.querySelector('.panel'));
   }, 900);
 };

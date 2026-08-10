@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://SITE-ADRESIN-BURAYA.com/sitemap.xml
+Sitemap: https://woogigames.com/sitemap.xml

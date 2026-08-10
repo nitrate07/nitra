@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Kelime Avı — Oyun Kutusu</title>
+<title>Kelime Avı — WoogiGames</title>
 <meta name="description" content="Harfleri birleştir, kelimeyi bul! Eğlenceli ve ücretsiz kelime avı oyunu.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://SITE-ADRESIN-BURAYA.com/kelimeavi.html">
+<link rel="canonical" href="https://woogigames.com/kelimeavi.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Kelime Avı — Oyun Kutusu">
+<meta property="og:title" content="Kelime Avı — WoogiGames">
 <meta property="og:description" content="Harfleri birleştir, kelimeyi bul! Eğlenceli ve ücretsiz kelime avı oyunu.">
-<meta property="og:url" content="https://SITE-ADRESIN-BURAYA.com/kelimeavi.html">
-<meta property="og:site_name" content="Oyun Kutusu">
+<meta property="og:url" content="https://woogigames.com/kelimeavi.html">
+<meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Kelime Avı — Oyun Kutusu">
+<meta name="twitter:title" content="Kelime Avı — WoogiGames">
 <meta name="twitter:description" content="Harfleri birleştir, kelimeyi bul! Eğlenceli ve ücretsiz kelime avı oyunu.">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
@@ -27,9 +27,9 @@
   #wordList{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:320px; margin-bottom:10px; }
   .word-chip{ background:#fff; padding:6px 12px; border-radius:10px; font-weight:800; font-size:.85rem; box-shadow:0 2px 0 #ddd; }
   .word-chip.found{ background:linear-gradient(135deg,var(--th-1,#2EC4B6),var(--th-2,#1c9cae)); color:#fff; text-decoration:line-through; box-shadow:0 2px 0 var(--th-2,#1c9cae); }
-  #letterGrid{ display:grid; gap:3px; user-select:none; touch-action:none; }
-  .letter{ width:34px; height:34px; background:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center;
-    font-weight:900; font-size:1.05rem; box-shadow:0 2px 0 #ddd; cursor:pointer; transition:transform .1s; }
+  #letterGrid{ display:grid; gap:3px; user-select:none; touch-action:none; width:100%; max-width:394px; margin:0 auto; }
+  .letter{ width:100%; aspect-ratio:1; background:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-weight:900; font-size:clamp(.68rem, 3.4vw, 1.05rem); box-shadow:0 2px 0 #ddd; cursor:pointer; transition:transform .1s; }
   .letter.selected{ background:var(--th-1,#FFD23F); box-shadow:0 2px 0 var(--th-2,#e0b326); transform:scale(1.08); }
   .letter.found{ background:linear-gradient(135deg,var(--th-1,#2EC4B6),var(--th-2,#1c9cae)); color:#fff; box-shadow:0 2px 0 var(--th-2,#1c9cae); }
   .progress-track{ margin-bottom:10px; }
@@ -91,7 +91,7 @@ function snd(fn){ if(!muted) fn(); }
 
 const size = [null,8,9,10,11][level];
 const wordCount = Math.min(theme.words.length, 4 + level);
-document.getElementById('letterGrid').style.gridTemplateColumns = `repeat(${size}, 34px)`;
+document.getElementById('letterGrid').style.gridTemplateColumns = `repeat(${size}, 1fr)`;
 
 const TR_UPPER = (s)=> s.toLocaleUpperCase('tr-TR').replace(/İ/g,'İ');
 const ALPHABET = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ';

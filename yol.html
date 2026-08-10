@@ -2,28 +2,41 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Yol Hafızası — Oyun Kutusu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Yol Hafızası — WoogiGames</title>
 <meta name="description" content="Yolu hatırla, doğru rotayı izle! Ücretsiz yol hafızası oyunu, çocuklar için güvenli.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://SITE-ADRESIN-BURAYA.com/yol.html">
+<link rel="canonical" href="https://woogigames.com/yol.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Yol Hafızası — Oyun Kutusu">
+<meta property="og:title" content="Yol Hafızası — WoogiGames">
 <meta property="og:description" content="Yolu hatırla, doğru rotayı izle! Ücretsiz yol hafızası oyunu, çocuklar için güvenli.">
-<meta property="og:url" content="https://SITE-ADRESIN-BURAYA.com/yol.html">
-<meta property="og:site_name" content="Oyun Kutusu">
+<meta property="og:url" content="https://woogigames.com/yol.html">
+<meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Yol Hafızası — Oyun Kutusu">
+<meta name="twitter:title" content="Yol Hafızası — WoogiGames">
 <meta name="twitter:description" content="Yolu hatırla, doğru rotayı izle! Ücretsiz yol hafızası oyunu, çocuklar için güvenli.">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
+  body{
+    background:radial-gradient(circle at 50% 0%, var(--th-bg1,#F7F5FF), var(--th-bg2,#EDE9FF) 70%);
+    padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom));
+  }
   #grid{display:grid; gap:8px;}
-  .pcell{background:#EDE9FF; width:58px; height:58px; transition:background .15s, transform .1s;}
-  .pcell.lit{background:var(--purple); transform:scale(1.06); box-shadow:0 0 18px 3px rgba(108,78,245,.6);}
+  .pcell{background:var(--th-bg2,#EDE9FF); width:58px; height:58px; transition:background .15s, transform .1s;}
+  .pcell.lit{background:var(--th-1,var(--purple)); transform:scale(1.06); box-shadow:0 0 18px 3px rgba(108,78,245,.6);}
   .pcell.done{background:var(--teal);}
   .pcell.wrong{background:var(--coral);}
+  #muteCtl{
+    position:fixed; top:14px; right:14px; width:42px; height:42px; border:none; border-radius:12px;
+    background:#fff; color:var(--ink); font-size:1.1rem; box-shadow:0 3px 0 #ddd; cursor:pointer; z-index:5;
+  }
+  #muteCtl:active{ transform:translateY(2px); }
+  #countdownOverlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.85); border-radius:20px; z-index:9;
+  }
 </style>
 </head>
 <body>
@@ -31,23 +44,40 @@
   <h1 id="title">🐾 Yol Hafızası</h1>
   <div id="hud"><span>🏆 Tur: <span id="round">0</span></span><span>📣 <span id="status">Başlat'a bas</span></span></div>
   <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-  <div class="panel">
+  <div class="panel" style="position:relative;">
     <div id="grid"></div>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">😿</div>
       <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
   <button class="btn alt" id="startBtn" style="margin-top:16px;">Başlat</button>
+  <button id="muteCtl">🔊</button>
 
 <script src="common.js"></script>
 <script>
 const { theme, level } = getParams();
 setTitle('Yol Hafızası');
 document.getElementById('title').textContent = `🐾 ${theme.name} Yol Hafızası`;
+document.documentElement.style.setProperty('--th-1', theme.hue1);
+document.documentElement.style.setProperty('--th-2', theme.hue2);
+document.documentElement.style.setProperty('--th-bg1', theme.bg1);
+document.documentElement.style.setProperty('--th-bg2', theme.bg2);
+
+let muted = localStorage.getItem('ok_yol_muted') === '1';
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = muted ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{
+  muted = !muted; localStorage.setItem('ok_yol_muted', muted?'1':'0');
+  muteCtl.textContent = muted?'🔇':'🔊';
+  if(muted) stopThemeAmbient(); else startThemeAmbient(theme.ambient, ()=>muted);
+});
+function snd(fn){ if(!muted) fn(); }
 
 const size = [null,3,4,4,5][level];
 const totalCells = size*size;
@@ -85,7 +115,13 @@ function startGame(){
   document.getElementById('overlay').style.display = 'none';
   document.getElementById('startBtn').style.display = 'none';
   updateProgress();
-  nextRound();
+  const cd = document.getElementById('countdownOverlay');
+  cd.style.display = 'flex';
+  runCountdown(cd, ()=>{
+    cd.style.display = 'none';
+    snd(()=> startThemeAmbient(theme.ambient, ()=>muted));
+    nextRound();
+  });
 }
 
 function nextRound(){
@@ -105,7 +141,7 @@ async function playPath(){
   await new Promise(r=>setTimeout(r,400));
   for(const idx of path){
     cells[idx].classList.add('lit');
-    playTone(380 + (idx*20), 0.18, 'sine', 0.13);
+    snd(()=>playTone(380 + (idx*20), 0.18, 'sine', 0.13));
     await new Promise(r=>setTimeout(r,speed*0.65));
     cells[idx].classList.remove('lit');
     await new Promise(r=>setTimeout(r,speed*0.35));
@@ -118,11 +154,21 @@ function handleClick(i){
   if(!accepting) return;
   if(i === path[userStep]){
     cells[i].classList.add('done');
-    playTone(380 + (i*20), 0.12, 'sine', 0.13);
+    snd(()=>playTone(380 + (i*20), 0.12, 'sine', 0.13));
     userStep++;
     if(userStep === path.length){
       accepting = false;
-      document.getElementById('status').textContent = 'Harika!';
+      document.getElementById('status').textContent = round >= 3 ? `🔥 ${round}. tur tamamlandı!` : 'Harika!';
+      const r = cells[i].getBoundingClientRect(), pr = document.querySelector('.panel').getBoundingClientRect();
+      const particles = [];
+      spawnParticles(particles, r.left-pr.left+r.width/2, r.top-pr.top+r.height/2, 10, [theme.hue1, theme.hue2, '#FFD23F'], {speed:3.5, life:20});
+      particles.forEach(p=>{
+        const el = document.createElement('div');
+        el.style.cssText = `position:absolute; left:${p.x}px; top:${p.y}px; width:${p.size}px; height:${p.size}px; border-radius:50%; background:${p.color}; pointer-events:none; z-index:6; transition:transform .5s ease, opacity .5s ease; opacity:1;`;
+        document.querySelector('.panel').appendChild(el);
+        requestAnimationFrame(()=>{ el.style.transform = `translate(${p.vx*12}px, ${p.vy*12}px)`; el.style.opacity = '0'; });
+        setTimeout(()=> el.remove(), 520);
+      });
       setTimeout(()=>{
         cells.forEach(c=>c.classList.remove('done'));
         nextRound();
@@ -130,14 +176,20 @@ function handleClick(i){
     }
   } else {
     accepting = false;
-    playError();
+    stopThemeAmbient();
+    snd(playError);
     cells[i].classList.add('wrong','shake');
     const finalRound = round - 1;
     document.getElementById('overMsg').textContent = `${finalRound}. tura kadar hatırladın!`;
+    renderResultGrid('resultGrid', [['TUR', finalRound], ['SEVİYE', LEVEL_NAMES[level]]]);
     document.getElementById('stars').textContent = starRating(finalRound, goalRounds);
-    document.getElementById('overlay').style.display = 'flex';
+    showOverlay('overlay');
   }
 }
+
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) stopThemeAmbient();
+});
 
 document.getElementById('startBtn').onclick = startGame;
 buildGrid();

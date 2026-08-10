@@ -2,28 +2,42 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kaydırmalı Bulmaca — Oyun Kutusu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Kaydırmalı Bulmaca — WoogiGames</title>
 <meta name="description" content="Parçaları kaydır, resmi tamamla! Ücretsiz kaydırmalı bulmaca oyunu, tarayıcıda oynanır.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://SITE-ADRESIN-BURAYA.com/kaydirma.html">
+<link rel="canonical" href="https://woogigames.com/kaydirma.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Kaydırmalı Bulmaca — Oyun Kutusu">
+<meta property="og:title" content="Kaydırmalı Bulmaca — WoogiGames">
 <meta property="og:description" content="Parçaları kaydır, resmi tamamla! Ücretsiz kaydırmalı bulmaca oyunu, tarayıcıda oynanır.">
-<meta property="og:url" content="https://SITE-ADRESIN-BURAYA.com/kaydirma.html">
-<meta property="og:site_name" content="Oyun Kutusu">
+<meta property="og:url" content="https://woogigames.com/kaydirma.html">
+<meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Kaydırmalı Bulmaca — Oyun Kutusu">
+<meta name="twitter:title" content="Kaydırmalı Bulmaca — WoogiGames">
 <meta name="twitter:description" content="Parçaları kaydır, resmi tamamla! Ücretsiz kaydırmalı bulmaca oyunu, tarayıcıda oynanır.">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
+  body{
+    background:radial-gradient(circle at 50% 0%, var(--th-bg1,#F7F5FF), var(--th-bg2,#EDE9FF) 70%);
+    padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom));
+  }
   #grid{display:grid; gap:6px;}
-  .tile{background:linear-gradient(135deg,var(--purple),#8f7bff); color:#fff; box-shadow:0 4px 0 var(--purple-dark); font-size:1.8rem;}
+  .tile{background:linear-gradient(135deg,var(--th-1,var(--purple)),var(--th-2,#8f7bff)); color:#fff; box-shadow:0 4px 0 var(--th-2,var(--purple-dark)); font-size:1.8rem; transition:transform .1s;}
+  .tile:active{ transform:scale(.94); }
   .tile.empty{background:transparent; box-shadow:none; cursor:default;}
-  #refRow{display:flex; gap:4px; margin-bottom:10px; background:#F1EEFF; padding:8px 10px; border-radius:12px;}
+  #refRow{display:flex; gap:4px; margin-bottom:10px; background:var(--th-bg2,#F1EEFF); padding:8px 10px; border-radius:12px;}
   #refRow span{font-size:1.1rem;}
+  #muteCtl{
+    position:fixed; top:14px; right:14px; width:42px; height:42px; border:none; border-radius:12px;
+    background:#fff; color:var(--ink); font-size:1.1rem; box-shadow:0 3px 0 #ddd; cursor:pointer; z-index:5;
+  }
+  #muteCtl:active{ transform:translateY(2px); }
+  #countdownOverlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.85); border-radius:20px; z-index:9;
+  }
 </style>
 </head>
 <body>
@@ -31,22 +45,39 @@
   <h1 id="title">🧩 Kaydırmalı Bulmaca</h1>
   <div id="hud"><span>👋 Hamle: <span id="moves">0</span></span></div>
   <div id="refRow"><span>Hedef sıra:</span><span id="refIcons"></span></div>
-  <div class="panel">
+  <div class="panel" style="position:relative;">
     <div id="grid"></div>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">🎉</div>
       <div class="msg">Bulmacayı çözdün!</div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="init()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
+  <button id="muteCtl">🔊</button>
 
 <script src="common.js"></script>
 <script>
 const { theme, level } = getParams();
 setTitle('Kaydırmalı Bulmaca');
 document.getElementById('title').textContent = `🧩 ${theme.name} Kaydırmalı Bulmaca`;
+document.documentElement.style.setProperty('--th-1', theme.hue1);
+document.documentElement.style.setProperty('--th-2', theme.hue2);
+document.documentElement.style.setProperty('--th-bg1', theme.bg1);
+document.documentElement.style.setProperty('--th-bg2', theme.bg2);
+
+let muted = localStorage.getItem('ok_kaydirma_muted') === '1';
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = muted ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{
+  muted = !muted; localStorage.setItem('ok_kaydirma_muted', muted?'1':'0');
+  muteCtl.textContent = muted?'🔇':'🔊';
+});
+function snd(fn){ if(!muted) fn(); }
+let started = false;
 
 const size = [null,3,3,4,4][level];
 const total = size*size;
@@ -78,10 +109,13 @@ function init(){
   }
   tiles = arr;
   emptyIndex = tiles.indexOf(null);
-  moves = 0;
+  moves = 0; started = false;
   document.getElementById('moves').textContent = 0;
   document.getElementById('overlay').style.display = 'none';
   render();
+  const cd = document.getElementById('countdownOverlay');
+  cd.style.display = 'flex';
+  runCountdown(cd, ()=>{ cd.style.display = 'none'; started = true; });
 }
 
 function render(){
@@ -99,6 +133,7 @@ function render(){
 }
 
 function tryMove(idx){
+  if(!started) return;
   const r1 = Math.floor(idx/size), c1 = idx%size;
   const r2 = Math.floor(emptyIndex/size), c2 = emptyIndex%size;
   const adjacent = (Math.abs(r1-r2)+Math.abs(c1-c2)) === 1;
@@ -107,14 +142,15 @@ function tryMove(idx){
   emptyIndex = idx;
   moves++;
   document.getElementById('moves').textContent = moves;
-  playClick(480);
+  snd(()=>playClick(480));
   render();
   const solved = tiles.every((v,i)=> i===total-1 ? v===null : v===i);
   if(solved){
-    playSuccess();
+    snd(playSuccess);
     const score = Math.max(0, total*3 - Math.max(0, moves - parMoves));
+    renderResultGrid('resultGrid', [['HAMLE', moves], ['SEVİYE', LEVEL_NAMES[level]]]);
     document.getElementById('stars').textContent = starRating(score, total*3);
-    document.getElementById('overlay').style.display = 'flex';
+    showOverlay('overlay');
     fireConfetti(document.querySelector('.panel'));
   }
 }

@@ -2,29 +2,42 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Parça Değiştirme — Oyun Kutusu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Parça Değiştirme — WoogiGames</title>
 <meta name="description" content="Doğru parçayı bul, bulmacayı tamamla! Ücretsiz parça değiştirme oyunu, çocuklar için güvenli.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://SITE-ADRESIN-BURAYA.com/parca.html">
+<link rel="canonical" href="https://woogigames.com/parca.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Parça Değiştirme — Oyun Kutusu">
+<meta property="og:title" content="Parça Değiştirme — WoogiGames">
 <meta property="og:description" content="Doğru parçayı bul, bulmacayı tamamla! Ücretsiz parça değiştirme oyunu, çocuklar için güvenli.">
-<meta property="og:url" content="https://SITE-ADRESIN-BURAYA.com/parca.html">
-<meta property="og:site_name" content="Oyun Kutusu">
+<meta property="og:url" content="https://woogigames.com/parca.html">
+<meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Parça Değiştirme — Oyun Kutusu">
+<meta name="twitter:title" content="Parça Değiştirme — WoogiGames">
 <meta name="twitter:description" content="Doğru parçayı bul, bulmacayı tamamla! Ücretsiz parça değiştirme oyunu, çocuklar için güvenli.">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  #refRow{display:flex; gap:6px; margin-bottom:12px; background:#F1EEFF; padding:10px 12px; border-radius:12px; flex-wrap:wrap; justify-content:center; max-width:320px;}
+  body{
+    background:radial-gradient(circle at 50% 0%, var(--th-bg1,#F7F5FF), var(--th-bg2,#EDE9FF) 70%);
+    padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom));
+  }
+  #refRow{display:flex; gap:6px; margin-bottom:12px; background:var(--th-bg2,#F1EEFF); padding:10px 12px; border-radius:12px; flex-wrap:wrap; justify-content:center; max-width:320px;}
   #refRow span{font-size:1.3rem;}
   #grid{display:grid; gap:8px;}
-  .ptile{background:#fff; box-shadow:0 4px 0 #ddd; font-size:1.8rem;}
-  .ptile.selected{outline:3px solid var(--purple); transform:scale(1.05);}
+  .ptile{background:#fff; box-shadow:0 4px 0 #ddd; font-size:1.8rem; transition:transform .1s;}
+  .ptile.selected{outline:3px solid var(--th-1,var(--purple)); transform:scale(1.05);}
   .ptile.correct{background:var(--teal); box-shadow:0 4px 0 var(--teal-dark);}
+  #muteCtl{
+    position:fixed; top:14px; right:14px; width:42px; height:42px; border:none; border-radius:12px;
+    background:#fff; color:var(--ink); font-size:1.1rem; box-shadow:0 3px 0 #ddd; cursor:pointer; z-index:5;
+  }
+  #muteCtl:active{ transform:translateY(2px); }
+  #countdownOverlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.85); border-radius:20px; z-index:9;
+  }
 </style>
 </head>
 <body>
@@ -32,16 +45,19 @@
   <h1 id="title">🔀 Parça Değiştirme</h1>
   <div id="hud"><span>🔁 Takas: <span id="swaps">0</span></span><span>✅ Doğru: <span id="correctCount">0</span>/<span id="total">0</span></span></div>
   <div id="refRow"><span style="font-size:.85rem; opacity:.6; align-self:center;">Hedef sıra →</span><span id="refIcons"></span></div>
-  <div class="panel">
+  <div class="panel" style="position:relative;">
     <div id="grid"></div>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">🎉</div>
       <div class="msg">Resmi doğru sıraya soktun!</div>
+      <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="init()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
+  <button id="muteCtl">🔊</button>
   <p style="font-size:.85rem; opacity:.7; margin-top:10px; text-align:center;">İki parçaya sırayla tıkla, yerlerini değiştir. Hepsi hedef sırayla eşleşsin!</p>
 
 <script src="common.js"></script>
@@ -49,6 +65,20 @@
 const { theme, level } = getParams();
 setTitle('Parça Değiştirme');
 document.getElementById('title').textContent = `🔀 ${theme.name} Parça Değiştirme`;
+document.documentElement.style.setProperty('--th-1', theme.hue1);
+document.documentElement.style.setProperty('--th-2', theme.hue2);
+document.documentElement.style.setProperty('--th-bg1', theme.bg1);
+document.documentElement.style.setProperty('--th-bg2', theme.bg2);
+
+let muted = localStorage.getItem('ok_parca_muted') === '1';
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = muted ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{
+  muted = !muted; localStorage.setItem('ok_parca_muted', muted?'1':'0');
+  muteCtl.textContent = muted?'🔇':'🔊';
+});
+function snd(fn){ if(!muted) fn(); }
+let started = false;
 
 const size = [null,3,4,4,5][level];
 const total = size*size;
@@ -69,10 +99,13 @@ function init(){
   while(current.every((v,i)=>v===target[i])){
     current = shuffle(current);
   }
-  selected = null; swaps = 0;
+  selected = null; swaps = 0; started = false;
   document.getElementById('swaps').textContent = 0;
   document.getElementById('overlay').style.display = 'none';
   render();
+  const cd = document.getElementById('countdownOverlay');
+  cd.style.display = 'flex';
+  runCountdown(cd, ()=>{ cd.style.display = 'none'; started = true; });
 }
 
 function render(){
@@ -92,18 +125,20 @@ function render(){
   });
   document.getElementById('correctCount').textContent = correctCount;
   if(correctCount === total){
-    playSuccess();
+    snd(playSuccess);
     const score = Math.max(0, total*3 - Math.max(0, swaps - total));
+    renderResultGrid('resultGrid', [['TAKAS', swaps], ['SEVİYE', LEVEL_NAMES[level]]]);
     document.getElementById('stars').textContent = starRating(score, total*3);
-    document.getElementById('overlay').style.display = 'flex';
+    showOverlay('overlay');
     fireConfetti(document.querySelector('.panel'));
   }
 }
 
 function handleClick(idx){
+  if(!started) return;
   if(selected === null){
     selected = idx;
-    playClick(430);
+    snd(()=>playClick(430));
     render();
     return;
   }
@@ -111,7 +146,7 @@ function handleClick(idx){
   [current[selected], current[idx]] = [current[idx], current[selected]];
   swaps++;
   document.getElementById('swaps').textContent = swaps;
-  playClick(520);
+  snd(()=>playClick(520));
   selected = null;
   render();
 }
