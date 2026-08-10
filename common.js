@@ -1,15 +1,20 @@
 // Oyun Kutusu - ortak veri ve yardımcı fonksiyonlar
 const THEMES = {
   hayvanlar: { name: 'Hayvanlar', emojis: ['🐱','🐶','🐰','🦊','🐻','🐼','🦁','🐸','🐵','🐷'],
-    words: ['kedi','köpek','tavşan','tilki','ayı','panda','aslan','kurbağa','maymun','domuz'] },
+    words: ['kedi','köpek','tavşan','tilki','ayı','panda','aslan','kurbağa','maymun','domuz'],
+    hue1:'#ffb85c', hue2:'#e8912e', bg1:'#fff3d6', bg2:'#ffe0a3', ambient:120 },
   meyveler: { name: 'Meyveler', emojis: ['🍎','🍌','🍇','🍉','🍓','🍒','🍍','🥝','🍑','🍋'],
-    words: ['elma','muz','üzüm','karpuz','çilek','kiraz','ananas','kivi','şeftali','limon'] },
+    words: ['elma','muz','üzüm','karpuz','çilek','kiraz','ananas','kivi','şeftali','limon'],
+    hue1:'#ff6b6b', hue2:'#c94b4b', bg1:'#ffe0e0', bg2:'#ffc2c2', ambient:140 },
   uzay: { name: 'Uzay', emojis: ['🚀','🌙','⭐','🪐','☄️','👽','🛸','🌎','🌟','🔭'],
-    words: ['roket','ay','yıldız','gezegen','kuyruklu yıldız','uzaylı','uçan daire','dünya','takımyıldız','teleskop'] },
+    words: ['roket','ay','yıldız','gezegen','kuyruklu yıldız','uzaylı','uçan daire','dünya','takımyıldız','teleskop'],
+    hue1:'#6C4EF5', hue2:'#4a34c9', bg1:'#e0d9ff', bg2:'#c2b3ff', ambient:70 },
   deniz: { name: 'Deniz', emojis: ['🐠','🐳','🐙','🦀','🐬','🐟','🦈','🐢','🐚','🌊'],
-    words: ['balık','balina','ahtapot','yengeç','yunus','köpekbalığı','kaplumbağa','midye','mercan','dalga'] },
+    words: ['balık','balina','ahtapot','yengeç','yunus','köpekbalığı','kaplumbağa','midye','mercan','dalga'],
+    hue1:'#3dd6ff', hue2:'#1c9cae', bg1:'#d6f5ff', bg2:'#b0e8ff', ambient:160 },
   tatli: { name: 'Tatlılar', emojis: ['🍕','🍩','🍪','🍦','🍭','🍰','🧁','🍫','🍬','🍿'],
-    words: ['pizza','donut','kurabiye','dondurma','lolipop','pasta','kek','çikolata','şeker','patlamış mısır'] }
+    words: ['pizza','donut','kurabiye','dondurma','lolipop','pasta','kek','çikolata','şeker','patlamış mısır'],
+    hue1:'#FF6EC7', hue2:'#c94b8e', bg1:'#ffe0f0', bg2:'#ffb8de', ambient:190 }
 };
 
 const LEVEL_NAMES = { 1: 'Kolay', 2: 'Orta', 3: 'Zor', 4: 'Uzman' };
@@ -202,6 +207,36 @@ function runCountdown(overlayEl, onDone, opts){
     }
   }
   step();
+}
+
+// ---- Tema-tintli ambiyans (paylaşılan AudioContext, labirent.html'den genellendi) ----
+let _ambientOsc, _ambientOsc2, _ambientGain, _ambientFilter, _ambientMutedFn = ()=>false;
+function startThemeAmbient(freq, isMutedFn){
+  if(isMutedFn) _ambientMutedFn = isMutedFn;
+  if(_ambientMutedFn() || _ambientOsc) return;
+  try{
+    const c = _ctx();
+    _ambientOsc = c.createOscillator(); _ambientOsc.type = 'sine';
+    _ambientOsc2 = c.createOscillator(); _ambientOsc2.type = 'sine';
+    _ambientFilter = c.createBiquadFilter(); _ambientFilter.type='lowpass'; _ambientFilter.frequency.value = 500;
+    _ambientGain = c.createGain(); _ambientGain.gain.value = 0.0001;
+    _ambientOsc.frequency.value = freq;
+    _ambientOsc2.frequency.value = freq * 1.503;
+    _ambientOsc.connect(_ambientFilter); _ambientOsc2.connect(_ambientFilter);
+    _ambientFilter.connect(_ambientGain); _ambientGain.connect(c.destination);
+    _ambientOsc.start(); _ambientOsc2.start();
+    _ambientGain.gain.linearRampToValueAtTime(0.018, c.currentTime+1.2);
+  }catch(e){}
+}
+function stopThemeAmbient(){
+  if(!_ambientOsc) return;
+  try{
+    const c = _ctx();
+    _ambientGain.gain.setTargetAtTime(0.0001, c.currentTime, 0.3);
+    const o1=_ambientOsc, o2=_ambientOsc2;
+    setTimeout(()=>{ try{o1.stop(); o2.stop();}catch(e){} }, 800);
+  }catch(e){}
+  _ambientOsc = _ambientOsc2 = _ambientGain = _ambientFilter = null;
 }
 
 // ---- Konfeti efekti ----

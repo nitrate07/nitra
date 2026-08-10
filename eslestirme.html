@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Eşleştirme — Oyun Kutusu</title>
 <meta name="description" content="Aynı kartları bul, hafızanı güçlendir! Çocuklar için ücretsiz eşleştirme hafıza oyunu.">
 <meta name="robots" content="index, follow">
@@ -16,22 +16,47 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Eşleştirme — Oyun Kutusu">
 <meta name="twitter:description" content="Aynı kartları bul, hafızanı güçlendir! Çocuklar için ücretsiz eşleştirme hafıza oyunu.">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
+  body{
+    background:radial-gradient(circle at 50% 0%, var(--th-bg1,#fff3d6), var(--th-bg2,#ffe0a3) 70%);
+    padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom));
+  }
+  h1{ font-family:'Fredoka',sans-serif; }
+  #hud span.combo-glow{ box-shadow:0 0 0 1px var(--th-1,#FFD23F), 0 0 12px rgba(255,210,63,.6), 0 3px 0 #ddd; }
+  .progress-track{ margin-bottom:12px; }
   #grid{display:grid; gap:10px;}
-  .flip-outer{width:70px; height:70px;}
-  .flip-front{background:linear-gradient(135deg,var(--purple),#8f7bff); box-shadow:0 4px 0 var(--purple-dark); color:#fff;}
+  .flip-outer{width:70px; height:70px; position:relative;}
+  .flip-front{background:linear-gradient(135deg, var(--th-1,#6C4EF5), var(--th-2,#8f7bff)); box-shadow:0 4px 0 var(--th-2,#4a34c9); color:#fff;}
   .flip-back{background:#fff; box-shadow:0 4px 0 #ddd;}
-  .flip-outer.matched .flip-back{background:var(--teal); box-shadow:0 4px 0 var(--teal-dark);}
+  .flip-outer.matched .flip-back{background:linear-gradient(135deg,var(--teal),#22c3b0); box-shadow:0 4px 0 var(--teal-dark);}
+  .flip-outer:not(.is-flipped):hover .flip-front{ filter:brightness(1.08); }
+  #muteCtl{
+    position:fixed; top:14px; right:14px; width:42px; height:42px; border:none; border-radius:12px;
+    background:#fff; color:var(--ink); font-size:1.1rem; box-shadow:0 3px 0 #ddd; cursor:pointer; z-index:5;
+  }
+  #muteCtl:active{ transform:translateY(2px); }
+  #wrap{ position:relative; }
+  #countdownOverlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.85); border-radius:20px; z-index:9;
+  }
 </style>
 </head>
 <body>
+  <button id="muteCtl">🔊</button>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1 id="title">🧠 Eşleştirme</h1>
-  <div id="hud"><span>👀 Hamle: <span id="moves">0</span></span><span>✅ Eşleşen: <span id="found">0</span>/<span id="total">0</span></span></div>
-  <div class="panel">
+  <div id="hud">
+    <span>👀 Hamle: <span id="moves">0</span></span>
+    <span id="comboBadge" class="combo-badge" style="display:none;"></span>
+    <span>✅ Eşleşen: <span id="found">0</span>/<span id="total">0</span></span>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="panel" id="wrap">
     <div id="grid"></div>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">🎉</div>
       <div class="msg">Tüm çiftleri buldun!</div>
@@ -47,6 +72,20 @@
 const { theme, level } = getParams();
 setTitle('Eşleştirme');
 document.getElementById('title').textContent = `🧠 ${theme.name} Eşleştirme`;
+document.documentElement.style.setProperty('--th-1', theme.hue1);
+document.documentElement.style.setProperty('--th-2', theme.hue2);
+document.documentElement.style.setProperty('--th-bg1', theme.bg1);
+document.documentElement.style.setProperty('--th-bg2', theme.bg2);
+
+let muted = localStorage.getItem('ok_eslestirme_muted') === '1';
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = muted ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{
+  muted = !muted; localStorage.setItem('ok_eslestirme_muted', muted?'1':'0');
+  muteCtl.textContent = muted?'🔇':'🔊';
+  if(muted) stopThemeAmbient(); else startThemeAmbient(theme.ambient, ()=>muted);
+});
+function snd(fn){ if(!muted) fn(); }
 
 const pairsCount = Math.min(theme.emojis.length, 3 + level * 2);
 const cols = pairsCount <= 6 ? 4 : 5;
@@ -54,16 +93,27 @@ document.getElementById('grid').style.gridTemplateColumns = `repeat(${cols}, 70p
 document.getElementById('total').textContent = pairsCount;
 const parMoves = Math.round(pairsCount * 1.6);
 
-let deck, flipped, matched, moves, lock;
+let deck, flipped, matched, moves, lock, combo, particles = [];
 
 function init(){
   const chosen = shuffle(theme.emojis).slice(0, pairsCount);
   deck = shuffle([...chosen, ...chosen]).map((e,i)=>({id:i, emoji:e, flipped:false, matched:false}));
-  flipped = []; matched = 0; moves = 0; lock = false;
+  flipped = []; matched = 0; moves = 0; lock = true;
+  combo = createCombo(999);
   document.getElementById('moves').textContent = 0;
   document.getElementById('found').textContent = 0;
+  document.getElementById('comboBadge').style.display = 'none';
+  document.getElementById('progressFill').style.width = '0%';
   document.getElementById('overlay').style.display = 'none';
   render(true);
+
+  const cd = document.getElementById('countdownOverlay');
+  cd.style.display = 'flex';
+  runCountdown(cd, ()=>{
+    cd.style.display = 'none';
+    lock = false;
+    snd(()=> startThemeAmbient(theme.ambient, ()=>muted));
+  });
 }
 
 function render(rebuild){
@@ -97,7 +147,7 @@ function flip(id){
   if(card.flipped || card.matched) return;
   card.flipped = true;
   flipped.push(card);
-  playClick(500);
+  snd(()=>playClick(500));
   render(false);
   if(flipped.length===2){
     moves++;
@@ -105,28 +155,38 @@ function flip(id){
     lock = true;
     setTimeout(()=>{
       const [a,b] = flipped;
+      const cardA = document.getElementById('card-'+a.id), cardB = document.getElementById('card-'+b.id);
       if(a.emoji===b.emoji){
         a.matched = true; b.matched = true; matched++;
         document.getElementById('found').textContent = matched;
-        playSuccess();
-        document.getElementById('card-'+a.id).classList.add('glow');
-        document.getElementById('card-'+b.id).classList.add('glow');
+        updateProgressBar(document.getElementById('progressFill'), (matched/pairsCount)*100);
+
+        const level_ = combo.register();
+        renderComboBadge('comboBadge', level_);
+        if(level_>1) snd(()=>playCombo(level_));
+        snd(playSuccess);
+        cardA.classList.add('glow'); cardB.classList.add('glow');
+        const r = cardA.getBoundingClientRect(), pr = document.querySelector('.panel').getBoundingClientRect();
+        spawnParticles(particles, r.left-pr.left+r.width/2, r.top-pr.top+r.height/2, 10, [theme.hue1, theme.hue2, '#FFD23F'], {speed:3.5, life:22});
+        const b2 = cardB.getBoundingClientRect();
+        spawnParticles(particles, b2.left-pr.left+b2.width/2, b2.top-pr.top+b2.height/2, 10, [theme.hue1, theme.hue2, '#FFD23F'], {speed:3.5, life:22});
+        renderParticlesOverlay();
+
         if(matched===pairsCount){
+          stopThemeAmbient();
           const score = Math.max(0, pairsCount * 3 - Math.max(0, moves - parMoves));
-          renderResultGrid('resultGrid', [['HAMLE', moves], ['ÇİFT', pairsCount], ['SEVİYE', LEVEL_NAMES[level]]]);
+          renderResultGrid('resultGrid', [['HAMLE', moves], ['ÇİFT', pairsCount], ['SEVİYE', LEVEL_NAMES[level]], ['EN İYİ SERİ', 'x'+combo.level]]);
           document.getElementById('stars').textContent = starRating(score, pairsCount * 3);
           showOverlay('overlay');
           fireConfetti(document.querySelector('.panel'));
         }
       } else {
         a.flipped = false; b.flipped = false;
-        playError();
-        document.getElementById('card-'+a.id).classList.add('shake');
-        document.getElementById('card-'+b.id).classList.add('shake');
-        setTimeout(()=>{
-          document.getElementById('card-'+a.id)?.classList.remove('shake');
-          document.getElementById('card-'+b.id)?.classList.remove('shake');
-        }, 350);
+        combo.reset();
+        document.getElementById('comboBadge').style.display = 'none';
+        snd(playError);
+        cardA.classList.add('shake'); cardB.classList.add('shake');
+        setTimeout(()=>{ cardA?.classList.remove('shake'); cardB?.classList.remove('shake'); }, 350);
       }
       flipped = [];
       lock = false;
@@ -134,6 +194,27 @@ function flip(id){
     }, 700);
   }
 }
+
+// basit DOM-üstü canvas olmayan parçacık overlay'i (küçük emoji-benzeri noktalar, CSS ile)
+function renderParticlesOverlay(){
+  const panel = document.querySelector('.panel');
+  particles.forEach(p=>{
+    const el = document.createElement('div');
+    el.style.cssText = `position:absolute; left:${p.x}px; top:${p.y}px; width:${p.size}px; height:${p.size}px; border-radius:50%; background:${p.color}; pointer-events:none; z-index:6; transition:transform .5s ease, opacity .5s ease; opacity:1;`;
+    panel.appendChild(el);
+    requestAnimationFrame(()=>{
+      el.style.transform = `translate(${p.vx*12}px, ${p.vy*12}px)`;
+      el.style.opacity = '0';
+    });
+    setTimeout(()=> el.remove(), 520);
+  });
+  particles = [];
+}
+
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) stopThemeAmbient();
+  else if(!lock || matched < pairsCount) snd(()=> startThemeAmbient(theme.ambient, ()=>muted));
+});
 
 init();
 </script>

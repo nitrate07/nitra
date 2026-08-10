@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Kelime Hafızası — Oyun Kutusu</title>
 <meta name="description" content="Kelimeleri hatırla, hafızanı test et! Çocuklar için ücretsiz kelime hafızası oyunu.">
 <meta name="robots" content="index, follow">
@@ -16,33 +16,41 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Kelime Hafızası — Oyun Kutusu">
 <meta name="twitter:description" content="Kelimeleri hatırla, hafızanı test et! Çocuklar için ücretsiz kelime hafızası oyunu.">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  #memList{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-width:340px; margin-bottom:10px;}
-  .word-chip{background:var(--yellow); padding:10px 16px; border-radius:12px; font-weight:800; box-shadow:0 3px 0 #e0b326;}
-  #choices{display:grid; grid-template-columns:repeat(2, 140px); gap:10px;}
-  .choice{
-    background:#fff; border:3px solid #E4DDFF; border-radius:14px; padding:12px; font-weight:800; text-align:center;
-    cursor:pointer; transition:transform .12s, background .15s;
+  body{
+    background:radial-gradient(circle at 50% 0%, var(--th-bg1,#fff3d6), var(--th-bg2,#ffe0a3) 70%);
+    padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom));
   }
-  .choice:active{transform:scale(.96);}
-  .choice.picked{outline:3px solid var(--purple); background:#F1EEFF;}
-  .choice.correct{background:var(--teal); color:#fff; border-color:var(--teal-dark);}
-  .choice.wrong{background:var(--coral); color:#fff; border-color:var(--coral-dark);}
-  .choice.missed{background:#FFE8A3; border-color:var(--yellow);}
-  #timerBar{width:100%; max-width:260px; height:10px; background:#EDE9FF; border-radius:999px; overflow:hidden; margin-bottom:14px;}
-  #timerFill{height:100%; background:linear-gradient(90deg,var(--coral),var(--yellow)); border-radius:999px; transition:width 1s linear;}
+  h1{ font-family:'Fredoka',sans-serif; }
+  #memList{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-width:340px; margin-bottom:10px;}
+  .word-chip{background:linear-gradient(135deg, var(--th-1,#FFD23F), var(--th-2,#e0b326)); color:#fff; padding:10px 16px; border-radius:12px; font-weight:800; box-shadow:0 3px 0 var(--th-2,#e0b326);}
+  #choices{display:grid; grid-template-columns:repeat(2, 140px); gap:10px;}
+  #timerBar{width:100%; max-width:260px; height:10px; background:#EDE9FF; border-radius:999px; overflow:hidden; margin-bottom:14px; position:relative;}
+  #timerFill{height:100%; background:linear-gradient(90deg,var(--th-1,#FF6B6B),var(--th-2,#FFD23F)); border-radius:999px; transition:width 1s linear;}
+  #muteCtl{
+    position:fixed; top:14px; right:14px; width:42px; height:42px; border:none; border-radius:12px;
+    background:#fff; color:var(--ink); font-size:1.1rem; box-shadow:0 3px 0 #ddd; cursor:pointer; z-index:5;
+  }
+  #muteCtl:active{ transform:translateY(2px); }
+  #wrap{ position:relative; }
+  #countdownOverlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.85); border-radius:20px; z-index:9;
+  }
 </style>
 </head>
 <body>
+  <button id="muteCtl">🔊</button>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1 id="title">📝 Kelime Hafızası</h1>
   <div id="hud"><span>📣 <span id="status">Kelimeleri ezberle!</span></span></div>
   <div id="timerBar"><div id="timerFill" style="width:100%"></div></div>
-  <div class="panel">
+  <div class="panel" id="wrap">
     <div id="memList"></div>
     <div id="choices" style="display:none;"></div>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big" id="overIcon">🎉</div>
       <div class="msg" id="overMsg"></div>
@@ -58,6 +66,19 @@
 const { theme, level } = getParams();
 setTitle('Kelime Hafızası');
 document.getElementById('title').textContent = `📝 ${theme.name} Kelime Hafızası`;
+document.documentElement.style.setProperty('--th-1', theme.hue1);
+document.documentElement.style.setProperty('--th-2', theme.hue2);
+document.documentElement.style.setProperty('--th-bg1', theme.bg1);
+document.documentElement.style.setProperty('--th-bg2', theme.bg2);
+
+let muted = localStorage.getItem('ok_kelime_muted') === '1';
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = muted ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{
+  muted = !muted; localStorage.setItem('ok_kelime_muted', muted?'1':'0');
+  muteCtl.textContent = muted?'🔇':'🔊';
+});
+function snd(fn){ if(!muted) fn(); }
 
 const wordCount = Math.min(theme.words.length, 3 + level);
 const studyTime = 3 + level;
@@ -68,27 +89,34 @@ const distractors = shuffle(distractorPool).slice(0, wordCount);
 const allChoices = shuffle([...chosenWords, ...distractors]);
 
 const memList = document.getElementById('memList');
-chosenWords.forEach((w,i)=>{
-  const chip = document.createElement('div');
-  chip.className = 'word-chip pop';
-  chip.style.animationDelay = (i*0.08)+'s';
-  chip.textContent = w;
-  memList.appendChild(chip);
-});
 
-let timeLeft = studyTime;
-document.getElementById('status').textContent = `Ezberle: ${timeLeft} sn`;
-const countdown = setInterval(()=>{
-  timeLeft--;
-  document.getElementById('timerFill').style.width = Math.max(0, (timeLeft/studyTime)*100) + '%';
-  if(timeLeft <= 0){
-    clearInterval(countdown);
-    showChoices();
-  } else {
-    document.getElementById('status').textContent = `Ezberle: ${timeLeft} sn`;
-    if(timeLeft <= 2) playTone(300,0.08,'triangle',0.1);
-  }
-}, 1000);
+function beginStudyPhase(){
+  chosenWords.forEach((w,i)=>{
+    const chip = document.createElement('div');
+    chip.className = 'word-chip pop';
+    chip.style.animationDelay = (i*0.08)+'s';
+    chip.textContent = w;
+    memList.appendChild(chip);
+  });
+
+  let timeLeft = studyTime;
+  document.getElementById('status').textContent = `Ezberle: ${timeLeft} sn`;
+  const countdown = setInterval(()=>{
+    timeLeft--;
+    document.getElementById('timerFill').style.width = Math.max(0, (timeLeft/studyTime)*100) + '%';
+    if(timeLeft <= 0){
+      clearInterval(countdown);
+      showChoices();
+    } else {
+      document.getElementById('status').textContent = `Ezberle: ${timeLeft} sn`;
+      if(timeLeft <= 2) snd(()=>playTone(300,0.08,'triangle',0.1));
+    }
+  }, 1000);
+}
+
+const cd = document.getElementById('countdownOverlay');
+cd.style.display = 'flex';
+runCountdown(cd, ()=>{ cd.style.display = 'none'; beginStudyPhase(); });
 
 let selected = new Set();
 let answered = false;
@@ -106,7 +134,7 @@ function showChoices(){
     div.textContent = w;
     div.onclick = ()=>{
       if(answered) return;
-      playClick(420);
+      snd(()=>playClick(420));
       if(selected.has(w)){ selected.delete(w); div.classList.remove('picked'); }
       else { selected.add(w); div.classList.add('picked'); }
     };
@@ -125,17 +153,22 @@ function checkAnswers(){
   if(answered) return;
   answered = true;
   let correct = 0;
+  const panel = document.querySelector('.panel');
   document.querySelectorAll('.choice').forEach(div=>{
     const w = div.dataset.word;
     if(!w) return;
     const wasShown = chosenWords.includes(w);
     const wasSelected = selected.has(w);
-    if(wasShown && wasSelected){ div.classList.add('correct'); correct++; }
-    else if(!wasShown && wasSelected){ div.classList.add('wrong'); }
-    else if(wasShown && !wasSelected){ div.classList.add('missed'); }
+    if(wasShown && wasSelected){
+      div.classList.add('correct'); correct++;
+      const r = div.getBoundingClientRect(), pr = panel.getBoundingClientRect();
+      spawnFloatParticle(panel, r.left-pr.left+r.width/2, r.top-pr.top+r.height/2, theme.hue1);
+    }
+    else if(!wasShown && wasSelected) div.classList.add('wrong');
+    else if(wasShown && !wasSelected) div.classList.add('missed');
   });
   const success = correct === wordCount;
-  if(success) playSuccess(); else playError();
+  snd(()=> success ? playSuccess() : playError());
   setTimeout(()=>{
     document.getElementById('overIcon').textContent = success ? '🎉' : '💪';
     document.getElementById('overMsg').textContent = `${wordCount} kelimeden ${correct} tanesini doğru hatırladın!`;
@@ -144,8 +177,22 @@ function checkAnswers(){
     ]);
     document.getElementById('stars').textContent = starRating(correct, wordCount);
     showOverlay('overlay');
-    if(success) fireConfetti(document.querySelector('.panel'));
+    if(success) fireConfetti(panel);
   }, 900);
+}
+
+function spawnFloatParticle(container, x, y, color){
+  for(let i=0;i<6;i++){
+    const el = document.createElement('div');
+    const ang = Math.random()*Math.PI*2, dist = 20+Math.random()*24;
+    el.style.cssText = `position:absolute; left:${x}px; top:${y}px; width:6px; height:6px; border-radius:50%; background:${color}; pointer-events:none; z-index:6; transition:transform .5s ease, opacity .5s ease; opacity:1;`;
+    container.appendChild(el);
+    requestAnimationFrame(()=>{
+      el.style.transform = `translate(${Math.cos(ang)*dist}px, ${Math.sin(ang)*dist}px)`;
+      el.style.opacity = '0';
+    });
+    setTimeout(()=> el.remove(), 520);
+  }
 }
 </script>
 </body>

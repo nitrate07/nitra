@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Kelime Avı — Oyun Kutusu</title>
 <meta name="description" content="Harfleri birleştir, kelimeyi bul! Eğlenceli ve ücretsiz kelime avı oyunu.">
 <meta name="robots" content="index, follow">
@@ -16,26 +16,48 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Kelime Avı — Oyun Kutusu">
 <meta name="twitter:description" content="Harfleri birleştir, kelimeyi bul! Eğlenceli ve ücretsiz kelime avı oyunu.">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
-  #wordList{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:320px; margin-bottom:12px; }
+  body{
+    background:radial-gradient(circle at 50% 0%, var(--th-bg1,#fff3d6), var(--th-bg2,#ffe0a3) 70%);
+    padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom));
+  }
+  h1{ font-family:'Fredoka',sans-serif; }
+  #wordList{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:320px; margin-bottom:10px; }
   .word-chip{ background:#fff; padding:6px 12px; border-radius:10px; font-weight:800; font-size:.85rem; box-shadow:0 2px 0 #ddd; }
-  .word-chip.found{ background:var(--teal); color:#fff; text-decoration:line-through; box-shadow:0 2px 0 var(--teal-dark); }
+  .word-chip.found{ background:linear-gradient(135deg,var(--th-1,#2EC4B6),var(--th-2,#1c9cae)); color:#fff; text-decoration:line-through; box-shadow:0 2px 0 var(--th-2,#1c9cae); }
   #letterGrid{ display:grid; gap:3px; user-select:none; touch-action:none; }
   .letter{ width:34px; height:34px; background:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center;
-    font-weight:900; font-size:1.05rem; box-shadow:0 2px 0 #ddd; cursor:pointer; }
-  .letter.selected{ background:var(--yellow); box-shadow:0 2px 0 #e0b326; }
-  .letter.found{ background:var(--teal); color:#fff; box-shadow:0 2px 0 var(--teal-dark); }
+    font-weight:900; font-size:1.05rem; box-shadow:0 2px 0 #ddd; cursor:pointer; transition:transform .1s; }
+  .letter.selected{ background:var(--th-1,#FFD23F); box-shadow:0 2px 0 var(--th-2,#e0b326); transform:scale(1.08); }
+  .letter.found{ background:linear-gradient(135deg,var(--th-1,#2EC4B6),var(--th-2,#1c9cae)); color:#fff; box-shadow:0 2px 0 var(--th-2,#1c9cae); }
+  .progress-track{ margin-bottom:10px; }
+  #comboBadge{ display:none; margin-bottom:8px; }
+  #muteCtl{
+    position:fixed; top:14px; right:14px; width:42px; height:42px; border:none; border-radius:12px;
+    background:#fff; color:var(--ink); font-size:1.1rem; box-shadow:0 3px 0 #ddd; cursor:pointer; z-index:5;
+  }
+  #muteCtl:active{ transform:translateY(2px); }
+  #wrap{ position:relative; }
+  #countdownOverlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.85); border-radius:20px; z-index:9;
+  }
+  p.hint{ font-size:.85rem; opacity:.7; margin-top:10px; text-align:center; }
 </style>
 </head>
 <body>
+  <button id="muteCtl">🔊</button>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1 id="title">🔤 Kelime Avı</h1>
   <div id="hud"><span>✅ Bulunan: <span id="foundCount">0</span>/<span id="totalCount">0</span></span></div>
+  <span id="comboBadge" class="combo-badge"></span>
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
   <div id="wordList"></div>
-  <div class="panel">
+  <div class="panel" id="wrap">
     <div id="letterGrid"></div>
+    <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">🎉</div>
       <div class="msg">Tüm kelimeleri buldun!</div>
@@ -45,13 +67,27 @@
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
-  <p style="font-size:.85rem; opacity:.7; margin-top:10px; text-align:center;">Bir harften başlayıp sürükleyerek kelimeyi çiz (yatay, dikey veya çapraz olabilir)!</p>
+  <p class="hint">Bir harften başlayıp sürükleyerek kelimeyi çiz (yatay, dikey veya çapraz olabilir)!</p>
 
 <script src="common.js"></script>
 <script>
 const { theme, level } = getParams();
 setTitle('Kelime Avı');
 document.getElementById('title').textContent = `🔤 ${theme.name} Kelime Avı`;
+document.documentElement.style.setProperty('--th-1', theme.hue1);
+document.documentElement.style.setProperty('--th-2', theme.hue2);
+document.documentElement.style.setProperty('--th-bg1', theme.bg1);
+document.documentElement.style.setProperty('--th-bg2', theme.bg2);
+
+let muted = localStorage.getItem('ok_kelimeavi_muted') === '1';
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = muted ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{
+  muted = !muted; localStorage.setItem('ok_kelimeavi_muted', muted?'1':'0');
+  muteCtl.textContent = muted?'🔇':'🔊';
+  if(muted) stopThemeAmbient(); else startThemeAmbient(theme.ambient, ()=>muted);
+});
+function snd(fn){ if(!muted) fn(); }
 
 const size = [null,8,9,10,11][level];
 const wordCount = Math.min(theme.words.length, 4 + level);
@@ -60,7 +96,7 @@ document.getElementById('letterGrid').style.gridTemplateColumns = `repeat(${size
 const TR_UPPER = (s)=> s.toLocaleUpperCase('tr-TR').replace(/İ/g,'İ');
 const ALPHABET = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ';
 
-let grid, words, foundWords, selecting, selection;
+let grid, words, foundWords, selecting, selection, combo, started = false;
 
 function emptyGrid(n){
   return Array.from({length:n}, ()=> Array.from({length:n}, ()=> null));
@@ -105,9 +141,12 @@ function init(){
   });
   for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(grid[r][c]===null) grid[r][c] = ALPHABET[Math.floor(Math.random()*ALPHABET.length)];
 
-  foundWords = 0;
+  foundWords = 0; started = false;
+  combo = createCombo(200);
   document.getElementById('foundCount').textContent = 0;
   document.getElementById('totalCount').textContent = words.length;
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('comboBadge').style.display = 'none';
   document.getElementById('overlay').style.display = 'none';
 
   const wl = document.getElementById('wordList');
@@ -121,6 +160,14 @@ function init(){
   });
 
   renderGrid();
+
+  const cd = document.getElementById('countdownOverlay');
+  cd.style.display = 'flex';
+  runCountdown(cd, ()=>{
+    cd.style.display = 'none';
+    started = true;
+    snd(()=> startThemeAmbient(theme.ambient, ()=>muted));
+  });
 }
 
 function renderGrid(){
@@ -144,7 +191,7 @@ function renderGrid(){
 
 selecting = false; selection = [];
 
-function startSelect(r,c){ selecting = true; selection = [[r,c]]; updateSelectionUI(); }
+function startSelect(r,c){ if(!started) return; selecting = true; selection = [[r,c]]; updateSelectionUI(); }
 function continueSelect(r,c){
   if(!selecting) return;
   const start = selection[0];
@@ -152,7 +199,7 @@ function continueSelect(r,c){
   const steps = Math.max(Math.abs(dr), Math.abs(dc));
   if(steps === 0){ selection = [start]; updateSelectionUI(); return; }
   const stepR = Math.sign(dr), stepC = Math.sign(dc);
-  if(dr!==0 && dc!==0 && Math.abs(dr)!==Math.abs(dc)) return; // sadece düz/çapraz çizgi
+  if(dr!==0 && dc!==0 && Math.abs(dr)!==Math.abs(dc)) return;
   const newSel = [];
   for(let i=0;i<=steps;i++) newSel.push([start[0]+stepR*i, start[1]+stepC*i]);
   selection = newSel;
@@ -172,23 +219,34 @@ function endSelect(){
   const selStr = selection.map(([r,c])=>grid[r][c]).join('');
   const selRev = selStr.split('').reverse().join('');
   const match = words.find(w=>!w.found && (w.word===selStr || w.word===selRev));
+  const panel = document.querySelector('.panel');
   if(match){
     match.found = true;
     foundWords++;
     document.getElementById('foundCount').textContent = foundWords;
+    updateProgressBar(document.getElementById('progressFill'), (foundWords/words.length)*100);
+
+    const level_ = combo.register();
+    renderComboBadge('comboBadge', level_);
+    if(level_>1) snd(()=>playCombo(level_));
+
     const chip = document.getElementById('chip-'+words.indexOf(match));
     chip.classList.add('found');
-    playWordFound();
-    const cr = chip.getBoundingClientRect(), pr = document.querySelector('.panel').getBoundingClientRect();
-    showFloatingPoints(document.querySelector('.panel'), cr.left-pr.left+cr.width/2, cr.top-pr.top, '✨ BULUNDU! +100', '#2EC4B6');
+    snd(playWordFound);
+    const cr = chip.getBoundingClientRect(), pr = panel.getBoundingClientRect();
+    showFloatingPoints(panel, cr.left-pr.left+cr.width/2, cr.top-pr.top,
+      level_>1 ? `🔥 x${level_} BULUNDU!` : '✨ BULUNDU! +100', theme.hue1);
     if(foundWords === words.length){
-      renderResultGrid('resultGrid', [['BULUNAN', words.length], ['KELİME', words.length], ['SKOR', words.length*100]]);
+      stopThemeAmbient();
+      renderResultGrid('resultGrid', [['BULUNAN', words.length], ['KELİME', words.length], ['SKOR', words.length*100], ['EN İYİ SERİ', 'x'+combo.level]]);
       document.getElementById('stars').textContent = starRating(words.length, words.length);
       showOverlay('overlay');
-      fireConfetti(document.querySelector('.panel'));
+      fireConfetti(panel);
     }
-  } else {
-    playClick(300);
+  } else if(started && selection.length>1){
+    combo.reset();
+    document.getElementById('comboBadge').style.display = 'none';
+    snd(()=>playClick(300));
   }
   selection = [];
   renderGrid();
@@ -201,6 +259,11 @@ document.getElementById('letterGrid').addEventListener('touchmove', e=>{
   const el = document.elementFromPoint(t.clientX, t.clientY);
   if(el && el.classList.contains('letter')) continueSelect(+el.dataset.r, +el.dataset.c);
 }, {passive:false});
+
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) stopThemeAmbient();
+  else if(started && foundWords < words.length) snd(()=> startThemeAmbient(theme.ambient, ()=>muted));
+});
 
 init();
 </script>
