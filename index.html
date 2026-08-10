@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+<!-- ============================================================
+  GOOGLE ADSENSE KURULUMU — AKSİYON GEREKİYOR:
+  1) Aşağıdaki "ca-pub-0000000000000000" değerini kendi AdSense
+     Publisher ID'inle değiştir (AdSense panelinde "Hesap > Hesap bilgileri"nde bulunur).
+  2) /ads.txt dosyasındaki pub-0000000000000000 değerini de aynı ID ile değiştir.
+  3) AdSense panelinde bu siteyi "Çocuklara yönelik / Child-directed" olarak işaretle
+     (Ayarlar > Reklam ayarları > İçerik hedef kitlesi). Bu site çocuklara yönelik
+     olduğu için Google bunu zorunlu kılıyor; işaretlemezsen hesabın askıya alınabilir.
+  4) Bir Gizlilik Politikası sayfan olmalı (gizlilik.html oluşturuldu, footer'a linklendi).
+============================================================ -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0000000000000000" crossorigin="anonymous"></script>
+<script>
+  // Çocuklara yönelik reklam işaretlemesi (TFAT) — kişiselleştirilmiş/davranışsal reklamı devre dışı bırakır.
+  window.adsbygoogle = window.adsbygoogle || [];
+  adsbygoogle.requestNonPersonalizedAds = 1;
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WoogiGames — Ücretsiz Çocuk Oyunları</title>
@@ -256,12 +272,14 @@
     background:linear-gradient(180deg,#1b1440,#0f0c2e);
     display:flex; flex-direction:column; padding:18px 12px; gap:4px;
     transform:translateX(-100%); transition:transform .3s ease;
-    overflow-y:auto;
+    overflow-y:auto; overflow-x:hidden; box-sizing:border-box;
   }
   #sidebar.open{ transform:translateX(0); box-shadow:10px 0 40px rgba(0,0,0,.4); }
   #sidebar .sb-logo{
-    font-family:'Fredoka',sans-serif; color:#fff; font-size:1.2rem; font-weight:600; text-align:center;
-    margin-bottom:14px; padding:6px 0;
+    font-family:'Fredoka',sans-serif; color:#fff; font-weight:600; text-align:center;
+    margin-bottom:14px; padding:6px 4px; font-size:1.05rem; line-height:1.3;
+    white-space:normal; word-break:keep-all; overflow-wrap:break-word;
+    display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; width:100%; box-sizing:border-box;
   }
   .sb-item{
     display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:14px; color:#c9c4e8;
@@ -319,6 +337,9 @@
   #statsBox{ background:#fff; border-radius:20px; padding:16px 18px; box-shadow:0 4px 0 #e4e0f7; }
   html.dark #statsBox{ background:#1a1640; }
   #statsBox h4{ font-family:'Fredoka',sans-serif; margin-bottom:10px; }
+  .ad-slot{ background:#fff; border-radius:16px; padding:10px; box-shadow:0 3px 0 #e4e0f7; text-align:center; min-height:100px; }
+  html.dark .ad-slot{ background:#1a1640; }
+  .ad-label{ display:block; font-size:.6rem; letter-spacing:1px; color:#9089b8; font-weight:800; margin-bottom:6px; text-transform:uppercase; }
   *{box-sizing:border-box; margin:0; padding:0;}
   html{scroll-behavior:smooth;}
   body{
@@ -583,7 +604,7 @@
   <button id="sidebarToggle">☰</button>
   <div id="sidebarBackdrop"></div>
   <aside id="sidebar">
-    <div class="sb-logo">🐼 WoogiGames</div>
+    <div class="sb-logo"><img src="assets/mascot-round.png" alt="WoogiGames" style="width:22px;height:22px;border-radius:50%;flex-shrink:0;"> WoogiGames</div>
     <a class="sb-item active" href="#"><span class="sb-icon">🏠</span> Ana Sayfa</a>
     <a class="sb-item" href="#oyunlar"><span class="sb-icon">🎮</span> Oyunlar</a>
     <a class="sb-item" href="#worldMap"><span class="sb-icon">🗺️</span> Dünyalar</a>
@@ -1058,6 +1079,16 @@
         <h4>📊 İstatistiklerim</h4>
         <div id="statsRow"></div>
       </div>
+      <div class="ad-slot">
+        <span class="ad-label">Reklam</span>
+        <ins class="adsbygoogle"
+          style="display:block"
+          data-ad-client="ca-pub-0000000000000000"
+          data-ad-slot="0000000000"
+          data-ad-format="auto"
+          data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
     </div>
   </aside>
 
@@ -1066,8 +1097,8 @@
   <footer id="ebeveyn">
     <div><strong>Ebeveynler için:</strong> Sitemizde reklam takibi ve kişisel veri toplama yapılmaz, üyelik gerekmez.</div>
     <div class="links">
-      <a href="#">Gizlilik Politikası</a>
-      <a href="#">İletişim</a>
+      <a href="gizlilik.html">Gizlilik Politikası</a>
+      <a href="mailto:iletisim@woogigames.com">İletişim</a>
     </div>
     <div style="margin-top:10px;">© 2026 WoogiGames</div>
   </footer>
