@@ -55,6 +55,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
+  #splashScreen{
+    position:fixed; inset:0; z-index:999; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 40%, #1a1440, #0a0824 75%);
+    animation:splashOut .6s ease forwards; animation-delay:1.3s;
+  }
+  #splashLogo{
+    width:min(70vw, 320px); animation:splashPop .7s cubic-bezier(.34,1.56,.64,1);
+    filter:drop-shadow(0 10px 30px rgba(0,0,0,.5));
+  }
+  @keyframes splashPop{ from{ opacity:0; transform:scale(.7);} to{ opacity:1; transform:scale(1);} }
+  @keyframes splashOut{ from{ opacity:1; visibility:visible;} to{ opacity:0; visibility:hidden; pointer-events:none;} }
+  @media (prefers-reduced-motion: reduce){
+    #splashScreen{ animation:splashOut .3s ease forwards; animation-delay:.4s; }
+    #splashLogo{ animation:none; }
+  }
   :root{
     --bg:#F7F5FF;
     --ink:#1B1B3A;
@@ -601,6 +616,12 @@
 </style>
 </head>
 <body>
+  <div id="splashScreen">
+    <img src="assets/logo.png" alt="WoogiGames" id="splashLogo">
+  </div>
+  <script>
+    setTimeout(()=>{ const s=document.getElementById('splashScreen'); if(s) s.remove(); }, 2000);
+  </script>
   <button id="sidebarToggle">☰</button>
   <div id="sidebarBackdrop"></div>
   <aside id="sidebar">
@@ -790,6 +811,20 @@
     <div class="grid" id="grid-aksiyon"></div>
 
     <template id="featuredTemplate">
+      <a class="game-card" href="woogi-macera.html" data-cat="macera hareket" data-name="woogi'nin macerası">
+        <span class="badge-new" style="background:linear-gradient(135deg,#3dd6ff,#6C4EF5);">Özgün</span>
+        <div class="thumb-svg"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="gWoogi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8fd868"/><stop offset="1" stop-color="#4a34c9"/></linearGradient></defs>
+          <rect width="100" height="100" fill="url(#gWoogi)"/>
+          <circle cx="78" cy="20" r="7" fill="#FFD23F" opacity=".85"/>
+          <rect x="10" y="70" width="80" height="10" fill="#5c8f3a" opacity=".6"/>
+          <text x="42" y="66" font-size="34" text-anchor="middle">🐼</text>
+          <text x="80" y="46" font-size="16" text-anchor="middle">🎋</text>
+          <text x="18" y="40" font-size="14" text-anchor="middle">⭐</text>
+        </svg></div>
+        <h3>Woogi'nin Macerası</h3>
+        <div class="tag">Beceri · Macera</div>
+      </a>
       <a class="game-card" href="labirent.html" data-cat="hafiza macera" data-name="labirent macerası">
         <span class="badge-new">Yeni</span>
         <div class="thumb-svg"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -1264,7 +1299,7 @@
 
   // Editörün Seçimi: sabit, elle seçilmiş favoriler
   const EDITOR_PICKS = [
-    'araba-yarisi.html','futbol-simsek.html','labirent.html','tekne-yarisi.html',
+    'woogi-macera.html','araba-yarisi.html','futbol-simsek.html','labirent.html','tekne-yarisi.html',
     'pizza.html','ucak-oyunu.html','serbest-vurus.html','kaykay-yarisi.html',
     'sandvic.html','ipatlama.html'
   ];

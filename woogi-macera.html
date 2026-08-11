@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Woogi'nin Macerası — WoogiGames</title>
+<meta name="description" content="WoogiGames'in kendi karakteri Woogi ile platform macerasına atıl! Zıpla, bambu topla, dünyaları keşfet. Ücretsiz ve tamamen özgün.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://woogigames.com/woogi-macera.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Woogi'nin Macerası — WoogiGames">
+<meta property="og:description" content="WoogiGames'in kendi karakteri Woogi ile platform macerasına atıl!">
+<meta property="og:url" content="https://woogigames.com/woogi-macera.html">
+<meta property="og:site_name" content="WoogiGames">
+<meta property="og:locale" content="tr_TR">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Woogi'nin Macerası — WoogiGames">
+<meta name="twitter:description" content="WoogiGames'in kendi karakteri Woogi ile platform macerasına atıl!">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  body{
+    background:radial-gradient(circle at 50% 0%, var(--lv-bg1,#bdefff), var(--lv-bg2,#eafcff) 70%);
+    padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom));
+  }
+  h1{ font-family:'Fredoka',sans-serif; }
+  #hud{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  #hud span{ font-size:.82rem; }
+  .progress-track{ margin:8px auto 10px; }
+  canvas{
+    background:linear-gradient(var(--lv-sky1,#7fc8f8),var(--lv-sky2,#cdeeff));
+    display:block; margin:0 auto; width:auto; height:auto;
+    aspect-ratio:480/300; max-width:min(94vw,560px);
+    max-height:calc(100vh - 300px); max-height:calc(100svh - 300px);
+    border-radius:16px; box-shadow:0 0 0 4px #fff, 0 14px 34px rgba(0,0,0,.25);
+    touch-action:none;
+  }
+  #wrap{ position:relative; display:flex; justify-content:center; }
+  #countdownOverlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(0,0,0,.25); border-radius:16px; z-index:9;
+  }
+  #levelBanner{
+    position:absolute; top:14px; left:50%; transform:translate(-50%,-140%); z-index:8; pointer-events:none;
+    background:rgba(20,14,50,.8); color:#fff; padding:8px 18px; border-radius:999px; font-weight:800;
+    font-family:'Fredoka',sans-serif; font-size:.95rem; transition:transform .5s cubic-bezier(.34,1.56,.64,1);
+  }
+  #levelBanner.show{ transform:translate(-50%,0); }
+  .controls{ display:flex; justify-content:space-between; align-items:center; margin-top:14px; max-width:560px; margin-left:auto; margin-right:auto; padding:0 6px; }
+  .dpad{ display:flex; gap:8px; }
+  .ctl{
+    width:58px; height:58px; border:none; border-radius:16px; background:#fff; color:var(--ink); font-size:1.4rem;
+    box-shadow:0 4px 0 #ddd; cursor:pointer; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none;
+  }
+  .ctl:active{ transform:translateY(3px); box-shadow:0 1px 0 #ddd; }
+  #jumpBtn{ width:72px; height:72px; background:linear-gradient(180deg,#3dd6ff,#2e94c9); color:#fff; font-size:1.7rem; box-shadow:0 5px 0 #1c6f94; }
+  #jumpBtn:active{ box-shadow:0 1px 0 #1c6f94; }
+  #muteCtl{ width:46px; height:46px; border:none; border-radius:14px; background:#fff; color:var(--ink); font-size:1.1rem; box-shadow:0 3px 0 #ddd; cursor:pointer; }
+  #muteCtl:active{ transform:translateY(2px); }
+  p.hint{ font-size:.82rem; opacity:.65; margin-top:10px; text-align:center; max-width:360px; }
+  #overlay .big{ font-size:2.4rem; }
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Oyunlara dön</a>
+  <h1>🐼 Woogi'nin Macerası</h1>
+  <div id="hud">
+    <span>🎋 <span id="bambooCount">0</span></span>
+    <span>⭐ <span id="starCount">0</span></span>
+    <span>❤️ <span id="lives">3</span></span>
+    <span>🗺️ <span id="levelName">Orman Girişi</span></span>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="levelProgress" style="width:0%"></div></div>
+
+  <div id="wrap">
+    <canvas id="c" width="480" height="300"></canvas>
+    <div id="levelBanner"></div>
+    <div id="countdownOverlay"></div>
+    <div id="overlay">
+      <div class="big" id="overIcon">🎉</div>
+      <div class="msg" id="overMsg"></div>
+      <div class="result-grid" id="resultGrid"></div>
+      <div class="stars" id="starsEl"></div>
+      <button class="btn" id="retryBtn">Tekrar Oyna</button>
+      <button class="btn alt" id="nextLevelBtn" style="display:none;">Sonraki Dünya →</button>
+      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="dpad">
+      <button class="ctl" id="leftBtn">◀</button>
+      <button class="ctl" id="rightBtn">▶</button>
+    </div>
+    <button id="muteCtl">🔊</button>
+    <button id="jumpBtn">⬆</button>
+  </div>
+  <p class="hint">Ok tuşları / dokunmatik butonlarla yürü, ZIPLA ile engellerden atla ve düşmanların üstüne bas! 🎋 bambu topla, bayrağa ulaş.</p>
+
+<script src="common.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const GRAVITY = 0.62;
+const JUMP_V = -12.5;
+const MOVE_SPEED = 2.7;
+const GROUND_Y = H - 40;
+
+// ================= SES MOTORU (paylaşılan AudioContext) =================
+const Audio_ = (function(){
+  let muted = localStorage.getItem('ok_woogi_muted') === '1';
+  let noiseBuffer;
+  let musicOn = false, musicStep = 0, musicTimeoutId = null;
+  function getCtx(){ return _ctx(); }
+  function unlock(){ try{ getCtx().resume(); }catch(e){} }
+  function makeNoiseBuffer(){
+    if(noiseBuffer) return noiseBuffer;
+    const c = getCtx(); const len = Math.floor(c.sampleRate*0.3);
+    noiseBuffer = c.createBuffer(1, len, c.sampleRate);
+    const d = noiseBuffer.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    return noiseBuffer;
+  }
+  function tone(freq, dur=0.12, type='sine', vol=0.15, delay=0){
+    if(muted) return;
+    try{
+      const c = getCtx(); const t0 = c.currentTime+delay;
+      const osc = c.createOscillator(); const gain = c.createGain();
+      osc.type = type; osc.frequency.setValueAtTime(freq, t0);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(Math.max(vol,0.001), t0+0.015);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+      osc.connect(gain); gain.connect(c.destination);
+      osc.start(t0); osc.stop(t0+dur+0.03);
+    }catch(e){}
+  }
+  function noiseBurst(dur=0.15, vol=0.15, filterFreq=500, type='lowpass'){
+    if(muted) return;
+    try{
+      const c = getCtx(); const t0 = c.currentTime;
+      const src = c.createBufferSource(); src.buffer = makeNoiseBuffer();
+      const filt = c.createBiquadFilter(); filt.type = type; filt.frequency.setValueAtTime(filterFreq, t0);
+      const gain = c.createGain();
+      gain.gain.setValueAtTime(vol, t0);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+      src.connect(filt); filt.connect(gain); gain.connect(c.destination);
+      src.start(t0); src.stop(t0+dur+0.05);
+    }catch(e){}
+  }
+  function jump(){ tone(500,0.12,'square',0.13); tone(750,0.1,'square',0.1,0.06); }
+  function land(){ tone(200,0.06,'sine',0.08); }
+  function bamboo(){ tone(750,0.07,'triangle',0.13); tone(1050,0.1,'triangle',0.12,0.05); }
+  function star(){ [700,900,1100].forEach((f,i)=>tone(f,0.1,'triangle',0.13,i*0.06)); }
+  function stomp(){ noiseBurst(0.1,0.14,700,'lowpass'); tone(180,0.1,'square',0.12); }
+  function hurt(){ noiseBurst(0.2,0.18,350,'lowpass'); tone(120,0.25,'sawtooth',0.15); }
+  function flag(){ [523,659,784,1046,1318].forEach((f,i)=>tone(f,0.18,'triangle',0.14,i*0.09)); }
+  function gameOver(){ [300,260,200,150].forEach((f,i)=>tone(f,0.3,'sawtooth',0.13,i*0.15)); }
+  const arp = [262,330,392,330, 294,349,440,349];
+  function scheduleMusic(){
+    if(!musicOn){ musicTimeoutId=null; return; }
+    if(!muted){ tone(arp[musicStep%arp.length], 0.18, 'triangle', 0.035); if(musicStep%4===0) tone(65,0.4,'sawtooth',0.04); }
+    musicStep++; musicTimeoutId = setTimeout(scheduleMusic, 240);
+  }
+  function startMusic(){ if(musicOn) return; musicOn=true; scheduleMusic(); }
+  function stopMusic(){ musicOn=false; if(musicTimeoutId){ clearTimeout(musicTimeoutId); musicTimeoutId=null; } }
+  function setMuted(v){ muted=v; localStorage.setItem('ok_woogi_muted', v?'1':'0'); }
+  function isMuted(){ return muted; }
+  return { unlock, jump, land, bamboo, star, stomp, hurt, flag, gameOver, startMusic, stopMusic, setMuted, isMuted };
+})();
+
+// ================= WOOGI ÇİZİMİ (tamamen özgün tasarım) =================
+function drawWoogi(x, y, facing, walkT, ducked){
+  ctx.save();
+  ctx.translate(x, y);
+  if(facing < 0) ctx.scale(-1, 1);
+  const bob = ducked ? 4 : Math.sin(walkT) * 2;
+
+  // gölge
+  ctx.save(); ctx.globalAlpha = 0.18; ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.ellipse(0, 16, 13, 4, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+
+  // arka bacaklar (yürüme animasyonu)
+  ctx.fillStyle = '#2b2b3a';
+  const legSwing = Math.sin(walkT) * 6;
+  ctx.fillRect(-7+legSwing*0.3, 6+bob, 5, 9-Math.abs(bob));
+  ctx.fillRect(3-legSwing*0.3, 6+bob, 5, 9-Math.abs(bob));
+
+  // gövde
+  const bodyGrad = ctx.createLinearGradient(0,-16,0,10);
+  bodyGrad.addColorStop(0,'#ffffff'); bodyGrad.addColorStop(1,'#e8e8f0');
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath(); ctx.ellipse(0, -2+bob*0.3, 12, 15, 0, 0, Math.PI*2); ctx.fill();
+
+  // kollar
+  ctx.fillStyle = '#f0f0f4';
+  ctx.beginPath(); ctx.ellipse(-11, 2+bob*0.3, 4, 8, -0.3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(11, 2+bob*0.3, 4, 8, 0.3, 0, Math.PI*2); ctx.fill();
+
+  // kulaklar (siyah)
+  ctx.fillStyle = '#1b1b24';
+  ctx.beginPath(); ctx.arc(-9, -19, 5.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(9, -19, 5.5, 0, Math.PI*2); ctx.fill();
+
+  // kafa
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(0, -13, 12.5, 0, Math.PI*2); ctx.fill();
+
+  // göz yamaları (siyah panda desenleri)
+  ctx.fillStyle = '#1b1b24';
+  ctx.beginPath(); ctx.ellipse(-6, -14, 4.5, 5.5, -0.15, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(6, -14, 4.5, 5.5, 0.15, 0, Math.PI*2); ctx.fill();
+
+  // gözler
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(-6, -14, 2.6, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(6, -14, 2.6, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#1e3a8a';
+  ctx.beginPath(); ctx.arc(-5.2, -14, 1.6, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(6.8, -14, 1.6, 0, Math.PI*2); ctx.fill();
+
+  // burun ve gülümseme
+  ctx.fillStyle = '#1b1b24';
+  ctx.beginPath(); ctx.ellipse(0, -8, 2.2, 1.6, 0, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#c94b6e'; ctx.lineWidth = 1.4; ctx.beginPath();
+  ctx.arc(0, -8, 4, 0.15*Math.PI, 0.85*Math.PI); ctx.stroke();
+
+  // marka kulaklığı (mavi, ayırt edici imza öğesi)
+  ctx.strokeStyle = '#2e94c9'; ctx.lineWidth = 3; ctx.lineCap='round';
+  ctx.beginPath(); ctx.arc(0, -19, 13, Math.PI*1.08, Math.PI*1.92); ctx.stroke();
+  ctx.fillStyle = '#3dd6ff';
+  ctx.beginPath(); ctx.ellipse(-11.5, -14, 3, 4.5, -0.2, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(11.5, -14, 3, 4.5, 0.2, 0, Math.PI*2); ctx.fill();
+
+  ctx.restore();
+}
+
+function drawEnemy(e){
+  ctx.save(); ctx.translate(e.x, e.y);
+  if(e.type === 'log'){
+    ctx.fillStyle = '#7a5230'; ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(-14,-12,28,24,8) : ctx.rect(-14,-12,28,24); ctx.fill();
+    ctx.fillStyle = '#5c3d22'; ctx.fillRect(-14,-2,28,4);
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-5,-4,3,0,Math.PI*2); ctx.arc(5,-4,3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#1b1b24'; ctx.beginPath(); ctx.arc(-5,-4,1.4,0,Math.PI*2); ctx.arc(5,-4,1.4,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#1b1b24'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(-8,-9); ctx.lineTo(-3,-7); ctx.moveTo(8,-9); ctx.lineTo(3,-7); ctx.stroke();
+  } else if(e.type === 'sand'){
+    ctx.rotate(e.rot||0);
+    ctx.fillStyle = '#d9a24a'; ctx.beginPath(); ctx.arc(0,0,13,0,Math.PI*2); ctx.fill();
+    for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; ctx.strokeStyle='#b9822e'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(Math.cos(a)*11,Math.sin(a)*11); ctx.lineTo(Math.cos(a)*16,Math.sin(a)*16); ctx.stroke(); }
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-4,-2,2.6,0,Math.PI*2); ctx.arc(4,-2,2.6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#1b1b24'; ctx.beginPath(); ctx.arc(-4,-2,1.2,0,Math.PI*2); ctx.arc(4,-2,1.2,0,Math.PI*2); ctx.fill();
+  } else if(e.type === 'blob'){
+    const sq = 1+Math.sin(e.bob||0)*0.08;
+    ctx.scale(1/sq, sq);
+    ctx.fillStyle = 'rgba(156,123,255,.85)'; ctx.shadowColor='#9c7bff'; ctx.shadowBlur=10;
+    ctx.beginPath(); ctx.arc(0,0,13,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-4,-2,3,0,Math.PI*2); ctx.arc(4,-2,3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#1b1b24'; ctx.beginPath(); ctx.arc(-4,-1,1.5,0,Math.PI*2); ctx.arc(4,-1,1.5,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ================= SEVİYE VERİLERİ (5 dünya hikayesiyle bağlantılı) =================
+function ground(x1,x2){ return {x:x1, y:GROUND_Y, w:x2-x1, h:H-GROUND_Y, solid:true}; }
+function plat(x,y,w){ return {x, y, w, h:14, solid:true}; }
+
+const LEVELS = [
+  {
+    name:'Orman Girişi', bg:'orman', sky1:'#8fd88f', sky2:'#d4f0a8', width:2100,
+    platforms:[ ground(0,420), ground(500,760), ground(860,1180), ground(1260,1500), ground(1580,2100),
+      plat(300,GROUND_Y-70,90), plat(600,GROUND_Y-90,80), plat(950,GROUND_Y-110,90), plat(1350,GROUND_Y-80,80) ],
+    enemies:[ {x:640,type:'log',range:70,vx:0.8,y:GROUND_Y-12}, {x:1000,type:'log',range:90,vx:1,y:GROUND_Y-12}, {x:1650,type:'log',range:80,vx:0.9,y:GROUND_Y-12} ],
+    bamboo: [340,340,620,650,980,1010,1380,1700,1750,1800],
+    starsAt: [605, 955, 1355],
+    goalX: 2040
+  },
+  {
+    name:'Çöl Geçidi', bg:'col', sky1:'#ffd9a0', sky2:'#fff0d6', width:2300,
+    platforms:[ ground(0,380), ground(460,700), ground(780,1000), ground(1080,1360), ground(1440,1720), ground(1800,2300),
+      plat(250,GROUND_Y-80,80), plat(560,GROUND_Y-100,70), plat(850,GROUND_Y-120,90), plat(1150,GROUND_Y-90,80), plat(1500,GROUND_Y-100,90) ],
+    enemies:[ {x:520,type:'sand',range:60,vx:1.4,y:GROUND_Y-13,rot:0}, {x:900,type:'sand',range:70,vx:1.6,y:GROUND_Y-13,rot:0},
+      {x:1250,type:'sand',range:80,vx:1.3,y:GROUND_Y-13,rot:0}, {x:1900,type:'sand',range:90,vx:1.7,y:GROUND_Y-13,rot:0} ],
+    bamboo:[290,570,595,860,895,1180,1540,1900,1950,2000],
+    starsAt:[565, 855, 1505],
+    goalX: 2240
+  },
+  {
+    name:'Uzay Rotası', bg:'uzay', sky1:'#241a4d', sky2:'#0c0a1a', width:2500,
+    platforms:[ ground(0,300), plat(360,GROUND_Y-30,120), plat(560,GROUND_Y-90,90), plat(760,GROUND_Y-140,90),
+      plat(980,GROUND_Y-100,90), ground(1120,1360), plat(1440,GROUND_Y-60,90), plat(1640,GROUND_Y-120,90),
+      plat(1860,GROUND_Y-70,100), ground(2020,2500) ],
+    enemies:[ {x:620,type:'blob',range:60,vx:0.7,y:GROUND_Y-104,bob:0}, {x:820,type:'blob',range:50,vx:0.9,y:GROUND_Y-154,bob:0},
+      {x:1700,type:'blob',range:70,vx:0.8,y:GROUND_Y-134,bob:0}, {x:1200,type:'blob',range:100,vx:1,y:GROUND_Y-12,bob:0} ],
+    bamboo:[400,610,615,810,815,1000,1470,1670,1675,1900],
+    starsAt:[615, 815, 1675],
+    goalX: 2440
+  }
+];
+
+let levelIdx = parseInt(new URLSearchParams(location.search).get('level') || '0', 10);
+if(levelIdx < 0 || levelIdx >= LEVELS.length) levelIdx = 0;
+
+let player, camX, running, paused, lives, bambooTotal, starTotal, particles, shaker, raf, frameCount;
+let level, keys = {left:false, right:false, jump:false};
+let respawnX, respawnY;
+
+function applyLevelTheme(){
+  const l = LEVELS[levelIdx];
+  document.documentElement.style.setProperty('--lv-sky1', l.sky1);
+  document.documentElement.style.setProperty('--lv-sky2', l.sky2);
+  document.documentElement.style.setProperty('--lv-bg1', l.sky1);
+  document.documentElement.style.setProperty('--lv-bg2', l.sky2);
+  document.getElementById('levelName').textContent = l.name;
+}
+
+function startLevel(){
+  level = JSON.parse(JSON.stringify(LEVELS[levelIdx]));
+  level.bamboo = level.bamboo.map(x=>({x, y:GROUND_Y-40, taken:false}));
+  level.starsAt = level.starsAt.map(x=>({x, y:GROUND_Y-90, taken:false}));
+  applyLevelTheme();
+  player = { x:40, y:GROUND_Y-15, vx:0, vy:0, w:22, h:30, onGround:false, facing:1, walkT:0, hurtT:0 };
+  respawnX = 40; respawnY = GROUND_Y-15;
+  camX = 0; running = false; paused = false; lives = 3; bambooTotal = 0; starTotal = 0;
+  particles = []; shaker = createShaker(); frameCount = 0;
+  document.getElementById('bambooCount').textContent = 0;
+  document.getElementById('starCount').textContent = 0;
+  document.getElementById('lives').textContent = lives;
+  document.getElementById('levelProgress').style.width = '0%';
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('nextLevelBtn').style.display = levelIdx < LEVELS.length-1 ? 'inline-flex' : 'none';
+
+  ctx.clearRect(0,0,W,H);
+  drawScene();
+
+  const banner = document.getElementById('levelBanner');
+  banner.textContent = `🗺️ ${level.name}`;
+  banner.classList.add('show');
+  setTimeout(()=> banner.classList.remove('show'), 1800);
+
+  Audio_.unlock();
+  runCountdown(document.getElementById('countdownOverlay'), ()=>{
+    running = true;
+    Audio_.startMusic();
+    loop();
+  });
+}
+
+function rectsOverlap(a,b){
+  return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+}
+
+function playerBox(){ return { x:player.x-player.w/2, y:player.y-player.h, w:player.w, h:player.h }; }
+
+function loseLife(){
+  lives--;
+  document.getElementById('lives').textContent = Math.max(0,lives);
+  player.hurtT = 45;
+  Audio_.hurt();
+  shaker.trigger(10);
+  spawnParticles(particles, player.x, player.y-15, 10, ['#ff6b6b','#c94b4b'], {speed:3.5, life:20});
+  if(lives <= 0){
+    endLevel(false);
+  } else {
+    player.x = respawnX; player.y = respawnY; player.vx=0; player.vy=0;
+  }
+}
+
+function endLevel(won){
+  running = false;
+  Audio_.stopMusic();
+  cancelAnimationFrame(raf);
+  const key = 'ok_woogi_stars_' + levelIdx;
+  const prevStars = parseInt(localStorage.getItem(key) || '0', 10);
+  const scorePct = won ? Math.round((bambooTotal/level.bamboo.length)*100) : 0;
+  const earnedStars = won ? starRating(bambooTotal + starTotal*3, level.bamboo.length + level.starsAt.length*3) : '☆☆☆';
+  if(won){
+    const starCount = (earnedStars.match(/⭐/g)||[]).length;
+    if(starCount > prevStars) localStorage.setItem(key, starCount);
+  }
+  document.getElementById('overIcon').textContent = won ? '🏁' : '💔';
+  document.getElementById('overMsg').textContent = won ? `${level.name} tamamlandı!` : 'Canların bitti, tekrar dene!';
+  renderResultGrid('resultGrid', [
+    ['🎋 BAMBU', bambooTotal+'/'+level.bamboo.length], ['⭐ YILDIZ', starTotal+'/'+level.starsAt.length],
+    ['CAN', Math.max(0,lives)], ['DÜNYA', level.name]
+  ]);
+  document.getElementById('starsEl').textContent = earnedStars;
+  showOverlay('overlay');
+  if(won){ Audio_.flag(); fireConfetti(document.getElementById('wrap')); }
+  else Audio_.gameOver();
+}
+
+function stompEnemy(e){
+  e.dead = true;
+  Audio_.stomp();
+  spawnParticles(particles, e.x, e.y, 8, ['#fff','#ddd'], {speed:3, life:16});
+  player.vy = JUMP_V*0.6;
+}
+
+function drawBackgroundDecor(){
+  const l = level;
+  if(l.bg === 'orman'){
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    for(let i=0;i<6;i++){ const bx = (i*400 - camX*0.3) % (l.width+400); ctx.beginPath(); ctx.ellipse(bx, 40+((i%3)*20), 30, 14, 0,0,Math.PI*2); ctx.fill(); }
+    ctx.fillStyle = 'rgba(34,120,34,.35)';
+    for(let i=0;i<10;i++){ const tx = (i*260 - camX*0.5) % (l.width+260); ctx.beginPath();
+      ctx.moveTo(tx, GROUND_Y+2); ctx.lineTo(tx+18, GROUND_Y-46); ctx.lineTo(tx+36, GROUND_Y+2); ctx.closePath(); ctx.fill(); }
+  } else if(l.bg === 'col'){
+    ctx.fillStyle = 'rgba(255,255,255,.4)';
+    const sunX = 380 - camX*0.15;
+    ctx.beginPath(); ctx.arc(sunX, 55, 34, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(140,90,30,.3)';
+    for(let i=0;i<8;i++){ const px = (i*300 - camX*0.4) % (l.width+300); ctx.fillRect(px, GROUND_Y-50, 10, 50); ctx.beginPath(); ctx.arc(px+5, GROUND_Y-50, 9,0,Math.PI*2); ctx.fill(); }
+  } else if(l.bg === 'uzay'){
+    for(let i=0;i<40;i++){ const sx=(i*137)%W, sy=(i*89)%(H-60); ctx.fillStyle='rgba(255,255,255,.5)'; ctx.fillRect(sx,sy,2,2); }
+    ctx.fillStyle = 'rgba(156,123,255,.25)';
+    const moonX = 300 - camX*0.2;
+    ctx.beginPath(); ctx.arc(moonX, 60, 26, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+function drawScene(){
+  ctx.clearRect(0,0,W,H);
+  drawBackgroundDecor();
+
+  ctx.save();
+  ctx.translate(-camX, 0);
+
+  // platformlar
+  level.platforms.forEach(p=>{
+    if(p.x+p.w < camX-20 || p.x > camX+W+20) return;
+    const grad = ctx.createLinearGradient(0,p.y,0,p.y+p.h+18);
+    if(level.bg==='orman'){ grad.addColorStop(0,'#8fd868'); grad.addColorStop(1,'#5c8f3a'); }
+    else if(level.bg==='col'){ grad.addColorStop(0,'#e8c878'); grad.addColorStop(1,'#b98f42'); }
+    else { grad.addColorStop(0,'#6a5aa8'); grad.addColorStop(1,'#3a2d6e'); }
+    ctx.fillStyle = grad;
+    ctx.fillRect(p.x, p.y, p.w, Math.min(p.h+18, H-p.y));
+  });
+
+  // bambu
+  level.bamboo.forEach(b=>{
+    if(b.taken || b.x < camX-20 || b.x > camX+W+20) return;
+    ctx.save(); ctx.translate(b.x, b.y + Math.sin(frameCount*0.1+b.x)*3);
+    ctx.font = '20px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🎋', 0, 0);
+    ctx.restore();
+  });
+  // yıldızlar
+  level.starsAt.forEach(s=>{
+    if(s.taken || s.x < camX-20 || s.x > camX+W+20) return;
+    ctx.save(); ctx.translate(s.x, s.y + Math.sin(frameCount*0.14+s.x)*4);
+    ctx.shadowColor='#FFD23F'; ctx.shadowBlur=10;
+    ctx.font = '22px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('⭐', 0, 0);
+    ctx.restore();
+  });
+
+  // düşmanlar
+  level.enemies.forEach(e=>{ if(!e.dead && e.x > camX-30 && e.x < camX+W+30) drawEnemy(e); });
+
+  updateParticles(ctx, particles);
+
+  // Woogi
+  if(player.hurtT<=0 || frameCount%6<3) drawWoogi(player.x, player.y, player.facing, player.walkT, false);
+
+  // bayrak
+  ctx.save(); ctx.translate(level.goalX, GROUND_Y);
+  ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-70); ctx.stroke();
+  ctx.fillStyle='#7bff6b'; ctx.beginPath(); ctx.moveTo(0,-70); ctx.lineTo(26,-60); ctx.lineTo(0,-50); ctx.closePath(); ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+function loop(){
+  if(!running) return;
+  frameCount++;
+  const sh = shaker.tick();
+
+  // yatay hareket
+  if(keys.left){ player.vx = -MOVE_SPEED; player.facing = -1; }
+  else if(keys.right){ player.vx = MOVE_SPEED; player.facing = 1; }
+  else player.vx *= 0.7;
+
+  if(Math.abs(player.vx) > 0.3) player.walkT += 0.25; else player.walkT = 0;
+
+  player.vy += GRAVITY;
+  if(player.vy > 14) player.vy = 14;
+
+  const prevOnGround = player.onGround;
+  player.onGround = false;
+
+  // X hareketi + çarpışma
+  player.x += player.vx;
+  let pb = playerBox();
+  level.platforms.forEach(p=>{
+    if(rectsOverlap(pb,p)){
+      if(player.vx > 0) player.x = p.x - player.w/2;
+      else if(player.vx < 0) player.x = p.x + p.w + player.w/2;
+      pb = playerBox();
+    }
+  });
+  player.x = Math.max(14, Math.min(level.width-14, player.x));
+
+  // Y hareketi + çarpışma
+  player.y += player.vy;
+  pb = playerBox();
+  level.platforms.forEach(p=>{
+    if(rectsOverlap(pb,p)){
+      if(player.vy > 0){ player.y = p.y; player.vy = 0; player.onGround = true; }
+      else if(player.vy < 0){ player.y = p.y + p.h + player.h; player.vy = 0; }
+      pb = playerBox();
+    }
+  });
+  if(!prevOnGround && player.onGround) Audio_.land();
+
+  if(keys.jump && player.onGround){ player.vy = JUMP_V; Audio_.jump(); keys.jump = false; spawnParticles(particles, player.x, player.y, 4, '#fff', {speed:1.5, life:10}); }
+
+  // düşme (çukur)
+  if(player.y > H+30){ loseLife(); }
+
+  // kamera
+  camX = Math.max(0, Math.min(level.width - W, player.x - W/2));
+
+  // bambu toplama
+  level.bamboo.forEach(b=>{
+    if(!b.taken && Math.hypot(b.x-player.x, b.y-(player.y-15)) < 22){
+      b.taken = true; bambooTotal++;
+      document.getElementById('bambooCount').textContent = bambooTotal;
+      Audio_.bamboo();
+      spawnParticles(particles, b.x, b.y, 6, ['#7bc94a','#FFD23F'], {speed:2.5, life:14});
+    }
+  });
+  level.starsAt.forEach(s=>{
+    if(!s.taken && Math.hypot(s.x-player.x, s.y-(player.y-15)) < 24){
+      s.taken = true; starTotal++;
+      document.getElementById('starCount').textContent = starTotal;
+      Audio_.star();
+      spawnParticles(particles, s.x, s.y, 10, ['#FFD23F','#fff'], {speed:3.5, life:20});
+      const pr = document.getElementById('wrap').getBoundingClientRect(), r = canvas.getBoundingClientRect();
+      showFloatingPoints(document.getElementById('wrap'), (r.left-pr.left)+(s.x-camX)*(r.width/W), (r.top-pr.top)+s.y*(r.height/H), '⭐ YILDIZ!', '#FFD23F');
+    }
+  });
+
+  // düşman etkileşimi
+  level.enemies.forEach(e=>{
+    if(e.dead) return;
+    e.x += e.vx;
+    if(e.startX===undefined) e.startX = e.x;
+    if(e.x > e.startX+e.range || e.x < e.startX-e.range) e.vx *= -1;
+    if(e.type==='sand') e.rot = (e.rot||0) + 0.15;
+    if(e.type==='blob') e.bob = (e.bob||0) + 0.1;
+
+    const dist = Math.hypot(e.x-player.x, e.y-(player.y-15));
+    if(dist < 20){
+      if(player.vy > 2 && (player.y-15) < e.y){ stompEnemy(e); }
+      else if(player.hurtT<=0){ loseLife(); }
+    }
+  });
+  if(player.hurtT>0) player.hurtT--;
+
+  // ilerleme
+  document.getElementById('levelProgress').style.width = Math.min(100, (player.x/level.goalX)*100) + '%';
+
+  // bayrağa ulaşma
+  if(player.x > level.goalX - 10){ endLevel(true); return; }
+
+  drawScene();
+  raf = requestAnimationFrame(loop);
+}
+
+// ---- Kontroller ----
+document.getElementById('leftBtn').addEventListener('touchstart', e=>{ e.preventDefault(); keys.left=true; }, {passive:false});
+document.getElementById('leftBtn').addEventListener('touchend', e=>{ e.preventDefault(); keys.left=false; }, {passive:false});
+document.getElementById('leftBtn').addEventListener('mousedown', ()=> keys.left=true);
+document.getElementById('leftBtn').addEventListener('mouseup', ()=> keys.left=false);
+document.getElementById('rightBtn').addEventListener('touchstart', e=>{ e.preventDefault(); keys.right=true; }, {passive:false});
+document.getElementById('rightBtn').addEventListener('touchend', e=>{ e.preventDefault(); keys.right=false; }, {passive:false});
+document.getElementById('rightBtn').addEventListener('mousedown', ()=> keys.right=true);
+document.getElementById('rightBtn').addEventListener('mouseup', ()=> keys.right=false);
+document.getElementById('jumpBtn').addEventListener('touchstart', e=>{ e.preventDefault(); keys.jump=true; }, {passive:false});
+document.getElementById('jumpBtn').addEventListener('mousedown', ()=> keys.jump=true);
+
+window.addEventListener('keydown', e=>{
+  if(e.key==='ArrowLeft') keys.left=true;
+  if(e.key==='ArrowRight') keys.right=true;
+  if(e.key===' '||e.key==='ArrowUp'){ keys.jump=true; e.preventDefault(); }
+});
+window.addEventListener('keyup', e=>{
+  if(e.key==='ArrowLeft') keys.left=false;
+  if(e.key==='ArrowRight') keys.right=false;
+});
+
+document.getElementById('retryBtn').addEventListener('click', startLevel);
+document.getElementById('nextLevelBtn').addEventListener('click', ()=>{
+  levelIdx = Math.min(LEVELS.length-1, levelIdx+1);
+  history.replaceState(null,'','?level='+levelIdx);
+  startLevel();
+});
+
+const muteCtl = document.getElementById('muteCtl');
+muteCtl.textContent = Audio_.isMuted() ? '🔇' : '🔊';
+muteCtl.addEventListener('click', ()=>{
+  Audio_.setMuted(!Audio_.isMuted());
+  muteCtl.textContent = Audio_.isMuted() ? '🔇' : '🔊';
+  if(!Audio_.isMuted() && running) Audio_.startMusic(); else Audio_.stopMusic();
+});
+
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ if(raf) cancelAnimationFrame(raf); Audio_.stopMusic(); }
+  else if(running){ Audio_.startMusic(); loop(); }
+});
+
+document.title = `${LEVELS[levelIdx].name} — Woogi'nin Macerası — WoogiGames`;
+startLevel();
+</script>
+</body>
+</html>
