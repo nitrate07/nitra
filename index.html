@@ -382,7 +382,7 @@
 
   header{
     position:sticky; top:0; z-index:50;
-    background:rgba(255,255,255,.75); backdrop-filter:blur(14px);
+    background:rgba(255,255,255,.92); backdrop-filter:blur(6px);
     border-bottom:3px solid transparent;
     border-image:linear-gradient(90deg,var(--coral),var(--yellow),var(--teal),var(--purple),var(--pink)) 1;
     box-shadow:0 2px 20px rgba(108,78,245,.08);
@@ -392,20 +392,17 @@
     display:flex; align-items:center; gap:14px; flex-wrap:wrap;
   }
   .logo{
-    font-family:'Fredoka',sans-serif; font-size:1.7rem; font-weight:700; margin-right:auto;
-    display:flex; align-items:center; gap:8px;
+    font-family:'Fredoka',sans-serif; font-size:1.4rem; font-weight:700; margin-right:auto;
+    display:flex; align-items:center; gap:8px; line-height:1; white-space:nowrap;
     background:linear-gradient(90deg,var(--purple),var(--pink),var(--coral));
     -webkit-background-clip:text; background-clip:text; color:transparent;
-    background-size:200% auto; animation:logoShine 4s linear infinite;
   }
-  @keyframes logoShine{ to{ background-position:200% center; } }
-  .logo span{ display:inline-block; animation:logoWiggle 2.4s ease-in-out infinite; filter:drop-shadow(0 3px 4px rgba(108,78,245,.35)); }
   .logo-mascot{
-    width:34px; height:34px; border-radius:50%; object-fit:cover; flex-shrink:0;
+    width:32px; height:32px; border-radius:50%; object-fit:cover; flex-shrink:0;
     box-shadow:0 0 0 2px #fff, 0 0 0 3.5px var(--purple), 0 3px 6px rgba(108,78,245,.35);
-    animation:logoWiggle 2.4s ease-in-out infinite;
+    transition:transform .2s;
   }
-  @keyframes logoWiggle{ 0%,100%{ transform:rotate(-8deg) scale(1);} 50%{ transform:rotate(8deg) scale(1.08);} }
+  .logo:hover .logo-mascot{ transform:scale(1.08) rotate(-6deg); }
   nav.links{ display:flex; gap:6px; }
   nav.links a{
     text-decoration:none; color:var(--ink); font-weight:800; font-size:.95rem;
