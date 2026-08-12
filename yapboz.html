@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Yapboz — WoogiGames</title>
 <meta name="description" content="Parçaları birleştir, resmi ortaya çıkar! Ücretsiz yapboz oyunu, tarayıcıda hemen oyna.">
 <meta name="robots" content="index, follow">
@@ -11,11 +18,15 @@
 <meta property="og:title" content="Yapboz — WoogiGames">
 <meta property="og:description" content="Parçaları birleştir, resmi ortaya çıkar! Ücretsiz yapboz oyunu, tarayıcıda hemen oyna.">
 <meta property="og:url" content="https://woogigames.com/yapboz.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Yapboz — WoogiGames">
 <meta name="twitter:description" content="Parçaları birleştir, resmi ortaya çıkar! Ücretsiz yapboz oyunu, tarayıcıda hemen oyna.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -26,7 +37,41 @@
   .piece{ cursor:pointer; border-radius:6px; box-shadow:0 3px 0 #ddd; transition:transform .12s; }
   .piece.selected{ outline:3px solid var(--purple); transform:scale(1.04); }
   .piece.correct{ box-shadow:0 3px 0 var(--teal-dark); outline:2px solid var(--teal); }
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:36px; height:36px; border:none; border-radius:10px;
+    background:rgba(20,14,50,.55); color:#fff; font-size:1.05rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.25);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Yapboz",
+  "url": "https://woogigames.com/yapboz.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Parçaları birleştir, resmi ortaya çıkar! Ücretsiz yapboz oyunu, tarayıcıda hemen oyna.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Puzzle",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Bulmaca Oyunları", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Yapboz", "item": "https://woogigames.com/yapboz.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
@@ -34,16 +79,17 @@
   <div id="hud"><span>🔁 Takas: <span id="swaps">0</span></span><span>✅ Doğru: <span id="correctCount">0</span>/<span id="total">0</span></span></div>
   <div id="previewWrap"><span>Hedef görsel:</span><canvas id="preview" width="70" height="70"></canvas></div>
   <div class="panel">
+    <button id="fsBtn" class="fs-btn">⛶</button>
     <div id="grid"></div>
     <div id="overlay">
       <div class="big">🎉</div>
-      <div class="msg">Yapbozu tamamladın!</div>
+      <div class="msg">Tüm parçaları doğru yerine yerleştirdin, yapboz tamam!</div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="init()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
-  <p style="font-size:.85rem; opacity:.7; margin-top:10px; text-align:center;">İki parçaya sırayla tıkla, yerlerini değiştirerek resmi tamamla!</p>
+  <p style="font-size:.85rem; opacity:.7; margin-top:10px; text-align:center;">İki parçaya sırayla dokun, yerlerini değiştirerek gizli resmi ortaya çıkar!</p>
 
 <script src="common.js"></script>
 <script>
@@ -130,24 +176,33 @@ function drawScene(c){
   (themes[themeKey] || themes.hayvanlar)();
 }
 
+// ---- Retina/DPR: kaynak sahne + önizleme + parçalar hep gerçek piksel yoğunluğunda çizilir ----
+const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+
 const source = document.createElement('canvas');
-source.width = SRC; source.height = SRC;
+source.width = SRC * DPR; source.height = SRC * DPR;
+const sctx = source.getContext('2d');
+sctx.scale(DPR, DPR);
 drawScene(source);
 
 // önizleme
-const pctx = document.getElementById('preview').getContext('2d');
-pctx.drawImage(source, 0, 0, 70, 70);
+const previewEl = document.getElementById('preview');
+previewEl.width = 70 * DPR; previewEl.height = 70 * DPR;
+previewEl.style.width = '70px'; previewEl.style.height = '70px';
+const pctx = previewEl.getContext('2d');
+pctx.drawImage(source, 0, 0, source.width, source.height, 0, 0, previewEl.width, previewEl.height);
 
 let current, selected, swaps;
 
 function makeTileCanvas(originalIndex){
   const c = document.createElement('canvas');
-  c.width = dispTile; c.height = dispTile;
+  c.width = dispTile * DPR; c.height = dispTile * DPR;
+  c.style.width = dispTile + 'px'; c.style.height = dispTile + 'px';
   c.className = 'cell piece';
   const gx = (originalIndex % size) * tileSize;
   const gy = Math.floor(originalIndex / size) * tileSize;
   const g = c.getContext('2d');
-  g.drawImage(source, gx, gy, tileSize, tileSize, 0, 0, dispTile, dispTile);
+  g.drawImage(source, gx*DPR, gy*DPR, tileSize*DPR, tileSize*DPR, 0, 0, dispTile*DPR, dispTile*DPR);
   return c;
 }
 
@@ -197,6 +252,9 @@ function handleClick(slot){
 }
 
 init();
+
+initFullscreenButton('fsBtn', document.querySelector('.panel'));
+initLandscapeHint();
 </script>
 </body>
 </html>

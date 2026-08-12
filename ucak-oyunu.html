@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Gece Uçuşu Turbo — WoogiGames</title>
 <meta name="description" content="Gökyüzünde tam gaz uçuş! Ücretsiz uçak oyunu, indirme gerektirmez, çocuklar için güvenli.">
 <meta name="robots" content="index, follow">
@@ -11,11 +18,15 @@
 <meta property="og:title" content="Gece Uçuşu Turbo — WoogiGames">
 <meta property="og:description" content="Gökyüzünde tam gaz uçuş! Ücretsiz uçak oyunu, indirme gerektirmez, çocuklar için güvenli.">
 <meta property="og:url" content="https://woogigames.com/ucak-oyunu.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Gece Uçuşu Turbo — WoogiGames">
 <meta name="twitter:description" content="Gökyüzünde tam gaz uçuş! Ücretsiz uçak oyunu, indirme gerektirmez, çocuklar için güvenli.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -23,7 +34,7 @@
     background:radial-gradient(circle at 50% 0%, #142240, #060a18 70%);
     padding-bottom:max(12px, env(safe-area-inset-bottom));
     padding-top:max(10px, env(safe-area-inset-top));
-    padding-left:12px; padding-right:12px;
+    padding-left:8px; padding-right:8px;
     min-height:100svh;
   }
   h1{ margin:0 0 6px; font-size:1.25rem; color:#fff; text-shadow:0 0 12px #7ce9ff; font-family:'Orbitron','Baloo 2',sans-serif; letter-spacing:.5px; }
@@ -56,12 +67,22 @@
   #nitroBar{ width:100%; max-width:260px; height:10px; background:#0e1730; border-radius:999px; overflow:hidden; margin:0 auto 8px; box-shadow:inset 0 0 0 1px rgba(124,233,255,.3); }
   #nitroFill{ height:100%; background:linear-gradient(90deg,#3dd6ff,#7bff6b); border-radius:999px; transition:width .1s linear; }
 
-  #wrap{ position:relative; display:flex; justify-content:center; }
+  #wrap{ position:relative; display:flex; justify-content:center; max-width:420px; margin:0 auto; }
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:38px; height:38px; border:none; border-radius:10px;
+    background:rgba(10,10,26,.6); color:#7ce9ff; font-size:1.15rem; cursor:pointer; box-shadow:0 0 0 1px rgba(124,233,255,.3);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
   canvas{
     background:#0a1024; border-radius:20px; box-shadow:0 0 0 2px rgba(124,233,255,.25), 0 14px 40px rgba(0,0,0,.6);
     touch-action:none; -webkit-tap-highlight-color:transparent;
-    display:block; margin:0 auto; width:auto; height:auto;
-    aspect-ratio:360/440; max-width:min(92vw,420px); max-height:calc(100vh - 340px); max-height:calc(100svh - 340px);
+    display:block; margin:0 auto; width:100%; height:auto;
+    aspect-ratio:360/440; max-width:420px; max-height:calc(100vh - 340px); max-height:calc(100svh - 340px);
+  }
+  @media (min-width:820px){
+    canvas{ max-width:560px; max-height:calc(100vh - 240px); max-height:calc(100svh - 240px); }
+    #wrap{ max-width:560px; }
   }
   #overlay{ background:rgba(6,10,24,.96); }
   #overlay .big{ font-size:2.6rem; }
@@ -90,6 +111,34 @@
   #countdownOverlay.go{ color:#ffd23f; font-size:3.2rem; letter-spacing:2px; text-shadow:0 0 30px #ffd23f, 0 0 90px rgba(255,210,63,.75); }
   @keyframes cdPop{ from{transform:scale(.3); opacity:0;} 60%{transform:scale(1.18); opacity:1;} to{transform:scale(1); opacity:1;} }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Uçak Oyunu",
+  "url": "https://woogigames.com/ucak-oyunu.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Gökyüzünde tam gaz uçuş! Ücretsiz uçak oyunu, indirme gerektirmez, çocuklar için güvenli.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Arcade",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Aksiyon Oyunları", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Uçak Oyunu", "item": "https://woogigames.com/ucak-oyunu.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
@@ -125,10 +174,11 @@
 
   <div id="wrap">
     <canvas id="c" width="360" height="440"></canvas>
+    <button id="fsBtn" class="fs-btn">⛶</button>
     <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">💥</div>
-      <div class="msg" id="overMsg">MISSION FAILED</div>
+      <div class="msg" id="overMsg">GÖREV BAŞARISIZ</div>
       <div class="resultGrid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
       <button class="btn" onclick="startGame()">Tekrar Oyna</button>
@@ -140,13 +190,21 @@
     <button class="btn alt" id="nitroBtn">🔥 TURBO</button>
     <button id="muteBtn">🔊</button>
   </div>
-  <p class="hint">Parmağını/fareni yukarı-aşağı sürükle, engellerden kaç, güçlendirmeleri topla, TURBO ile hızlan!</p>
+  <p class="hint">Parmağını ya da fareni yukarı-aşağı sürükleyerek uçağını yönet, engellerden ustaca kaç, güçlendirmeleri topla ve TURBO ile hızlan!</p>
 
 <script src="common.js"></script>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
+
+// Retina/yuksek DPI netligi: mantiksal oyun boyutu (W x H) degismiyor, sadece
+// canvas'in gercek piksel arka bellegi ekran yogunluguna gore buyutuluyor ve
+// tum cizimler ctx.scale ile bu olcege otomatik uyduruluyor.
+const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+canvas.width = W * DPR;
+canvas.height = H * DPR;
+ctx.scale(DPR, DPR);
 const DIFFICULTY_TARGET = 3000; // %100 ilerleme kabul edilen mesafe
 
 let bestScore = parseInt(localStorage.getItem('ok_ucak_best_v3') || '0', 10);
@@ -456,8 +514,10 @@ function endGame(won){
   running = false;
   Audio_.stopEngine(); Audio_.stopMusic();
   const s = Math.floor(score), d = Math.floor(distance);
-  if(s > bestScore){ bestScore = s; localStorage.setItem('ok_ucak_best_v3', bestScore); }
+  let isNewBest = false;
+  if(s > bestScore){ bestScore = s; isNewBest = true; localStorage.setItem('ok_ucak_best_v3', bestScore); }
   document.getElementById('best').textContent = bestScore;
+  earnXP(isNewBest ? 15 : 5, isNewBest ? 'yeni-rekor' : 'oyun-bitti');
 
   document.querySelector('#overlay .big').textContent = won ? '🏁' : '💥';
   document.getElementById('overMsg').textContent = won ? 'GÖREV TAMAMLANDI!' : 'GÖREV BAŞARISIZ';
@@ -801,6 +861,8 @@ document.addEventListener('visibilitychange', ()=>{
   else if(running){ Audio_.startEngine(); Audio_.startMusic(); loop(); }
 });
 
+initFullscreenButton('fsBtn', document.getElementById('wrap'));
+initLandscapeHint();
 startGame();
 </script>
 </body>

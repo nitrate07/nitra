@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Gece Yarışı Underground — WoogiGames</title>
 <meta name="description" content="Gece şehrinde nitro dolu yarış! Araba yarışı oyunu tamamen ücretsiz, tarayıcıda oynanır, indirme gerektirmez.">
 <meta name="robots" content="index, follow">
@@ -11,11 +18,15 @@
 <meta property="og:title" content="Gece Yarışı Underground — WoogiGames">
 <meta property="og:description" content="Gece şehrinde nitro dolu yarış! Araba yarışı oyunu tamamen ücretsiz, tarayıcıda oynanır, indirme gerektirmez.">
 <meta property="og:url" content="https://woogigames.com/araba-yarisi.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Gece Yarışı Underground — WoogiGames">
 <meta name="twitter:description" content="Gece şehrinde nitro dolu yarış! Araba yarışı oyunu tamamen ücretsiz, tarayıcıda oynanır, indirme gerektirmez.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -23,13 +34,19 @@
     background:radial-gradient(circle at 50% 0%, #221a3d, #0c0a1a 70%);
     padding-bottom:max(12px, env(safe-area-inset-bottom));
     padding-top:max(10px, env(safe-area-inset-top));
-    padding-left:12px; padding-right:12px;
+    padding-left:8px; padding-right:8px;
     min-height:100svh;
   }
   h1{ margin:0 0 6px; font-size:1.3rem; }
   a.back{ margin-bottom:2px; }
   #hud{ margin-bottom:8px; gap:8px; }
   .progress-track{ margin-bottom:6px; }
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:38px; height:38px; border:none; border-radius:10px;
+    background:rgba(10,10,26,.6); color:#7ce9ff; font-size:1.15rem; cursor:pointer; box-shadow:0 0 0 1px rgba(124,233,255,.3);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
   h1{ color:#fff; text-shadow:0 0 14px #7ce9ff; font-family:'Orbitron','Baloo 2',sans-serif; letter-spacing:1px; }
   a.back{ color:#9be8ff; }
   #hud{
@@ -45,13 +62,17 @@
     background:#14102a; border-radius:20px; box-shadow:0 0 0 2px rgba(124,233,255,.3), 0 18px 50px rgba(0,0,0,.65);
     touch-action:none; -webkit-tap-highlight-color:transparent;
     display:block; margin:0 auto;
-    width:auto; height:auto;
+    width:100%; height:auto;
     aspect-ratio:400/620;
-    max-width:min(92vw, 420px);
+    max-width:420px;
     max-height:calc(100vh - 300px);
     max-height:calc(100svh - 300px);
   }
-  #wrap{position:relative; display:flex; justify-content:center;}
+  #wrap{position:relative; display:flex; justify-content:center; max-width:420px; margin:0 auto;}
+  @media (min-width:820px){
+    canvas{ max-width:560px; max-height:calc(100vh - 220px); max-height:calc(100svh - 220px); }
+    #wrap{ max-width:560px; }
+  }
   .progress-track{ background:#1c1735; box-shadow:inset 0 0 0 1px rgba(124,233,255,.3); }
   .progress-fill{ background:linear-gradient(90deg,#3dd6ff,#7bff6b); }
   .controls{display:flex; gap:10px; margin-top:10px; align-items:center; justify-content:center; flex-wrap:wrap;}
@@ -84,6 +105,34 @@
   #countdownOverlay.go{ color:#ffd23f; text-shadow:0 0 30px #ffd23f, 0 0 90px rgba(255,210,63,.75); font-size:3.6rem; letter-spacing:2px;}
   @keyframes cdPop{ from{ transform:scale(.3); opacity:0;} 60%{ transform:scale(1.18); opacity:1;} to{ transform:scale(1); opacity:1;} }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Gece Yarışı Underground",
+  "url": "https://woogigames.com/araba-yarisi.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Gece şehrinde nitro dolu yarış! Araba yarışı oyunu tamamen ücretsiz, tarayıcıda oynanır, indirme gerektirmez.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Racing",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Yarış Oyunları", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Gece Yarışı Underground", "item": "https://woogigames.com/araba-yarisi.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
@@ -93,6 +142,7 @@
   <div id="nitroBar"><div id="nitroFill" style="width:100%"></div></div>
   <div id="wrap">
     <canvas id="c" width="400" height="620"></canvas>
+    <button id="fsBtn" class="fs-btn">⛶</button>
     <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">💥</div>
@@ -108,13 +158,21 @@
     <button class="ctl" id="rightBtn">▶</button>
     <button class="ctl" id="muteBtn">🔊</button>
   </div>
-  <p class="hint">Ok tuşlarıyla şerit değiştir, ⚡ topla, NİTRO ile roket gibi hızlan!</p>
+  <p class="hint">Ok tuşlarıyla şeritler arasında geçiş yap, yolda parıldayan ⚡'ları topla, sonra NİTRO ile roket gibi fırla!</p>
 
 <script src="common.js"></script>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
+
+// Retina/yuksek DPI netligi: mantiksal oyun boyutu (W x H) degismiyor, sadece
+// canvas'in gercek piksel arka bellegi ekran yogunluguna gore buyutuluyor ve
+// tum cizimler ctx.scale ile bu olcege otomatik uyduruluyor.
+const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+canvas.width = W * DPR;
+canvas.height = H * DPR;
+ctx.scale(DPR, DPR);
 const laneCount = 3;
 const ROAD_MARGIN = 46;
 const roadWidth = W - ROAD_MARGIN*2;
@@ -467,12 +525,14 @@ function endGame(){
   Audio_.stopEngine();
   Audio_.stopMusic();
   const distance = Math.floor(score);
-  if(distance > bestScore){ bestScore = distance; localStorage.setItem('ok_araba_best_v3', bestScore); }
+  let isNewBest = false;
+  if(distance > bestScore){ bestScore = distance; isNewBest = true; localStorage.setItem('ok_araba_best_v3', bestScore); }
   document.getElementById('best').textContent = bestScore;
+  earnXP(isNewBest ? 15 : 5, isNewBest ? 'yeni-rekor' : 'oyun-bitti');
   const won = distance >= 1000;
   document.getElementById('overMsg').textContent = won
     ? `Muhteşem! ${distance} metre ile 3 yıldızı kaptın! 🏆`
-    : `${distance} metre gidebildin!`;
+    : `Gece şehrinde tam ${distance} metre yol kat ettin!`;
   document.querySelector('#overlay .big').textContent = won ? '🏁' : '💥';
   document.getElementById('stars').textContent = starRating(distance, 1000);
   document.getElementById('overlay').style.display = 'flex';
@@ -800,6 +860,8 @@ document.addEventListener('visibilitychange', ()=>{
   }
 });
 
+initFullscreenButton('fsBtn', document.getElementById('wrap'));
+initLandscapeHint();
 startGame();
 </script>
 </body>

@@ -3,19 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>İp Atlama — WoogiGames</title>
-<meta name="description" content="Ritmi yakala, ipi atla! Eğlenceli ve ücretsiz ip atlama oyunu, çocuklar için güvenli.">
+<meta name="description" content="Ritmi yakala, doğru anda zıpla ve seriyi bozmadan ilerle! Eğlenceli, tamamen ücretsiz ve çocuklar için güvenli ip atlama oyunu.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://woogigames.com/ipatlama.html">
 <meta property="og:type" content="website">
 <meta property="og:title" content="İp Atlama — WoogiGames">
-<meta property="og:description" content="Ritmi yakala, ipi atla! Eğlenceli ve ücretsiz ip atlama oyunu, çocuklar için güvenli.">
+<meta property="og:description" content="Ritmi yakala, doğru anda zıpla ve seriyi bozmadan ilerle! Eğlenceli, tamamen ücretsiz ve çocuklar için güvenli ip atlama oyunu.">
 <meta property="og:url" content="https://woogigames.com/ipatlama.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="İp Atlama — WoogiGames">
-<meta name="twitter:description" content="Ritmi yakala, ipi atla! Eğlenceli ve ücretsiz ip atlama oyunu, çocuklar için güvenli.">
+<meta name="twitter:description" content="Ritmi yakala, doğru anda zıpla ve seriyi bozmadan ilerle! Eğlenceli, tamamen ücretsiz ve çocuklar için güvenli ip atlama oyunu.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -26,7 +37,41 @@
   #zoneMarker{ position:absolute; top:0; width:14px; height:14px; background:#ff6b6b; border-radius:50%; transition:left .05s linear; }
   #zoneSafe{ position:absolute; top:0; height:14px; background:rgba(123,201,74,.55); border-radius:999px; }
   p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:340px;}
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:36px; height:36px; border:none; border-radius:10px;
+    background:rgba(20,14,50,.55); color:#fff; font-size:1.05rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.25);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "İp Atlama",
+  "url": "https://woogigames.com/ipatlama.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Ritmi yakala, doğru anda zıpla ve seriyi bozmadan ilerle! Eğlenceli, tamamen ücretsiz ve çocuklar için güvenli ip atlama oyunu.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Arcade",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Aksiyon Oyunları", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "İp Atlama", "item": "https://woogigames.com/ipatlama.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
@@ -39,6 +84,7 @@
   </div>
   <div id="zoneBar"><div id="zoneSafe"></div><div id="zoneMarker"></div></div>
   <div class="panel" style="display:flex; flex-direction:column; align-items:center; position:relative;">
+    <button id="fsBtn" class="fs-btn">⛶</button>
     <canvas id="c" width="320" height="360"></canvas>
     <div id="countdownOverlay"></div>
     <div id="overlay">
@@ -50,13 +96,21 @@
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
-  <p class="hint">İp yere değeceği an (yeşil bölgeye gelince) tıkla/boşluk tuşuna bas ve zıpla! Yanlış zamanda zıplarsan ya da hiç zıplamazsan ipe takılırsın.</p>
+  <p class="hint">İp tam yere değmek üzereyken (yeşil bölgeye girdiği an) tıkla ya da boşluk tuşuna bas ve tam zamanında zıpla! Erken kalkarsan, geç kalırsan ya da hiç zıplamazsan ipe takılırsın.</p>
 
 <script src="common.js"></script>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
+
+// Retina/yuksek DPI netligi: mantiksal oyun boyutu (W x H) degismiyor, sadece
+// canvas'in gercek piksel arka bellegi ekran yogunluguna gore buyutuluyor ve
+// tum cizimler ctx.scale ile bu olcege otomatik uyduruluyor.
+const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+canvas.width = W * DPR;
+canvas.height = H * DPR;
+ctx.scale(DPR, DPR);
 const GROUND_Y = H - 80;
 
 let score, misses, running, cyclePos, cycleSpeed, jumping, jumpV, charY, judged, best;
@@ -85,11 +139,11 @@ function endGame(){
   running = false;
   if(score > best){ best = score; localStorage.setItem('ok_ipatlama_best', best); }
   document.getElementById('best').textContent = best;
-  document.getElementById('overMsg').textContent = `${score} kere üst üste atladın!`;
+  document.getElementById('overMsg').textContent = `Üst üste tam ${score} kez atladın, ne güzel bir ritim tuttun!`;
   renderResultGrid('resultGrid', [['ATLAMA', score], ['REKOR', best], ['EN İYİ SERİ', 'x'+combo.level]]);
   document.getElementById('stars').textContent = starRating(score, 20);
-  showOverlay('overlay');
-  if(score >= 15) fireConfetti(document.querySelector('.panel'));
+  showOverlay('overlay', score >= 15 ? {celebrate:true} : undefined);
+  if(score >= 15) fireConfetti(document.querySelector('.panel'), {big:true});
 }
 
 function drawScene(){
@@ -183,6 +237,9 @@ canvas.addEventListener('touchstart', e=>{ e.preventDefault(); doJump(); }, {pas
 window.addEventListener('keydown', e=>{ if(e.key===' '){ e.preventDefault(); doJump(); } });
 
 startGame();
+
+initFullscreenButton('fsBtn', document.querySelector('.panel'));
+initLandscapeHint();
 </script>
 </body>
 </html>

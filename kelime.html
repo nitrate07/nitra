@@ -3,19 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Kelime Hafızası — WoogiGames</title>
-<meta name="description" content="Kelimeleri hatırla, hafızanı test et! Çocuklar için ücretsiz kelime hafızası oyunu.">
+<meta name="description" content="Gösterilen kelimeleri aklında tut, sonra aralarından doğrularını seçerek hafızanı sına! Çocuklar için tamamen ücretsiz kelime hafızası oyunu.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://woogigames.com/kelime.html">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Kelime Hafızası — WoogiGames">
-<meta property="og:description" content="Kelimeleri hatırla, hafızanı test et! Çocuklar için ücretsiz kelime hafızası oyunu.">
+<meta property="og:description" content="Gösterilen kelimeleri aklında tut, sonra aralarından doğrularını seçerek hafızanı sına! Çocuklar için tamamen ücretsiz kelime hafızası oyunu.">
 <meta property="og:url" content="https://woogigames.com/kelime.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Kelime Hafızası — WoogiGames">
-<meta name="twitter:description" content="Kelimeleri hatırla, hafızanı test et! Çocuklar için ücretsiz kelime hafızası oyunu.">
+<meta name="twitter:description" content="Gösterilen kelimeleri aklında tut, sonra aralarından doğrularını seçerek hafızanı sına! Çocuklar için tamamen ücretsiz kelime hafızası oyunu.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -39,13 +50,47 @@
     position:absolute; inset:0; display:none; align-items:center; justify-content:center;
     background:rgba(255,255,255,.85); border-radius:20px; z-index:9;
   }
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:36px; height:36px; border:none; border-radius:10px;
+    background:rgba(20,14,50,.55); color:#fff; font-size:1.05rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.25);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Kelime Hafızası",
+  "url": "https://woogigames.com/kelime.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Gösterilen kelimeleri aklında tut, sonra aralarından doğrularını seçerek hafızanı sına! Çocuklar için tamamen ücretsiz kelime hafızası oyunu.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Educational",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Eğitici Oyunlar", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Kelime Hafızası", "item": "https://woogigames.com/kelime.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <button id="muteCtl">🔊</button>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1 id="title">📝 Kelime Hafızası</h1>
-  <div id="hud"><span>📣 <span id="status">Kelimeleri ezberle!</span></span></div>
+  <div id="hud"><span>📣 <span id="status">Kelimeleri dikkatle ezberle!</span></span></div>
   <div id="timerBar"><div id="timerFill" style="width:100%"></div></div>
   <div class="panel" id="wrap">
     <div id="memList"></div>
@@ -56,14 +101,15 @@
       <div class="msg" id="overMsg"></div>
       <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
-      <button class="btn" onclick="location.reload()">Tekrar Oyna</button>
+      <button class="btn" onclick="playAgain()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
 
 <script src="common.js"></script>
 <script>
-const { theme, level } = getParams();
+let { theme, level } = getParams();
+let pendingLevel = level;
 setTitle('Kelime Hafızası');
 document.getElementById('title').textContent = `📝 ${theme.name} Kelime Hafızası`;
 document.documentElement.style.setProperty('--th-1', theme.hue1);
@@ -80,15 +126,35 @@ muteCtl.addEventListener('click', ()=>{
 });
 function snd(fn){ if(!muted) fn(); }
 
-const wordCount = Math.min(theme.words.length, 3 + level);
-const studyTime = 3 + level;
-
-const chosenWords = shuffle(theme.words).slice(0, wordCount);
-const distractorPool = theme.words.filter(w=>!chosenWords.includes(w));
-const distractors = shuffle(distractorPool).slice(0, wordCount);
-const allChoices = shuffle([...chosenWords, ...distractors]);
+let wordCount, studyTime, chosenWords, distractorPool, distractors, allChoices;
 
 const memList = document.getElementById('memList');
+
+function init(){
+  // Adaptif zorluk: bir önceki turda ayarlanan seviye burada devreye girer
+  // (bkz. dosyanın altındaki "Tekrar Oyna" -> playAgain()).
+  level = pendingLevel;
+  wordCount = Math.min(theme.words.length, 3 + level);
+  studyTime = 3 + level;
+  chosenWords = shuffle(theme.words).slice(0, wordCount);
+  distractorPool = theme.words.filter(w=>!chosenWords.includes(w));
+  distractors = shuffle(distractorPool).slice(0, wordCount);
+  allChoices = shuffle([...chosenWords, ...distractors]);
+
+  selected = new Set();
+  answered = false;
+  memList.innerHTML = '';
+  memList.style.display = 'flex';
+  document.getElementById('choices').innerHTML = '';
+  document.getElementById('choices').style.display = 'none';
+  document.getElementById('timerBar').style.display = 'block';
+  document.getElementById('timerFill').style.width = '100%';
+  document.getElementById('overlay').style.display = 'none';
+
+  const cd = document.getElementById('countdownOverlay');
+  cd.style.display = 'flex';
+  runCountdown(cd, ()=>{ cd.style.display = 'none'; beginStudyPhase(); });
+}
 
 function beginStudyPhase(){
   chosenWords.forEach((w,i)=>{
@@ -114,17 +180,13 @@ function beginStudyPhase(){
   }, 1000);
 }
 
-const cd = document.getElementById('countdownOverlay');
-cd.style.display = 'flex';
-runCountdown(cd, ()=>{ cd.style.display = 'none'; beginStudyPhase(); });
-
 let selected = new Set();
 let answered = false;
 
 function showChoices(){
   memList.style.display = 'none';
   document.getElementById('timerBar').style.display = 'none';
-  document.getElementById('status').textContent = 'Hangileri gösterildi? Seç ve onayla!';
+  document.getElementById('status').textContent = 'Hangi kelimeler gösterilmişti? Doğru olanları seç ve onayla!';
   const choicesEl = document.getElementById('choices');
   choicesEl.style.display = 'grid';
   allChoices.forEach((w,i)=>{
@@ -169,15 +231,19 @@ function checkAnswers(){
   });
   const success = correct === wordCount;
   snd(()=> success ? playSuccess() : playError());
+  // Adaptif zorluk: bu turdaki doğru oranına göre bir sonraki turun seviyesini ayarla.
+  const performanceRatio = wordCount > 0 ? correct / wordCount : 0;
+  pendingLevel = computeAdaptiveLevel(level, performanceRatio);
   setTimeout(()=>{
     document.getElementById('overIcon').textContent = success ? '🎉' : '💪';
-    document.getElementById('overMsg').textContent = `${wordCount} kelimeden ${correct} tanesini doğru hatırladın!`;
+    document.getElementById('overMsg').textContent = `Toplam ${wordCount} kelimeden tam ${correct} tanesini doğru hatırladın!`;
     renderResultGrid('resultGrid', [
       ['DOĞRU', correct+'/'+wordCount], ['SEVİYE', LEVEL_NAMES[level]]
     ]);
     document.getElementById('stars').textContent = starRating(correct, wordCount);
-    showOverlay('overlay');
-    if(success) fireConfetti(panel);
+    showAdaptiveNote(document.getElementById('overlay'), level, pendingLevel);
+    showOverlay('overlay', success ? {celebrate:true} : undefined);
+    if(success) fireConfetti(panel, {big:true});
   }, 900);
 }
 
@@ -194,6 +260,12 @@ function spawnFloatParticle(container, x, y, color){
     setTimeout(()=> el.remove(), 520);
   }
 }
+
+function playAgain(){ init(); }
+
+init();
+
+initFullscreenButton('fsBtn', document.getElementById('wrap'));
 </script>
 </body>
 </html>

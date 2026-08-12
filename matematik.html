@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Matematik Yarışı — WoogiGames</title>
 <meta name="description" content="Hızlı düşün, doğru cevabı seç! Çocuklar için eğlenceli ücretsiz matematik yarışı oyunu.">
 <meta name="robots" content="index, follow">
@@ -11,11 +18,15 @@
 <meta property="og:title" content="Matematik Yarışı — WoogiGames">
 <meta property="og:description" content="Hızlı düşün, doğru cevabı seç! Çocuklar için eğlenceli ücretsiz matematik yarışı oyunu.">
 <meta property="og:url" content="https://woogigames.com/matematik.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Matematik Yarışı — WoogiGames">
 <meta name="twitter:description" content="Hızlı düşün, doğru cevabı seç! Çocuklar için eğlenceli ücretsiz matematik yarışı oyunu.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -30,7 +41,41 @@
   .choice:active{ transform:scale(.94); }
   .choice.correct{ background:var(--teal); color:#fff; border-color:var(--teal-dark); }
   .choice.wrong{ background:var(--coral); color:#fff; border-color:var(--coral-dark); }
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:36px; height:36px; border:none; border-radius:10px;
+    background:rgba(20,14,50,.55); color:#fff; font-size:1.05rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.25);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Matematik Yarışı",
+  "url": "https://woogigames.com/matematik.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Hızlı düşün, doğru cevabı seç! Çocuklar için eğlenceli ücretsiz matematik yarışı oyunu.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Educational",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Eğitici Oyunlar", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Matematik Yarışı", "item": "https://woogigames.com/matematik.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
@@ -42,6 +87,7 @@
   </div>
   <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
   <div class="panel">
+    <button id="fsBtn" class="fs-btn">⛶</button>
     <div id="banner"></div>
     <div id="problem">?</div>
     <div id="timerBar"><div id="timerFill" style="width:100%"></div></div>
@@ -178,11 +224,12 @@ function handleAnswer(opt, btn){
     triggerWrongFx(document.getElementById('problem'));
     if(wrong >= 3){
       setTimeout(()=>{
-        document.getElementById('overMsg').textContent = `${score} puan topladın!`;
+        document.getElementById('overMsg').textContent = `Süper hesap yaptın! Bu yarışta ${score} puan topladın.`;
         renderResultGrid('resultGrid', [
           ['DOĞRU', round-wrong], ['SKOR', score], ['TUR', round], ['EN İYİ COMBO', 'x'+comboLevel]
         ]);
         document.getElementById('stars').textContent = starRating(score, goalRounds);
+        earnXP(Math.min(30, 5 + round*2), 'oyun-bitti');
         showOverlay('overlay');
       }, 700);
     } else {
@@ -192,6 +239,8 @@ function handleAnswer(opt, btn){
 }
 
 startGame();
+
+initFullscreenButton('fsBtn', document.querySelector('.panel'));
 </script>
 </body>
 </html>

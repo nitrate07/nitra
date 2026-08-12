@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Futbol Maçı — WoogiGames</title>
 <meta name="description" content="Topu file ile buluştur! Ücretsiz futbol maçı oyunu, çocuklar için eğlenceli ve güvenli.">
 <meta name="robots" content="index, follow">
@@ -11,11 +18,15 @@
 <meta property="og:title" content="Futbol Maçı — WoogiGames">
 <meta property="og:description" content="Topu file ile buluştur! Ücretsiz futbol maçı oyunu, çocuklar için eğlenceli ve güvenli.">
 <meta property="og:url" content="https://woogigames.com/futbol.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Futbol Maçı — WoogiGames">
 <meta name="twitter:description" content="Topu file ile buluştur! Ücretsiz futbol maçı oyunu, çocuklar için eğlenceli ve güvenli.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -25,7 +36,41 @@
   #wrap{position:relative;}
   #stageLabel{ font-weight:800; margin-bottom:8px; text-align:center; }
   p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:36px; height:36px; border:none; border-radius:10px;
+    background:rgba(20,14,50,.55); color:#fff; font-size:1.05rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.25);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Futbol Maçı",
+  "url": "https://woogigames.com/futbol.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Topu file ile buluştur! Ücretsiz futbol maçı oyunu, çocuklar için eğlenceli ve güvenli.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Sports",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Spor Oyunları", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Futbol Maçı", "item": "https://woogigames.com/futbol.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
@@ -35,8 +80,9 @@
     <span>🆚 Rakip: <span id="oppScore">0</span></span>
     <span>🏃 Hücum: <span id="attackNum">1</span>/5</span>
   </div>
-  <div id="stageLabel">Topu sürerek rakip yarı sahaya geç!</div>
+  <div id="stageLabel">Topu ustaca sürerek rakip yarı sahaya geç!</div>
   <div id="wrap">
+    <button id="fsBtn" class="fs-btn">⛶</button>
     <canvas id="c" width="320" height="440"></canvas>
     <div id="countdownOverlay"></div>
     <div id="overlay">
@@ -48,13 +94,21 @@
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
-  <p class="hint">Şerit değiştirerek rakip oyunculardan kaç, kaleye yaklaşınca kaleyi tıklayarak şutunu çek!</p>
+  <p class="hint">Şeritler arasında geçiş yaparak rakip oyunculardan ustaca kaç, kaleye yeterince yaklaşınca kaleyi tıklayıp şutunu çek!</p>
 
 <script src="common.js"></script>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
+
+// Retina/yuksek DPI netligi: mantiksal oyun boyutu (W x H) degismiyor, sadece
+// canvas'in gercek piksel arka bellegi ekran yogunluguna gore buyutuluyor ve
+// tum cizimler ctx.scale ile bu olcege otomatik uyduruluyor.
+const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+canvas.width = W * DPR;
+canvas.height = H * DPR;
+ctx.scale(DPR, DPR);
 const laneCount = 3;
 const ROAD_MARGIN = 20;
 const fieldWidth = W - ROAD_MARGIN*2;
@@ -84,7 +138,7 @@ function startGame(){
 function startAttack(){
   attackNum++;
   document.getElementById('attackNum').textContent = attackNum;
-  document.getElementById('stageLabel').textContent = 'Topu sürerek rakip yarı sahaya geç!';
+  document.getElementById('stageLabel').textContent = 'Topu ustaca sürerek rakip yarı sahaya geç!';
   phase = 'run';
   player = { lane: 1, x: laneX(1), tilt:0, targetTilt:0 };
   defenders = [];
@@ -102,14 +156,14 @@ function endMatch(){
   cancelAnimationFrame(raf);
   const won = score > oppScore, draw = score === oppScore;
   document.getElementById('overMsg').textContent =
-    won ? `Maçı kazandın! ${score} - ${oppScore}` :
-    draw ? `Berabere bitti: ${score} - ${oppScore}` :
-    `Maçı kaybettin: ${score} - ${oppScore}`;
+    won ? `Muhteşem, maçı kazandın! ${score} - ${oppScore}` :
+    draw ? `Çekişmeli bir maç berabere bitti: ${score} - ${oppScore}` :
+    `Bu sefer olmadı, maçı kaybettin: ${score} - ${oppScore}`;
   document.querySelector('#overlay .big').textContent = won ? '🏆' : draw ? '🤝' : '😿';
   renderResultGrid('resultGrid', [['SEN', score], ['RAKİP', oppScore], ['HÜCUM', TOTAL_ATTACKS]]);
   document.getElementById('stars').textContent = starRating(score, TOTAL_ATTACKS);
-  showOverlay('overlay');
-  if(won) fireConfetti(document.getElementById('wrap'));
+  showOverlay('overlay', won ? {celebrate:true} : undefined);
+  if(won) fireConfetti(document.getElementById('wrap'), {big:true});
 }
 
 function drawField(){
@@ -167,7 +221,7 @@ function loopRun(){
 
 function startShotPhase(){
   phase = 'shoot';
-  document.getElementById('stageLabel').textContent = 'Şimdi kaleye tıkla ve şutunu çek!';
+  document.getElementById('stageLabel').textContent = 'Şimdi kaleyi hedef al ve şutunu çek!';
   shotGoal = { x: 40, y: 24, w: W-80, h: 90 };
   shotKeeperPos = { x: W/2, y: shotGoal.y + shotGoal.h/2 };
   animatingShot = false;
@@ -223,7 +277,7 @@ function handleShotClick(cx, cy){
         playError();
         shaker.trigger(9);
         spawnParticles(particles, target.x, target.y, 8, ['#fff','#ccc'], {speed:3, life:16});
-        document.getElementById('stageLabel').textContent = 'Kaleci kurtardı!';
+        document.getElementById('stageLabel').textContent = 'Kaleci harika bir kurtarış yaptı!';
       }
       else {
         score++;
@@ -286,6 +340,9 @@ canvas.addEventListener('touchend', e=>{
 });
 
 startGame();
+
+initFullscreenButton('fsBtn', document.getElementById('wrap'));
+initLandscapeHint();
 </script>
 </body>
 </html>

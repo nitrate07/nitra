@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Şimşek FC — Efsane Şut</title>
 <meta name="description" content="Efsane şutlarla kaleyi sars! Şimşek FC futbol oyunu ücretsiz, indirme gerektirmez.">
 <meta name="robots" content="index, follow">
@@ -11,11 +18,15 @@
 <meta property="og:title" content="Şimşek FC — Efsane Şut">
 <meta property="og:description" content="Efsane şutlarla kaleyi sars! Şimşek FC futbol oyunu ücretsiz, indirme gerektirmez.">
 <meta property="og:url" content="https://woogigames.com/futbol-simsek.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Şimşek FC — Efsane Şut">
 <meta name="twitter:description" content="Efsane şutlarla kaleyi sars! Şimşek FC futbol oyunu ücretsiz, indirme gerektirmez.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -112,7 +123,41 @@
     box-shadow:0 4px 16px rgba(255,110,109,0.4);
   }
   #restartBtn:hover{filter:brightness(1.1);transform:translateY(-1px);}
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:36px; height:36px; border:none; border-radius:10px;
+    background:rgba(20,14,50,.55); color:#fff; font-size:1.05rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.25);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Şimşek FC",
+  "url": "https://woogigames.com/futbol-simsek.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Efsane şutlarla kaleyi sars! Şimşek FC futbol oyunu ücretsiz, indirme gerektirmez.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Sports",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Spor Oyunları", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Şimşek FC", "item": "https://woogigames.com/futbol-simsek.html" }
+  ]
+}
+</script>
 </head>
 <body>
 <a class="back" href="index.html">← Oyunlara dön</a>
@@ -130,6 +175,7 @@
 </div>
 
 <div id="wrap">
+    <button id="fsBtn" class="fs-btn">⛶</button>
 <canvas id="game" width="800" height="480"></canvas>
 </div>
 
@@ -147,6 +193,14 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
+
+// Retina/yuksek DPI netligi: mantiksal oyun boyutu (W x H) degismiyor, sadece
+// canvas'in gercek piksel arka bellegi ekran yogunluguna gore buyutuluyor ve
+// tum cizimler ctx.scale ile bu olcege otomatik uyduruluyor.
+const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+canvas.width = W * DPR;
+canvas.height = H * DPR;
+ctx.scale(DPR, DPR);
 const FIELD_TOP = 60, FIELD_BOTTOM = H - 30;
 const FIELD_H = FIELD_BOTTOM - FIELD_TOP;
 
@@ -703,6 +757,7 @@ const timer = setInterval(()=>{
     timeLeft = 0;
     document.getElementById('time').textContent = 0;
     gameOver = true;
+    earnXP(Math.min(30, 5 + score.player*3), 'oyun-bitti');
     document.getElementById('restartBtn').style.display = 'inline-block';
   }
 }, 1000);
@@ -721,6 +776,9 @@ document.getElementById('restartBtn').addEventListener('click', ()=>{
 
 resetPositions();
 loop();
+
+initFullscreenButton('fsBtn', document.getElementById('wrap'));
+initLandscapeHint();
 </script>
 </body>
 </html>

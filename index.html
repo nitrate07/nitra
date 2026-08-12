@@ -19,6 +19,13 @@
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>WoogiGames — Ücretsiz Çocuk Oyunları</title>
 <meta name="description" content="Çocuklar için ücretsiz, güvenli, tarayıcıda oynanan online oyunlar. İndirme yok, kayıt yok, sadece eğlence! Hafıza, bulmaca, yarış, spor ve daha fazlası.">
 <meta name="robots" content="index, follow">
@@ -28,11 +35,15 @@
 <meta property="og:title" content="WoogiGames — Ücretsiz Çocuk Oyunları">
 <meta property="og:description" content="Çocuklar için ücretsiz, güvenli, tarayıcıda oynanan online oyunlar. İndirme yok, kayıt yok, sadece eğlence!">
 <meta property="og:url" content="https://woogigames.com/">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="WoogiGames — Ücretsiz Çocuk Oyunları">
 <meta name="twitter:description" content="Çocuklar için ücretsiz, güvenli, tarayıcıda oynanan online oyunlar.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
 <link rel="icon" type="image/png" href="assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/favicon-180.png">
@@ -54,563 +65,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
-<style>
-  #splashScreen{
-    position:fixed; inset:0; z-index:999; display:flex; align-items:center; justify-content:center;
-    background:radial-gradient(circle at 50% 40%, #1a1440, #0a0824 75%);
-    animation:splashOut .6s ease forwards; animation-delay:1.3s;
-  }
-  #splashLogo{
-    width:min(70vw, 320px); animation:splashPop .7s cubic-bezier(.34,1.56,.64,1);
-    filter:drop-shadow(0 10px 30px rgba(0,0,0,.5));
-  }
-  @keyframes splashPop{ from{ opacity:0; transform:scale(.7);} to{ opacity:1; transform:scale(1);} }
-  @keyframes splashOut{ from{ opacity:1; visibility:visible;} to{ opacity:0; visibility:hidden; pointer-events:none;} }
-  @media (prefers-reduced-motion: reduce){
-    #splashScreen{ animation:splashOut .3s ease forwards; animation-delay:.4s; }
-    #splashLogo{ animation:none; }
-  }
-  :root{
-    --bg:#F7F5FF;
-    --ink:#1B1B3A;
-    --purple:#6C4EF5;
-    --purple-dark:#4a34c9;
-    --coral:#FF6B6B;
-    --coral-dark:#c94b4b;
-    --yellow:#FFD23F;
-    --teal:#2EC4B6;
-    --teal-dark:#1c9c90;
-    --pink:#FF6EC7;
-    --card:#ffffff;
-  }
-  html.dark{
-    --bg:#0d0a26;
-    --ink:#F0EEFF;
-    --card:#1a1640;
-  }
-  html.dark body{
-    background:
-      radial-gradient(circle at 8% 12%, rgba(255,209,63,.10), transparent 45%),
-      radial-gradient(circle at 92% 18%, rgba(46,196,182,.12), transparent 45%),
-      radial-gradient(circle at 15% 85%, rgba(255,110,199,.10), transparent 45%),
-      radial-gradient(circle at 88% 82%, rgba(108,78,245,.2), transparent 45%),
-      var(--bg);
-  }
-  html.dark header{ background:rgba(13,10,38,.8); }
-  html.dark .search-box{ background:#1a1640; }
-  html.dark .search-box input{ color:var(--ink); }
-  html.dark .cat-pill, html.dark .badge, html.dark .music-btn{ background:#1a1640; color:var(--ink); }
-  html.dark .game-card{ background:#1a1640; box-shadow:0 4px 0 #0a0824; }
-  html.dark footer{ background:#120e33; }
-  html.dark #sidebar{ background:linear-gradient(180deg,#151038,#0a0824); }
-  html, body{ transition:background .3s ease, color .3s ease; }
-  .game-card, .cat-pill, .search-box, header{ transition:background .3s ease, box-shadow .3s ease, color .3s ease; }
-
-  /* Konuşan maskot */
-  #mascotWidget{
-    position:fixed; bottom:16px; left:16px; z-index:100; display:flex; align-items:flex-end; gap:10px;
-    cursor:pointer;
-  }
-  #mascotChar{
-    font-size:2.6rem; animation:mascotIdle 2.2s ease-in-out infinite;
-    filter:drop-shadow(0 6px 10px rgba(108,78,245,.4));
-  }
-  @keyframes mascotIdle{ 0%,100%{ transform:translateY(0) rotate(-3deg);} 50%{ transform:translateY(-8px) rotate(3deg);} }
-  #mascotBubble{
-    background:#fff; border-radius:16px 16px 16px 4px; padding:10px 14px; font-weight:800; font-size:.82rem;
-    color:var(--ink); box-shadow:0 4px 0 #e4e0f7, 0 8px 20px rgba(0,0,0,.12); max-width:200px;
-    opacity:0; transform:translateY(6px) scale(.9); transition:opacity .25s, transform .25s; position:relative;
-  }
-  #mascotBubble.show{ opacity:1; transform:translateY(0) scale(1); }
-  html.dark #mascotBubble{ background:#1a1640; color:var(--ink); box-shadow:0 4px 0 #0a0824, 0 8px 20px rgba(0,0,0,.3); }
-  @media (max-width:600px){ #mascotWidget{ bottom:10px; left:10px; } #mascotChar{ font-size:2.1rem; } #mascotBubble{ max-width:150px; font-size:.75rem; } }
-
-  /* Başarılarım paneli */
-  #achievements{
-    max-width:1100px; margin:0 auto 20px; padding:0 20px; position:relative; z-index:1;
-  }
-  #achievements.hidden{ display:none; }
-  #achTitle{ font-family:'Fredoka',sans-serif; font-size:1.1rem; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
-  #achRow{ display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; }
-  .ach-chip{
-    flex:0 0 auto; background:linear-gradient(135deg,#fff,#F7F5FF); border-radius:14px; padding:10px 16px;
-    box-shadow:0 3px 0 #e4e0f7; text-decoration:none; color:var(--ink); display:flex; align-items:center; gap:8px;
-    font-weight:800; font-size:.82rem; white-space:nowrap; transition:transform .15s;
-  }
-  .ach-chip:hover{ transform:translateY(-2px); }
-  .ach-chip .ach-val{ color:var(--purple); font-weight:900; }
-  html.dark .ach-chip{ background:linear-gradient(135deg,#1a1640,#120e33); box-shadow:0 3px 0 #0a0824; }
-
-  /* Profil */
-  .profile-badge{
-    display:flex; align-items:center; gap:8px; background:#fff; border-radius:999px; padding:6px 14px 6px 6px;
-    box-shadow:0 3px 0 #e4e0f7; cursor:pointer; font-weight:800; font-size:.85rem; border:none; font-family:inherit;
-  }
-  .profile-badge .avatar{ width:30px; height:30px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
-  html.dark .profile-badge{ background:#1a1640; color:var(--ink); }
-  #profileModal{
-    position:fixed; inset:0; background:rgba(20,15,40,.55); z-index:200; display:none;
-    align-items:center; justify-content:center; padding:20px;
-  }
-  #profileModal.show{ display:flex; }
-  #profileCard{
-    background:#fff; border-radius:24px; padding:26px; max-width:360px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,.3);
-    text-align:center;
-  }
-  html.dark #profileCard{ background:#1a1640; }
-  #profileCard h3{ font-family:'Fredoka',sans-serif; margin-bottom:14px; }
-  #avatarPicker{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:14px; }
-  .avatar-opt{ width:44px; height:44px; border-radius:50%; background:#F1EEFF; display:flex; align-items:center; justify-content:center;
-    font-size:1.4rem; cursor:pointer; border:3px solid transparent; }
-  .avatar-opt.selected{ border-color:var(--purple); background:#E4DDFF; }
-  #nameInput{ width:100%; padding:10px 14px; border-radius:12px; border:2px solid #E4DDFF; font-family:inherit; font-size:1rem; margin-bottom:14px; text-align:center; }
-  #colorPicker{ display:flex; gap:8px; justify-content:center; margin-bottom:18px; }
-  .color-opt{ width:30px; height:30px; border-radius:50%; cursor:pointer; border:3px solid transparent; }
-  .color-opt.selected{ border-color:var(--ink); transform:scale(1.15); }
-
-  /* Poki tarzı yatay kaydırmalı raylar */
-  .rails{ max-width:1100px; margin:0 auto; padding:6px 20px 0; position:relative; z-index:1; }
-  .rail{ margin-bottom:26px; }
-  .rail-track{
-    display:flex; gap:14px; overflow-x:auto; padding:4px 2px 14px; scroll-snap-type:x proximity;
-    -webkit-overflow-scrolling:touch; scrollbar-width:thin;
-  }
-  .rail-track::-webkit-scrollbar{ height:8px; }
-  .rail-track::-webkit-scrollbar-thumb{ background:rgba(108,78,245,.25); border-radius:99px; }
-  .rail-track .game-card{ flex:0 0 128px; scroll-snap-align:start; }
-  .rail-empty{
-    background:var(--card); border-radius:16px; padding:18px 20px; font-weight:700; font-size:.9rem;
-    box-shadow:0 4px 0 #e4e0f7; display:flex; align-items:center; gap:10px;
-  }
-  .rail-empty a{ color:var(--purple); text-decoration:underline; }
-
-  /* Rastgele oyun butonu */
-  .random-btn{
-    display:inline-flex; align-items:center; gap:10px; margin-top:16px; padding:14px 26px;
-    background:linear-gradient(135deg,#FFD23F,#FF9F5A); color:#1B1B3A; border:none; border-radius:999px;
-    font-family:'Baloo 2','Nunito',sans-serif; font-weight:800; font-size:1.05rem; cursor:pointer;
-    box-shadow:0 5px 0 #c9762a; transition:transform .15s, box-shadow .15s; text-decoration:none;
-  }
-  .random-btn:hover{ transform:translateY(-3px); box-shadow:0 8px 0 #c9762a; }
-  .random-btn:active{ transform:translateY(0); box-shadow:0 3px 0 #c9762a; }
-  .random-btn .dice{ font-size:1.3rem; display:inline-block; animation:diceSpin 3s ease-in-out infinite; }
-  @keyframes diceSpin{ 0%,80%,100%{ transform:rotate(0);} 85%{ transform:rotate(-18deg);} 90%{ transform:rotate(14deg);} 95%{ transform:rotate(-8deg);} }
-
-  /* Maskot hikaye modalı */
-  #patiStoryModal{
-    position:fixed; inset:0; background:rgba(20,14,50,.55); z-index:200; display:none;
-    align-items:center; justify-content:center; padding:20px;
-  }
-  #patiStoryModal.show{ display:flex; }
-  .pati-story-box{
-    background:var(--card); border-radius:24px; padding:28px 26px; max-width:380px; text-align:center;
-    box-shadow:0 10px 0 #e4e0f7, 0 20px 40px rgba(0,0,0,.25); position:relative;
-  }
-  .pati-story-box .p-emoji{ font-size:3.4rem; display:block; margin-bottom:10px; animation:mascotIdle 2.2s ease-in-out infinite; }
-  .pati-story-box h3{ font-family:'Fredoka',sans-serif; font-size:1.25rem; margin:0 0 10px; }
-  .pati-story-box p{ font-size:.92rem; line-height:1.5; opacity:.85; margin:0 0 18px; }
-  .pati-story-box button{
-    background:linear-gradient(135deg,#6C4EF5,#9C7BFF); color:#fff; border:none; border-radius:999px;
-    padding:11px 24px; font-weight:800; font-family:'Baloo 2',sans-serif; font-size:.95rem; cursor:pointer;
-    box-shadow:0 4px 0 #4a34c9;
-  }
-
-  /* Dünya Haritası */
-  #worldMap{ max-width:1100px; margin:0 auto 20px; padding:0 20px; position:relative; z-index:1; }
-  #worldMapGrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:14px; }
-  .region-card{
-    border-radius:20px; padding:16px 10px; text-align:center; cursor:pointer; text-decoration:none; color:#fff;
-    box-shadow:0 4px 0 rgba(0,0,0,.15); transition:transform .15s; position:relative; overflow:hidden;
-  }
-  .region-card:hover{ transform:translateY(-4px) scale(1.03); }
-  .region-card .r-emoji{ font-size:2.4rem; display:block; margin-bottom:6px; filter:drop-shadow(0 3px 4px rgba(0,0,0,.25)); }
-  .region-card .r-name{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:.95rem; }
-  .region-card .r-badge{ font-size:.65rem; font-weight:800; margin-top:4px; opacity:.9; }
-  .region-card.locked{ filter:grayscale(.5); opacity:.7; }
-
-  /* Ebeveyn Paneli */
-  #parentModal{ position:fixed; inset:0; background:rgba(20,15,40,.6); z-index:200; display:none; align-items:center; justify-content:center; padding:16px; }
-  #parentModal.show{ display:flex; }
-  #parentCard{
-    background:#fff; border-radius:24px; padding:26px; max-width:480px; width:100%; max-height:85vh; overflow-y:auto;
-    box-shadow:0 20px 60px rgba(0,0,0,.3);
-  }
-  html.dark #parentCard{ background:#1a1640; }
-  #parentCard h3{ font-family:'Fredoka',sans-serif; margin-bottom:4px; }
-  #parentCard .sub{ font-size:.8rem; opacity:.6; margin-bottom:16px; }
-  .parent-stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
-  .parent-stat{ background:#F7F5FF; border-radius:14px; padding:12px; text-align:center; }
-  html.dark .parent-stat{ background:#120e33; }
-  .parent-stat .num{ font-size:1.5rem; font-weight:900; color:var(--purple); }
-  .parent-stat .lbl{ font-size:.72rem; opacity:.7; font-weight:700; }
-  #parentCard h4{ font-size:.85rem; margin:14px 0 8px; font-weight:800; }
-  .parent-list{ display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
-  .parent-list-item{ display:flex; justify-content:space-between; background:#F7F5FF; border-radius:10px; padding:8px 12px; font-size:.82rem; font-weight:700; }
-  html.dark .parent-list-item{ background:#120e33; }
-  .parent-bar-track{ background:#F1EEFF; border-radius:8px; height:10px; overflow:hidden; margin-top:4px; }
-  html.dark .parent-bar-track{ background:#120e33; }
-  .parent-bar-fill{ height:100%; background:linear-gradient(90deg,var(--purple),var(--teal)); border-radius:8px; }
-  #parentCard .empty-note{ font-size:.85rem; opacity:.6; text-align:center; padding:14px; }
-
-  /* Gerçek verili istatistik şeridi */
-  #statsRow{
-    display:flex; gap:10px; flex-wrap:wrap;
-  }
-  .stat-pill{
-    display:flex; align-items:center; gap:8px; background:linear-gradient(135deg,#fff,#F7F5FF);
-    border-radius:999px; padding:8px 16px; box-shadow:0 3px 0 #e4e0f7, 0 6px 14px rgba(108,78,245,.08);
-    font-weight:800; font-size:.85rem;
-  }
-  .stat-pill .icon{ font-size:1.2rem; }
-  .stat-pill .val{ color:var(--purple); font-weight:900; }
-  html.dark .stat-pill{ background:linear-gradient(135deg,#1a1640,#120e33); }
-
-  /* Macera banner */
-  #adventureBanner{ position:relative; z-index:1; margin-top:14px; }
-  #adventureCard{
-    background:linear-gradient(120deg,#6C4EF5,#4a34c9); border-radius:24px; padding:22px 26px;
-    display:flex; align-items:center; gap:18px; box-shadow:0 10px 30px rgba(108,78,245,.35); flex-wrap:wrap;
-    color:#fff; text-decoration:none;
-  }
-  #adventureCard .a-mascot{ font-size:3.2rem; animation:mascotIdle 2.2s ease-in-out infinite; flex:0 0 auto; }
-  #adventureCard .a-text{ flex:1; min-width:200px; }
-  #adventureCard h3{ font-family:'Fredoka',sans-serif; font-size:1.25rem; margin-bottom:4px; }
-  #adventureCard p{ font-size:.85rem; opacity:.92; }
-  #adventureCard .a-cta{
-    background:#fff; color:var(--purple); font-weight:900; padding:10px 20px; border-radius:999px;
-    font-size:.85rem; white-space:nowrap; box-shadow:0 3px 0 rgba(0,0,0,.15);
-  }
-
-  /* Sol kenar çubuğu navigasyonu */
-  #sidebar{
-    position:fixed; left:0; top:0; bottom:0; width:190px; z-index:90;
-    background:linear-gradient(180deg,#1b1440,#0f0c2e);
-    display:flex; flex-direction:column; padding:18px 12px; gap:4px;
-    transform:translateX(-100%); transition:transform .3s ease;
-    overflow-y:auto; overflow-x:hidden; box-sizing:border-box;
-  }
-  #sidebar.open{ transform:translateX(0); box-shadow:10px 0 40px rgba(0,0,0,.4); }
-  #sidebar .sb-logo{
-    font-family:'Fredoka',sans-serif; color:#fff; font-weight:600; text-align:center;
-    margin-bottom:14px; padding:6px 4px; font-size:1.05rem; line-height:1.3;
-    white-space:normal; word-break:keep-all; overflow-wrap:break-word;
-    display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; width:100%; box-sizing:border-box;
-  }
-  .sb-item{
-    display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:14px; color:#c9c4e8;
-    text-decoration:none; font-weight:800; font-size:.88rem; border:none; background:none; width:100%;
-    text-align:left; cursor:pointer; font-family:inherit;
-  }
-  .sb-item:hover{ background:rgba(255,255,255,.08); color:#fff; }
-  .sb-item.active{ background:linear-gradient(90deg,#FFD23F,#FFB03D); color:#1B1B3A; }
-  .sb-item .sb-icon{ font-size:1.15rem; }
-  #sidebarBackdrop{ position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:85; display:none; }
-  #sidebarBackdrop.show{ display:block; }
-  #sidebarToggle{
-    position:fixed; top:14px; left:14px; z-index:95; width:44px; height:44px; border-radius:14px; border:none;
-    background:#1a1640; color:#fff; font-size:1.3rem; box-shadow:0 4px 12px rgba(0,0,0,.3); cursor:pointer;
-  }
-  @media (min-width:960px){
-    #sidebar{ transform:translateX(0); }
-    #sidebarToggle{ display:none; }
-    #sidebarBackdrop{ display:none !important; }
-    body{ padding-left:190px; }
-  }
-
-  /* Ana düzen: masaüstünde merkez + sağ sidebar, mobilde tek sütun (doğal DOM sırası) */
-  #mainLayout{ max-width:1400px; margin:0 auto; padding:0 20px; position:relative; z-index:1; }
-  #centerCol > *{ max-width:1100px; margin-left:auto; margin-right:auto; }
-  #rightCol{ display:flex; flex-direction:column; gap:14px; margin-top:18px; }
-  @media (min-width:1240px){
-    #mainLayout{ display:grid; grid-template-columns:1fr 300px; align-items:start; gap:26px; padding:0 24px; }
-    #centerCol{ min-width:0; }
-    #centerCol > *{ max-width:none; }
-    #rightCol{ position:sticky; top:78px; margin-top:22px; }
-  }
-
-  /* Günlük Görevler + Sandık + İstatistikler (sidebar bağlamında dikey) */
-  #dailySection{ display:flex; flex-direction:column; gap:14px; }
-  #questsBox{ background:#fff; border-radius:20px; padding:16px 18px; box-shadow:0 4px 0 #e4e0f7; }
-  html.dark #questsBox{ background:#1a1640; }
-  #questsBox h4{ font-family:'Fredoka',sans-serif; margin-bottom:10px; }
-  .quest-item{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-  .quest-item .q-icon{ font-size:1.3rem; }
-  .quest-item .q-body{ flex:1; }
-  .quest-item .q-label{ font-size:.8rem; font-weight:800; margin-bottom:3px; display:flex; justify-content:space-between; }
-  .quest-track{ background:#F1EEFF; border-radius:8px; height:9px; overflow:hidden; }
-  html.dark .quest-track{ background:#120e33; }
-  .quest-fill{ height:100%; background:linear-gradient(90deg,var(--teal),var(--purple)); border-radius:8px; transition:width .3s; }
-  .quest-item.done .quest-fill{ background:linear-gradient(90deg,#7bc94a,#4a9a3a); }
-  #chestsBox{ background:#fff; border-radius:20px; padding:16px 18px; box-shadow:0 4px 0 #e4e0f7; text-align:center; }
-  html.dark #chestsBox{ background:#1a1640; }
-  #chestsBox h4{ font-family:'Fredoka',sans-serif; margin-bottom:10px; }
-  .chest-btn{ font-size:2.2rem; background:none; border:none; cursor:pointer; padding:6px; transition:transform .15s; }
-  .chest-btn:hover{ transform:scale(1.1); }
-  .chest-btn:disabled{ opacity:.4; cursor:default; }
-  .chest-btn:disabled:hover{ transform:none; }
-  #chestNote{ font-size:.75rem; opacity:.65; margin-top:6px; }
-  #statsBox{ background:#fff; border-radius:20px; padding:16px 18px; box-shadow:0 4px 0 #e4e0f7; }
-  html.dark #statsBox{ background:#1a1640; }
-  #statsBox h4{ font-family:'Fredoka',sans-serif; margin-bottom:10px; }
-  .ad-slot{ background:#fff; border-radius:16px; padding:10px; box-shadow:0 3px 0 #e4e0f7; text-align:center; min-height:100px; }
-  html.dark .ad-slot{ background:#1a1640; }
-  .ad-label{ display:block; font-size:.6rem; letter-spacing:1px; color:#9089b8; font-weight:800; margin-bottom:6px; text-transform:uppercase; }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  html{scroll-behavior:smooth;}
-  body{
-    font-family:'Nunito', system-ui, sans-serif;
-    background:
-      radial-gradient(circle at 8% 12%, rgba(255,209,63,.28), transparent 45%),
-      radial-gradient(circle at 92% 18%, rgba(46,196,182,.25), transparent 45%),
-      radial-gradient(circle at 15% 85%, rgba(255,110,199,.22), transparent 45%),
-      radial-gradient(circle at 88% 82%, rgba(108,78,245,.2), transparent 45%),
-      var(--bg);
-    color:var(--ink);
-    min-height:100vh;
-  }
-  h1,h2,h3,.logo,.cta{ font-family:'Baloo 2', 'Nunito', system-ui, sans-serif; }
-
-  /* decorative blobs */
-  .blob{ position:fixed; border-radius:50%; filter:blur(2px); opacity:.55; z-index:0; pointer-events:none; animation:blobDrift 9s ease-in-out infinite;}
-  .blob1{ width:300px; height:300px; background:radial-gradient(circle,#FFE08A,#FFD23F); top:-90px; left:-110px;}
-  .blob2{ width:240px; height:240px; background:radial-gradient(circle,#9CF0E6,#2EC4B6); bottom:-70px; right:-90px; animation-delay:2s;}
-  .blob3{ width:180px; height:180px; background:radial-gradient(circle,#FFB8DE,#FF6EC7); top:40%; left:-100px; opacity:.35; animation-delay:4s;}
-  @keyframes blobDrift{ 0%,100%{ transform:translate(0,0) scale(1);} 50%{ transform:translate(18px,-14px) scale(1.06);} }
-  .sparkle{ position:fixed; font-size:1.4rem; z-index:0; pointer-events:none; opacity:.7; animation:twinkle 2.6s ease-in-out infinite; }
-  @keyframes twinkle{ 0%,100%{ opacity:.25; transform:scale(.8) rotate(0deg);} 50%{ opacity:.9; transform:scale(1.15) rotate(15deg);} }
-  @media (prefers-reduced-motion: reduce){ .blob{ animation:none; } }
-
-  header{
-    position:sticky; top:0; z-index:50;
-    background:rgba(255,255,255,.92); backdrop-filter:blur(6px);
-    border-bottom:3px solid transparent;
-    border-image:linear-gradient(90deg,var(--coral),var(--yellow),var(--teal),var(--purple),var(--pink)) 1;
-    box-shadow:0 2px 20px rgba(108,78,245,.08);
-  }
-  .nav{
-    max-width:1400px; margin:0 auto; padding:12px 24px;
-    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
-  }
-  .logo{
-    font-family:'Fredoka',sans-serif; font-size:1.4rem; font-weight:700; margin-right:auto;
-    display:flex; align-items:center; gap:8px; line-height:1; white-space:nowrap;
-    background:linear-gradient(90deg,var(--purple),var(--pink),var(--coral));
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
-  .logo-mascot{
-    width:32px; height:32px; border-radius:50%; object-fit:cover; flex-shrink:0;
-    box-shadow:0 0 0 2px #fff, 0 0 0 3.5px var(--purple), 0 3px 6px rgba(108,78,245,.35);
-    transition:transform .2s;
-  }
-  .logo:hover .logo-mascot{ transform:scale(1.08) rotate(-6deg); }
-  nav.links{ display:flex; gap:6px; }
-  nav.links a{
-    text-decoration:none; color:var(--ink); font-weight:800; font-size:.95rem;
-    padding:8px 14px; border-radius:999px; transition:all .18s;
-  }
-  nav.links a:hover, nav.links a.active{
-    background:linear-gradient(135deg,#fff,#F1EEFF); box-shadow:0 3px 0 #e4e0f7; transform:translateY(-1px);
-  }
-  .search-box{
-    display:flex; align-items:center; background:#fff; border-radius:999px; padding:8px 16px;
-    box-shadow:0 3px 0 #e4e0f7, inset 0 0 0 2px rgba(108,78,245,.08); min-width:180px; flex:1; max-width:440px;
-    transition:box-shadow .2s;
-  }
-  .search-box:focus-within{ box-shadow:0 3px 0 #e4e0f7, inset 0 0 0 2px var(--purple); }
-  .search-box input{ border:none; outline:none; font-family:inherit; font-size:.95rem; flex:1; background:transparent;}
-  .header-stat{
-    display:flex; align-items:center; gap:5px; background:linear-gradient(135deg,#fff,#FFF6E0); padding:8px 14px;
-    border-radius:999px; font-weight:900; font-size:.85rem; box-shadow:0 3px 0 #ffd9a0; white-space:nowrap; flex:0 0 auto;
-  }
-  html.dark .header-stat{ background:linear-gradient(135deg,#1a1640,#241c50); box-shadow:0 3px 0 #2a2060; }
-  .music-btn{
-    width:44px; height:44px; border:none; border-radius:50%; background:#fff; font-size:1.3rem; cursor:pointer;
-    box-shadow:0 3px 0 #e4e0f7; display:flex; align-items:center; justify-content:center; flex:0 0 auto;
-    transition:transform .15s;
-  }
-  .music-btn:active{ transform:scale(.9); }
-  .music-btn.playing{ animation:musicPulse 1.2s ease-in-out infinite; }
-  @keyframes musicPulse{ 0%,100%{ box-shadow:0 3px 0 #e4e0f7, 0 0 0 0 rgba(108,78,245,.4);} 50%{ box-shadow:0 3px 0 #e4e0f7, 0 0 0 8px rgba(108,78,245,0);} }
-
-  /* hero (kompakt) */
-  .hero{
-    max-width:1100px; margin:0 auto; padding:22px 20px 18px; position:relative; z-index:1;
-    display:flex; align-items:center; gap:24px; flex-wrap:wrap;
-  }
-  .hero-text{ flex:1; min-width:260px; }
-  .hero-text h1{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:1.9rem; line-height:1.16; color:var(--ink); margin-bottom:8px;}
-  .hero-text h1 em{ font-style:normal; color:var(--purple); text-decoration:underline wavy var(--yellow) 2px; text-underline-offset:4px;}
-  .hero-text h1 .rainbow{
-    background:linear-gradient(90deg,#FF6B6B,#FFD23F,#2EC4B6,#6C4EF5,#FF6EC7,#FF6B6B);
-    background-size:300% auto; -webkit-background-clip:text; background-clip:text; color:transparent;
-    animation:rainbowShift 5s linear infinite; text-shadow:0 4px 18px rgba(108,78,245,.2);
-  }
-  @keyframes rainbowShift{ to{ background-position:300% center; } }
-  .hero-text p{ font-size:.92rem; opacity:.7; margin-bottom:14px; max-width:440px;}
-  .badges{ display:flex; gap:8px; flex-wrap:wrap; }
-  .badge{
-    background:linear-gradient(135deg,#fff,#F7F5FF); padding:6px 13px; border-radius:999px; font-weight:800;
-    font-size:.72rem; box-shadow:0 3px 0 #e4e0f7, 0 6px 14px rgba(108,78,245,.08); transition:transform .15s;
-  }
-  .badge:hover{ transform:translateY(-2px) scale(1.05); }
-  .badge:nth-child(1){ box-shadow:0 3px 0 #ffd9a0, 0 6px 14px rgba(255,159,61,.15); border:2px solid rgba(255,159,61,.3);}
-  .badge:nth-child(2){ box-shadow:0 3px 0 #b8e6ff, 0 6px 14px rgba(61,214,255,.15); border:2px solid rgba(61,214,255,.3);}
-  .badge:nth-child(3){ box-shadow:0 3px 0 #ffc2e0, 0 6px 14px rgba(255,110,199,.15); border:2px solid rgba(255,110,199,.3);}
-  .hero-art{
-    flex:0 0 auto; min-width:120px; display:flex; justify-content:center; align-items:center;
-    font-size:4.2rem; position:relative;
-  }
-  .hero-art::before{
-    content:''; position:absolute; width:120px; height:120px; border-radius:50%;
-    background:radial-gradient(circle, rgba(255,210,63,.55), rgba(108,78,245,.25) 55%, transparent 75%);
-    filter:blur(6px); animation:glowPulse 2.4s ease-in-out infinite;
-  }
-  @keyframes glowPulse{ 0%,100%{ transform:scale(1); opacity:.8;} 50%{ transform:scale(1.12); opacity:1;} }
-  .hero-art .mascot{ display:inline-block; position:relative; z-index:2; animation:bounce 1.8s cubic-bezier(.34,1.56,.64,1) infinite; filter:drop-shadow(0 14px 18px rgba(108,78,245,.4)); }
-  @keyframes bounce{ 0%,100%{ transform:translateY(0) rotate(-4deg) scale(1);} 45%{ transform:translateY(-14px) rotate(4deg) scale(1.05);} 55%{ transform:translateY(-14px) rotate(4deg) scale(.98);} }
-  .hero-art .float{ position:absolute; font-size:1.3rem; animation:float 4s ease-in-out infinite; filter:drop-shadow(0 4px 6px rgba(0,0,0,.12)); z-index:2; }
-  .hero-art .f1{ top:-6px; left:-6px; animation-delay:0s;}
-  .hero-art .f2{ bottom:-4px; right:0; animation-delay:1s;}
-  .hero-art .f3{ top:45%; right:-20px; animation-delay:2s;}
-  .hero-art .f4{ top:4%; right:14%; animation-delay:.6s; font-size:1rem;}
-  .hero-art .f5{ bottom:20%; left:-10px; animation-delay:1.6s; font-size:1.8rem;}
-  @keyframes float{ 0%,100%{ transform:translateY(0) rotate(0deg);} 50%{ transform:translateY(-14px) rotate(12deg);} }
-  @media (prefers-reduced-motion: reduce){ .hero-art .float, .hero-art .mascot, .hero-art::before{ animation:none; } }
-
-  /* categories */
-  .cats{ max-width:1100px; margin:10px auto 0; padding:0 20px; display:flex; gap:10px; overflow-x:auto; position:relative; z-index:1;}
-  .cat-pill{
-    flex:0 0 auto; background:#fff; border:none; padding:10px 18px; border-radius:999px; font-weight:800; font-family:inherit;
-    font-size:.9rem; cursor:pointer; box-shadow:0 3px 0 #e4e0f7; color:var(--ink); white-space:nowrap;
-  }
-  .cat-pill.active{ background:var(--purple); color:#fff; box-shadow:0 3px 0 var(--purple-dark); }
-  .cat-pill[data-cat="hafiza"].active{ background:linear-gradient(135deg,#6C4EF5,#9C7BFF); box-shadow:0 3px 0 #4a34c9; }
-  .cat-pill[data-cat="bulmaca"].active{ background:linear-gradient(135deg,#FF6B9E,#FF9F6B); box-shadow:0 3px 0 #c94b6e; }
-  .cat-pill[data-cat="yaris"].active{ background:linear-gradient(135deg,#4a34c9,#2b2456); box-shadow:0 3px 0 #1a1638; }
-  .cat-pill[data-cat="spor"].active{ background:linear-gradient(135deg,#6bc46b,#4a9a4a); box-shadow:0 3px 0 #327032; }
-  .cat-pill[data-cat="yaratici"].active{ background:linear-gradient(135deg,#FFB03D,#FF9F5A); color:#1B1B3A; box-shadow:0 3px 0 #c97a2a; }
-  .cat-pill[data-cat="zeka"].active{ background:linear-gradient(135deg,#2EC4B6,#3DD6FF); box-shadow:0 3px 0 #1c9c90; }
-  .cat-pill[data-cat="macera"].active{ background:linear-gradient(135deg,#22B8AA,#2EC4B6); box-shadow:0 3px 0 #17847a; }
-  .cat-pill[data-cat="hareket"].active{ background:linear-gradient(135deg,#3DD6FF,#2EC4B6); box-shadow:0 3px 0 #1c9cae; }
-  .cat-pill[data-cat="mutfak"].active{ background:linear-gradient(135deg,#ff9f5a,#ffb85c); color:#1B1B3A; box-shadow:0 3px 0 #c9762a; }
-  .cat-pill[data-cat="aksiyon"].active{ background:linear-gradient(135deg,#FF6B6B,#FF3D6E); box-shadow:0 3px 0 #c9304f; }
-
-  /* grid */
-  main{ max-width:1100px; margin:0 auto; padding:30px 20px 60px; position:relative; z-index:1;}
-  main h2{ font-size:1.3rem; margin-bottom:16px; }
-  .section-band{
-    display:flex; align-items:center; gap:10px; padding:12px 20px; border-radius:999px; margin-bottom:18px;
-    color:#fff; font-family:'Baloo 2','Nunito',sans-serif; font-weight:800; font-size:1.15rem;
-    box-shadow:0 4px 0 rgba(0,0,0,.08);
-  }
-  .section-band .count{ font-size:.78rem; font-weight:700; background:rgba(255,255,255,.25); padding:3px 12px; border-radius:999px; margin-left:auto; }
-  .band-featured{ background:linear-gradient(90deg,#FFB03D,#FF6B6B); }
-  .band-macera{ background:linear-gradient(90deg,#22B8AA,#2EC4B6); }
-  .band-hareket{ background:linear-gradient(90deg,#3DD6FF,#2EC4B6); }
-  .band-yaris{ background:linear-gradient(90deg,#2b2456,#6C4EF5); }
-  .band-spor{ background:linear-gradient(90deg,#4a9a4a,#6bc46b); }
-  .band-mutfak{ background:linear-gradient(90deg,#ff9f5a,#ffb85c); color:#1B1B3A; }
-  .band-aksiyon{ background:linear-gradient(90deg,#FF6B6B,#FF3D6E); }
-  .band-hafiza{ background:linear-gradient(90deg,#6C4EF5,#9C7BFF); }
-  .band-bulmaca{ background:linear-gradient(90deg,#FF6B9E,#FF9F6B); }
-  .band-yaratici{ background:linear-gradient(90deg,#FF9F5A,#FFD23F); color:#1B1B3A; }
-  .band-zeka{ background:linear-gradient(90deg,#2EC4B6,#3DD6FF); }
-  .grid{
-    display:grid; grid-template-columns:repeat(auto-fill, minmax(130px,1fr)); gap:14px; margin-bottom:36px;
-  }
-  .game-card{
-    background:var(--card); border-radius:16px; padding:8px; text-align:center; text-decoration:none; color:var(--ink);
-    box-shadow:0 4px 0 #e4e0f7; transition:transform .15s, box-shadow .15s; position:relative; overflow:hidden;
-    --accent:#C9BBFF; --glow:rgba(108,78,245,.18);
-  }
-  .game-card::after{
-    content:''; position:absolute; top:0; left:16%; right:16%; height:4px; z-index:6;
-    background:var(--accent); border-radius:0 0 8px 8px; opacity:.9;
-  }
-  .game-card:hover{ transform:translateY(-4px) scale(1.03); box-shadow:0 8px 0 #e4e0f7, 0 14px 22px var(--glow); }
-  .game-card[data-cat~="hafiza"]{ --accent:#6C4EF5; --glow:rgba(108,78,245,.3); }
-  .game-card[data-cat~="bulmaca"]{ --accent:#FF6B9E; --glow:rgba(255,107,158,.3); }
-  .game-card[data-cat~="yaris"]{ --accent:#4a34c9; --glow:rgba(74,52,201,.3); }
-  .game-card[data-cat~="spor"]{ --accent:#4a9a4a; --glow:rgba(74,154,74,.3); }
-  .game-card[data-cat~="yaratici"]{ --accent:#FFB03D; --glow:rgba(255,176,61,.3); }
-  .game-card[data-cat~="zeka"]{ --accent:#2EC4B6; --glow:rgba(46,196,182,.3); }
-  .game-card[data-cat~="macera"]{ --accent:#22B8AA; --glow:rgba(34,184,170,.3); }
-  .game-card[data-cat~="hareket"]{ --accent:#3DD6FF; --glow:rgba(61,214,255,.3); }
-  .game-card[data-cat~="mutfak"]{ --accent:#ff9f5a; --glow:rgba(255,159,90,.3); }
-  .game-card[data-cat~="aksiyon"]{ --accent:#FF3D6E; --glow:rgba(255,61,110,.3); }
-  .thumb .ic{ display:inline-block; transition:transform .28s cubic-bezier(.34,1.56,.64,1); }
-  .game-card:hover .ic{ transform:scale(1.18) rotate(-6deg); }
-  @keyframes cardIn{ from{ opacity:0; transform:translateY(14px) scale(.96); } to{ opacity:1; transform:translateY(0) scale(1); } }
-  .game-card.reveal{ animation:cardIn .45s ease both; }
-  .game-card::before{
-    content:''; position:absolute; top:0; left:-120%; width:60%; height:100%;
-    background:linear-gradient(115deg, transparent, rgba(255,255,255,.55), transparent);
-    transform:skewX(-20deg); transition:left .55s ease; z-index:5; pointer-events:none;
-  }
-  .game-card:hover::before{ left:130%; }
-  .thumb{
-    width:100%; aspect-ratio:1/1; border-radius:12px; display:flex; align-items:center; justify-content:center;
-    font-size:3.2rem; margin-bottom:6px; position:relative; overflow:hidden;
-  }
-  .thumb span.ic{ position:relative; z-index:2; filter:drop-shadow(0 2px 3px rgba(0,0,0,.18)); }
-  .thumb::after{ content:''; position:absolute; inset:0; z-index:1; border-radius:inherit; }
-  /* tema renkleri */
-  .th-hayvanlar{ background:linear-gradient(135deg,#FFE8C2,#FF9F5A); }
-  .th-meyveler{ background:linear-gradient(135deg,#FFD1DC,#FF5C86); }
-  .th-uzay{ background:linear-gradient(135deg,#CBBBFF,#6C4EF5); }
-  .th-deniz{ background:linear-gradient(135deg,#BDEFFF,#22B8AA); }
-  .th-tatli{ background:linear-gradient(135deg,#FFE0F3,#FF7FC2); }
-  .th-default{ background:linear-gradient(135deg,#E4DDFF,#C9BBFF); }
-  /* mekanik şekil/desen grupları */
-  .shape-match{ border-radius:16px; }
-  .shape-match::after{ background-image:
-    linear-gradient(rgba(255,255,255,.35) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.35) 1px, transparent 1px);
-    background-size:33% 33%; }
-  .shape-order{ border-radius:50%; margin-left:auto; margin-right:auto; width:88%; aspect-ratio:1/1; }
-  .shape-order::after{ background-image: repeating-conic-gradient(rgba(255,255,255,.28) 0deg 8deg, transparent 8deg 40deg); }
-  .shape-recall{ border-radius:32% 68% 68% 32% / 32% 32% 68% 68%; }
-  .shape-recall::after{ background-image: radial-gradient(circle, rgba(255,255,255,.4) 18%, transparent 19%);
-    background-size:24px 24px; }
-  .thumb-svg{ width:100%; aspect-ratio:1/1; border-radius:14px; overflow:hidden; margin-bottom:6px; display:block; }
-  .thumb-svg svg{ width:100%; height:100%; display:block; }
-  .t1{ background:linear-gradient(135deg,#E4DDFF,#C9BBFF); }
-  .t2{ background:linear-gradient(135deg,#FFEBB0,#FFD23F); }
-  .t3{ background:linear-gradient(135deg,#CFF3F0,#8FE4DB); }
-  .t4{ background:linear-gradient(135deg,#FFD9D9,#FFB3B3); }
-  .game-card h3{ font-size:.8rem; font-weight:800; margin:0; line-height:1.2; }
-  .game-card .tag{
-    display:block; position:absolute; top:8px; right:8px; z-index:7;
-    background:rgba(20,14,50,.55); color:#fff; font-size:.6rem; font-weight:800;
-    padding:2px 7px; border-radius:999px; backdrop-filter:blur(2px); letter-spacing:.2px;
-  }
-  .rail-track .game-card .tag{ font-size:.55rem; padding:1px 6px; }
-  .badge-new{
-    position:absolute; top:8px; left:8px; background:var(--coral); color:#fff; font-size:.65rem; font-weight:800;
-    padding:3px 8px; border-radius:999px;
-  }
-  .badge-soon{
-    position:absolute; inset:0; background:rgba(255,255,255,.85); display:flex; align-items:center; justify-content:center;
-    font-weight:800; color:var(--purple); font-size:.85rem; border-radius:18px;
-  }
-  .soon-card{ cursor:default; }
-
-  footer{
-    background:#fff; border-top:3px solid var(--bg); padding:30px 20px; text-align:center;
-    font-size:.85rem; opacity:.7; position:relative; z-index:1;
-  }
-  footer .links{ display:flex; gap:16px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
-  footer a{ color:var(--purple); text-decoration:none; font-weight:800; }
-
-  @media (max-width:600px){
-    .hero-text h1{ font-size:2rem; }
-    .hero-art{ font-size:5rem; }
-    nav.links{ display:none; }
-    .random-btn{ width:100%; justify-content:center; padding:13px 20px; }
-    .rail-track .game-card{ flex-basis:108px; }
-    .rails{ padding:6px 14px 0; }
-  }
-</style>
+<link rel="stylesheet" href="assets/index.css">
 </head>
 <body>
   <div id="splashScreen">
@@ -628,10 +83,17 @@
     <a class="sb-item" href="#worldMap"><span class="sb-icon">🗺️</span> Dünyalar</a>
     <button class="sb-item" id="sbProfileBtn"><span class="sb-icon">🧑</span> Profilim</button>
     <a class="sb-item" href="#achievements"><span class="sb-icon">🏆</span> Başarılarım</a>
+    <button class="sb-item" id="sbLeaderboardBtn"><span class="sb-icon">🌍</span> Liderlik Tablosu</button>
+    <button class="sb-item" id="sbCollectionBtn"><span class="sb-icon">🃏</span> Woogi Koleksiyonu</button>
+    <button class="sb-item" id="sbGrowthBtn"><span class="sb-icon">📊</span> Gelişim Haritam</button>
     <button class="sb-item" id="sbParentBtn"><span class="sb-icon">👨‍👩‍👧</span> Ebeveyn Paneli</button>
+    <a class="sb-item" href="blog.html"><span class="sb-icon">📰</span> Ebeveyn Rehberi</a>
     <div style="flex:1;"></div>
     <button class="sb-item" id="sbThemeBtn"><span class="sb-icon">🌙</span> Tema</button>
+    <button class="sb-item" id="sbColorThemeBtn"><span class="sb-icon">🎨</span> Renk Teması</button>
+    <button class="sb-item" id="sbLangBtn"><span class="sb-icon">🌐</span> Dil / Language</button>
     <button class="sb-item" id="sbMusicBtn"><span class="sb-icon">🔊</span> Müzik</button>
+    <button class="sb-item" id="sbAssistantBtn"><span class="sb-icon">🐼</span> Yapay Zeka Asistanı</button>
   </aside>
 
   <div class="blob blob1"></div>
@@ -653,8 +115,13 @@
         <input id="searchInput" type="text" placeholder="Oyun ara...">
       </div>
       <div id="headerStat" class="header-stat" title="Bugünkü oyun serin">🔥 <span id="headerStreak">0</span> gün</div>
+      <button id="xpLevelBadge" title="Seviyeni ve XP'ini gör">
+        <span id="xpLevelIcon">🐣</span><span id="xpLevelUnit">Sv.</span><span id="xpLevelNum">1</span>
+      </button>
       <button class="music-btn" id="musicToggle" title="Müziği aç/kapat">🔊</button>
       <button class="music-btn" id="themeToggle" title="Karanlık/Aydınlık tema">🌙</button>
+      <button class="music-btn" id="colorThemeToggle" title="Renk teması: Woogi Mor / Okyanus">🎨</button>
+      <button class="music-btn" id="langToggle" title="Dil / Language">🌐 TR</button>
       <button class="profile-badge" id="profileBadge">
         <span class="avatar" id="profileAvatarIcon">👤</span>
         <span id="profileNameLabel">Profil Oluştur</span>
@@ -666,8 +133,22 @@
     <div id="profileCard">
       <h3>👋 Merhaba! Sen kimsin?</h3>
       <input id="nameInput" type="text" placeholder="Adını yaz..." maxlength="16">
+      <div id="avatarPreviewBox"><div id="avatarPreview"><span id="avPrevBase">🐱</span><span id="avPrevHat"></span><span id="avPrevAcc"></span></div></div>
+      <div id="xpBarBox" style="margin:2px 0 14px;">
+        <div class="xp-bar-track"><div class="xp-bar-fill" id="xpBarFill" style="width:0%;"></div></div>
+        <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:.72rem; font-weight:700; opacity:.75;">
+          <span id="xpBarLabel">🐣 Woogi Yavrusu · 0/60 XP</span>
+          <span title="Toplam XP">✨ <span id="xpTotalVal">0</span></span>
+        </div>
+      </div>
+      <div class="picker-label">Karakter</div>
       <div id="avatarPicker"></div>
+      <div class="picker-label">Renk</div>
       <div id="colorPicker"></div>
+      <div class="picker-label">Şapka</div>
+      <div id="hatPicker"></div>
+      <div class="picker-label">Aksesuar</div>
+      <div id="accessoryPicker"></div>
       <button class="btn" id="saveProfileBtn" style="width:100%;">Kaydet</button>
       <button class="btn alt" id="closeProfileBtn" style="width:100%; margin-top:8px;">Kapat</button>
     </div>
@@ -676,7 +157,7 @@
   <div id="parentModal">
     <div id="parentCard">
       <h3>👨‍👩‍👧 Ebeveyn Paneli</h3>
-      <div class="sub">Reklam takibi veya kişisel veri toplama yapılmaz; hesap bilgileri yalnızca sizin onayınızla saklanır.</div>
+      <div class="sub">Kişiselleştirilmiş reklam takibi veya kişisel veri toplama yapılmaz; hesap bilgileri yalnızca sizin onayınızla saklanır.</div>
 
       <div id="parentAuthGate" style="display:none;">
         <div id="authTabs" style="display:flex; gap:8px; margin-bottom:14px;">
@@ -710,28 +191,104 @@
     </div>
   </div>
 
+  <div id="leaderboardModal">
+    <div id="leaderboardCard">
+      <h3>🌍 Liderlik Tablosu</h3>
+      <div class="sub" id="leaderboardSub">Diğer WoogiGames oyuncularıyla günlük serini ve toplam oyun sayını karşılaştır.</div>
+      <div id="leaderboardBody"></div>
+      <button class="btn" id="submitScoreBtn" style="width:100%; margin-top:12px;">Skorumu Paylaş</button>
+      <button class="btn alt" id="closeLeaderboardBtn" style="width:100%; margin-top:8px;">Kapat</button>
+    </div>
+  </div>
+
+  <div id="collectionModal">
+    <div id="collectionCard">
+      <h3>🃏 Woogi Koleksiyonu <span id="collectionCount" class="collection-count"></span></h3>
+      <div class="sub">Görevleri ve haftalık meydan okumaları tamamlayarak yeni Woogi karakterleri kazan!</div>
+      <div id="collectionBody" class="collection-grid"></div>
+      <button class="btn alt" id="closeCollectionBtn" style="width:100%; margin-top:12px;">Kapat</button>
+    </div>
+  </div>
+
+  <div id="growthModal">
+    <div id="growthCard">
+      <h3>📊 Gelişim Haritam</h3>
+      <div class="sub">Bu bir test veya değerlendirme değil — sadece hangi oyunlarda ne kadar pratik yaptığını eğlenceli bir şekilde gösterir! 😊</div>
+      <div id="growthSummary" class="growth-summary"></div>
+      <div id="growthAreas" class="growth-areas"></div>
+      <button class="btn alt" id="closeGrowthBtn" style="width:100%; margin-top:14px;">Kapat</button>
+    </div>
+  </div>
+
   <div id="mainLayout">
   <div id="centerCol">
 
   <section class="hero">
     <div class="hero-text">
-      <h1>Tarayıcında <span class="rainbow">ücretsiz</span> oyna, indirme yok!</h1>
-      <p>Çocuklar için özenle seçilmiş, reklam takibi olmayan, güvenli ve eğlenceli online oyunlar. Kayıt olmadan, tek tıkla oyna!</p>
+      <h1>Oynayarak <span class="rainbow">hafızasını</span> güçlendirsin! 🧠</h1>
+      <p>Çocuğunuz için özel tasarlanmış hafıza ve dikkat pratiği oyunları — her gün birkaç dakika oynayarak alışkanlık kazanır. Kişiselleştirilmiş reklam takibi yok, kayıt olmadan tek tıkla başla!</p>
       <div class="badges">
-        <span class="badge">🎮 100% Ücretsiz</span>
-        <span class="badge">🚫 İndirme Gerektirmez</span>
+        <span class="badge">🧠 Hafıza Odaklı Pratik</span>
+        <span class="badge">🔥 Günlük Alışkanlık</span>
         <span class="badge">🛡️ Çocuk Dostu</span>
       </div>
-      <button class="random-btn" id="randomGameBtn"><span class="dice">🎲</span> Rastgele Oyun</button>
+      <button class="random-btn" id="randomGameBtn"><span class="dice">🧠</span> Hafıza Egzersizine Başla</button>
     </div>
     <div class="hero-art">
       <span class="mascot">🐼</span>
-      <span class="float f1">🏠</span>
-      <span class="float f2">🌲</span>
-      <span class="float f3">🏜️</span>
-      <span class="float f4">🚀</span>
+      <span class="float f1">🧩</span>
+      <span class="float f2">🃏</span>
+      <span class="float f3">⭐</span>
+      <span class="float f4">🔁</span>
     </div>
   </section>
+
+  <style>
+    .memory-spotlight{
+      max-width:1120px; margin:0 auto 26px; padding:22px 24px; border-radius:22px;
+      background:linear-gradient(135deg, var(--purple), #9C7BFF 60%, var(--teal));
+      color:#fff; display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+      box-shadow:0 10px 30px rgba(108,78,245,.28);
+    }
+    .memory-spotlight .ms-icon{ font-size:3rem; filter:drop-shadow(0 6px 10px rgba(0,0,0,.2)); flex:0 0 auto; }
+    .memory-spotlight .ms-text{ flex:1; min-width:220px; }
+    .memory-spotlight h2{ margin:0 0 4px; font-family:'Fredoka',sans-serif; font-size:1.25rem; }
+    .memory-spotlight p{ margin:0; opacity:.92; font-size:.88rem; }
+    .memory-spotlight .ms-streak{ background:rgba(255,255,255,.18); border-radius:14px; padding:8px 14px; font-weight:800; font-size:.85rem; text-align:center; }
+    .memory-spotlight .ms-streak b{ display:block; font-size:1.3rem; }
+    .memory-spotlight .ms-cta{
+      background:#fff; color:var(--purple); font-weight:900; padding:10px 18px; border-radius:999px;
+      text-decoration:none; white-space:nowrap; box-shadow:0 3px 0 rgba(0,0,0,.12);
+    }
+    .why-memory{ max-width:1120px; margin:0 auto 32px; display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; }
+    .why-memory .wm-card{
+      background:var(--card); border-radius:16px; padding:16px; text-align:center; box-shadow:0 3px 0 rgba(0,0,0,.06);
+    }
+    .why-memory .wm-icon{ font-size:1.7rem; margin-bottom:6px; }
+    .why-memory h4{ margin:0 0 4px; font-size:.9rem; color:var(--ink); }
+    .why-memory p{ margin:0; font-size:.76rem; opacity:.7; color:var(--ink); }
+    @media (max-width:640px){ .memory-spotlight{ flex-direction:column; text-align:center; } }
+  </style>
+
+  <!-- Günün hafıza egzersizi: içerik assets/index.js -> pickDailyMemoryExercise() ile
+       GAME_CATALOG'daki hafıza/bulmaca oyunları arasından tarihe göre otomatik seçilir
+       (JS çalışmazsa aşağıdaki statik metin/link zaten makul bir varsayılan olarak kalır). -->
+  <div class="memory-spotlight">
+    <span class="ms-icon" id="msIcon">🌀</span>
+    <div class="ms-text">
+      <h2 id="msTitle">Bugünün Hafıza Egzersizi: Labirent Macerası</h2>
+      <p>Kısa ve eğlenceli bir pratikle hafıza kasını çalıştır!</p>
+    </div>
+    <div class="ms-streak">🔥 Seri<b id="msStreakVal">0 gün</b></div>
+    <a class="ms-cta" id="msLink" href="labirent.html">Şimdi Pratik Yap →</a>
+  </div>
+
+  <div class="why-memory">
+    <div class="wm-card"><div class="wm-icon">🔁</div><h4>Tekrarla, Öğren</h4><p>Kısa tekrarlarla kalıcı alışkanlık kazandırır.</p></div>
+    <div class="wm-card"><div class="wm-icon">🎯</div><h4>Odaklanmayı Destekler</h4><p>Dikkatini tek bir göreve vermeyi eğlenceli hale getirir.</p></div>
+    <div class="wm-card"><div class="wm-icon">📈</div><h4>Gelişimi Gör</h4><p>Günlük seri ve rozetlerle ilerlemesini takip et.</p></div>
+    <div class="wm-card"><div class="wm-icon">😊</div><h4>Oyun Gibi Hisseder</h4><p>Pratik değil, eğlence gibi gelir — o yüzden severek devam eder.</p></div>
+  </div>
 
   <div id="adventureBanner">
     <a id="adventureCard" href="#worldMap">
@@ -746,6 +303,10 @@
 
   <div class="rails" id="rails">
     <div class="rail">
+      <div class="section-band band-hafiza">🧠 Hafıza Oyunları <span class="count" id="railMemoryCount"></span></div>
+      <div class="rail-track" id="railMemory"></div>
+    </div>
+    <div class="rail">
       <div class="section-band band-aksiyon">🔥 Öne Çıkan Oyunlar</div>
       <div class="rail-track" id="railPopular"></div>
     </div>
@@ -758,7 +319,7 @@
       <div class="rail-track" id="railNew"></div>
     </div>
     <div class="rail">
-      <div class="section-band band-hafiza">🎮 Son Oynananlar</div>
+      <div class="section-band band-recent">🎮 Son Oynananlar</div>
       <div class="rail-track" id="railRecent"></div>
     </div>
   </div>
@@ -777,17 +338,32 @@
     <button class="cat-pill active" data-cat="all">✨ Hepsi</button>
     <button class="cat-pill" data-cat="hafiza">🧠 Hafıza Geliştirici</button>
     <button class="cat-pill" data-cat="bulmaca">🧩 Bulmaca</button>
-    <button class="cat-pill" data-cat="yaris">🏎️ Yarış</button>
-    <button class="cat-pill" data-cat="spor">🏀 Spor</button>
-    <button class="cat-pill" data-cat="yaratici">🎨 Yaratıcılık</button>
     <button class="cat-pill" data-cat="zeka">🔢 Zeka</button>
-    <button class="cat-pill" data-cat="mutfak">🍳 Mutfak</button>
-    <button class="cat-pill" data-cat="aksiyon">🎯 Aksiyon</button>
+    <button class="cat-pill" data-cat="yaratici">🎨 Yaratıcılık</button>
     <button class="cat-pill" data-cat="macera">🗺️ Macera</button>
     <button class="cat-pill" data-cat="hareket">🏃 Hareket</button>
+    <button class="cat-pill" data-cat="yaris">🏎️ Yarış</button>
+    <button class="cat-pill" data-cat="spor">🏀 Spor</button>
+    <button class="cat-pill" data-cat="mutfak">🍳 Mutfak</button>
+    <button class="cat-pill" data-cat="aksiyon">🎯 Aksiyon</button>
   </div>
 
   <main id="oyunlar">
+
+    <div class="section-band band-hafiza">🧠 Hafıza Geliştirici Oyunlar <span class="count" id="hafizaCount">100 oyun</span></div>
+    <div class="grid" id="hafizaGrid"></div>
+    <button class="show-all-btn" data-cat="hafiza">Tümünü Gör (100 oyun) →</button>
+
+    <div class="section-band band-bulmaca">🧩 Bulmaca Oyunları <span class="count" id="bulmacaCount">100 oyun</span></div>
+    <div class="grid" id="bulmacaGrid"></div>
+    <button class="show-all-btn" data-cat="bulmaca">Tümünü Gör (100 oyun) →</button>
+
+    <div class="section-band band-zeka">🔢 Zeka Oyunları <span class="count">20 oyun</span></div>
+    <div class="grid" id="zekaGrid"></div>
+    <button class="show-all-btn" data-cat="zeka">Tümünü Gör (20 oyun) →</button>
+
+    <div class="section-band band-yaratici">🎨 Yaratıcılık Oyunları <span class="count">5 oyun</span></div>
+    <div class="grid" id="yaraticiGrid"></div>
 
     <div class="section-band band-macera">🗺️ Macera <span class="count" id="cnt-macera"></span></div>
     <div class="grid" id="grid-macera"></div>
@@ -1080,18 +656,6 @@
         <h3>Denge Ustası</h3><div class="tag">Hareket</div>
       </a>
     </template>
-
-    <div class="section-band band-hafiza">🧠 Hafıza Geliştirici Oyunlar <span class="count" id="hafizaCount">100 oyun</span></div>
-    <div class="grid" id="hafizaGrid"></div>
-
-    <div class="section-band band-bulmaca">🧩 Bulmaca Oyunları <span class="count" id="bulmacaCount">100 oyun</span></div>
-    <div class="grid" id="bulmacaGrid"></div>
-
-    <div class="section-band band-yaratici">🎨 Yaratıcılık Oyunları <span class="count">5 oyun</span></div>
-    <div class="grid" id="yaraticiGrid"></div>
-
-    <div class="section-band band-zeka">🔢 Zeka Oyunları <span class="count">20 oyun</span></div>
-    <div class="grid" id="zekaGrid"></div>
   </main>
 
   </div>
@@ -1106,6 +670,12 @@
         <h4>🎁 Günlük Sandık</h4>
         <button class="chest-btn" id="chestBtn">📦</button>
         <div id="chestNote">Her gün bir kez açabilirsin!</div>
+      </div>
+      <div id="weeklyBox">
+        <h4>🏆 Haftalık Woogi Meydan Okuması</h4>
+        <div id="weeklyDesc" class="q-label"></div>
+        <div class="quest-track"><div class="quest-fill" id="weeklyFill" style="width:0%"></div></div>
+        <div id="weeklyRewardNote"></div>
       </div>
       <div id="statsBox">
         <h4>📊 İstatistiklerim</h4>
@@ -1127,10 +697,12 @@
   </div>
 
   <footer id="ebeveyn">
-    <div><strong>Ebeveynler için:</strong> Sitemizde reklam takibi ve kişisel veri toplama yapılmaz, üyelik gerekmez.</div>
+    <div><strong>Ebeveynler için:</strong> Sitemizde kişiselleştirilmiş reklam takibi ve kişisel veri toplama yapılmaz, üyelik gerekmez.</div>
     <div class="links">
+      <a href="blog.html">Ebeveyn Rehberi</a>
       <a href="gizlilik.html">Gizlilik Politikası</a>
-      <a href="mailto:iletisim@woogigames.com">İletişim</a>
+      <a href="kullanim-sartlari.html">Kullanım Şartları</a>
+      <a href="mailto:sessizlik0607@hotmail.com">İletişim</a>
     </div>
     <div style="margin-top:10px;">© 2026 WoogiGames</div>
   </footer>
@@ -1138,6 +710,18 @@
   <div id="mascotWidget">
     <span id="mascotChar">🐼</span>
     <div id="mascotBubble"></div>
+  </div>
+  <div id="mascotChatPanel" role="dialog" aria-label="Woogi'ye Sor">
+    <div id="mascotChatHeader">
+      <span>🐼 Woogi'ye Sor</span>
+      <button id="mascotChatClose" aria-label="Kapat" type="button">✕</button>
+    </div>
+    <div id="mascotChatLog"></div>
+    <div id="mascotChatQuick"></div>
+    <form id="mascotChatForm">
+      <input id="mascotChatInput" type="text" placeholder="Bir şey sor..." maxlength="120" autocomplete="off">
+      <button id="mascotChatSend" aria-label="Gönder" type="submit">➤</button>
+    </form>
   </div>
 
   <div id="patiStoryModal">
@@ -1156,855 +740,7 @@
 <script src="firebase-config.js"></script>
 <script src="parent-auth.js"></script>
 <script src="common.js"></script>
-<script>
-  // 5 oyun motoru x 5 tema x 4 seviye = 100 hafıza geliştirici oyun kartı
-  const ENGINES = [
-    { file: 'eslestirme.html', name: 'Eşleştirme', icon: '🧠', shape: 'match' },
-    { file: 'simon.html',      name: 'Sıra Takibi', icon: '🔁', shape: 'order' },
-    { file: 'kelime.html',     name: 'Kelime Hafızası', icon: '📝', shape: 'recall' },
-    { file: 'gorsel.html',     name: 'Görsel Hafıza', icon: '👁️', shape: 'recall' },
-    { file: 'yol.html',        name: 'Yol Hafızası', icon: '🐾', shape: 'order' }
-  ];
-  const themeKeys = Object.keys(THEMES);
-
-  const hafizaGrid = document.getElementById('hafizaGrid');
-  const frag = document.createDocumentFragment();
-  ENGINES.forEach(engine=>{
-    themeKeys.forEach(themeKey=>{
-      const theme = THEMES[themeKey];
-      [1,2,3,4].forEach(level=>{
-        const a = document.createElement('a');
-        a.className = 'game-card';
-        a.href = `${engine.file}?theme=${themeKey}&level=${level}`;
-        a.dataset.cat = 'hafiza';
-        const title = `${theme.name} ${engine.name}`;
-        a.dataset.name = title.toLowerCase();
-        a.innerHTML = `
-          <div class="thumb th-${themeKey} shape-${engine.shape}"><span class="ic">${engine.icon}</span></div>
-          <h3>${title}</h3>
-          <div class="tag">${LEVEL_NAMES[level]}</div>`;
-        frag.appendChild(a);
-      });
-    });
-  });
-  hafizaGrid.appendChild(frag);
-
-  // Bulmaca kataloğu: 5 motor x 5 tema x 4 seviye = 100 kart
-  const PUZZLE_ENGINES = [
-    { file: 'kaydirma.html', name: 'Kaydırmalı Bulmaca', icon: '🧩', shape: 'match' },
-    { file: 'parca.html',    name: 'Parça Değiştirme', icon: '🔀', shape: 'match' },
-    { file: 'desen.html',    name: 'Desen Tamamlama', icon: '🔮', shape: 'order' },
-    { file: 'yapboz.html',   name: 'Yapboz', icon: '🖼️', shape: 'recall' },
-    { file: 'kelimeavi.html', name: 'Kelime Avı', icon: '🔤', shape: 'match' }
-  ];
-  const bulmacaGrid = document.getElementById('bulmacaGrid');
-  const puzzleFrag = document.createDocumentFragment();
-  PUZZLE_ENGINES.forEach(engine=>{
-    themeKeys.forEach(themeKey=>{
-      const theme = THEMES[themeKey];
-      [1,2,3,4].forEach(level=>{
-        const a = document.createElement('a');
-        a.className = 'game-card';
-        a.href = `${engine.file}?theme=${themeKey}&level=${level}`;
-        a.dataset.cat = 'bulmaca';
-        const title = `${theme.name} ${engine.name}`;
-        a.dataset.name = title.toLowerCase();
-        a.innerHTML = `
-          <div class="thumb th-${themeKey} shape-${engine.shape}"><span class="ic">${engine.icon}</span></div>
-          <h3>${title}</h3>
-          <div class="tag">${LEVEL_NAMES[level]}</div>`;
-        puzzleFrag.appendChild(a);
-      });
-    });
-  });
-  bulmacaGrid.appendChild(puzzleFrag);
-
-  // Yaratıcılık kataloğu: 1 motor x 5 tema = 5 kart (seviye yok, sadece tema)
-  const yaraticiGrid = document.getElementById('yaraticiGrid');
-  const yaraticiFrag = document.createDocumentFragment();
-  themeKeys.forEach(themeKey=>{
-    const theme = THEMES[themeKey];
-    const a = document.createElement('a');
-    a.className = 'game-card';
-    a.href = `boyama.html?theme=${themeKey}`;
-    a.dataset.cat = 'yaratici';
-    const title = `${theme.name} Boyama Kitabı`;
-    a.dataset.name = title.toLowerCase();
-    a.innerHTML = `
-      <div class="thumb th-${themeKey} shape-recall"><span class="ic">🎨</span></div>
-      <h3>${title}</h3>
-      <div class="tag">Yaratıcılık</div>`;
-    yaraticiFrag.appendChild(a);
-  });
-  yaraticiGrid.appendChild(yaraticiFrag);
-
-  // Zeka kataloğu: 1 motor x 5 tema x 4 seviye = 20 kart
-  const zekaGrid = document.getElementById('zekaGrid');
-  const zekaFrag = document.createDocumentFragment();
-  themeKeys.forEach(themeKey=>{
-    const theme = THEMES[themeKey];
-    [1,2,3,4].forEach(level=>{
-      const a = document.createElement('a');
-      a.className = 'game-card';
-      a.href = `matematik.html?theme=${themeKey}&level=${level}`;
-      a.dataset.cat = 'zeka';
-      const title = `${theme.name} Matematik Yarışı`;
-      a.dataset.name = title.toLowerCase();
-      a.innerHTML = `
-        <div class="thumb th-${themeKey} shape-order"><span class="ic">🔢</span></div>
-        <h3>${title}</h3>
-        <div class="tag">${LEVEL_NAMES[level]}</div>`;
-      zekaFrag.appendChild(a);
-    });
-  });
-  zekaGrid.appendChild(zekaFrag);
-
-  // Öne çıkan kartları kendi kategori bandına dağıt
-  const CATEGORY_PRIORITY = ['macera','yaris','spor','mutfak','aksiyon','hareket'];
-  const template = document.getElementById('featuredTemplate');
-  const templateCards = Array.from(template.content.children);
-  templateCards.forEach(card=>{
-    const cats = (card.dataset.cat || '').split(' ');
-    const primary = CATEGORY_PRIORITY.find(c=>cats.includes(c)) || cats[0];
-    const target = document.getElementById('grid-' + primary);
-    if(target) target.appendChild(card.cloneNode(true));
-  });
-  CATEGORY_PRIORITY.forEach(cat=>{
-    const grid = document.getElementById('grid-'+cat);
-    const cnt = document.getElementById('cnt-'+cat);
-    if(grid && cnt) cnt.textContent = grid.children.length + ' oyun';
-  });
-
-  // ---- Poki tarzı raylar: Popüler / Editörün Seçimi / Yeni / Son Oynananlar ----
-  const cardByHref = {};
-  templateCards.forEach(c=>{ cardByHref[c.getAttribute('href')] = c; });
-
-  function fillRail(elId, hrefs, emptyMsg){
-    const track = document.getElementById(elId);
-    if(!track) return;
-    let added = 0;
-    hrefs.forEach(href=>{
-      const src = cardByHref[href];
-      if(!src) return;
-      track.appendChild(src.cloneNode(true));
-      added++;
-    });
-    if(!added && emptyMsg){
-      track.outerHTML = `<div class="rail-empty" id="${elId}">🐼 ${emptyMsg}</div>`;
-    }
-  }
-
-  // Editörün Seçimi: sabit, elle seçilmiş favoriler
-  const EDITOR_PICKS = [
-    'woogi-macera.html','araba-yarisi.html','futbol-simsek.html','labirent.html','tekne-yarisi.html',
-    'pizza.html','ucak-oyunu.html','serbest-vurus.html','kaykay-yarisi.html',
-    'sandvic.html','ipatlama.html'
-  ];
-  fillRail('railEditor', EDITOR_PICKS);
-
-  // Yeni Eklenenler: "Yeni" rozetli kartlar + birkaç taze oyun
-  const newBadged = templateCards.filter(c=> c.querySelector('.badge-new')).map(c=>c.getAttribute('href'));
-  const NEW_GAMES = [...new Set([...newBadged, 'yakalama.html','denge.html','merdiven.html','at-yarisi.html','bisiklet-yarisi.html','paten.html'])];
-  fillRail('railNew', NEW_GAMES);
-
-  // Bugün Popüler: gerçek oynama sayıları varsa onlarla, yoksa güne göre sabit bir sıralama
-  const allFeaturedHrefs = templateCards.map(c=>c.getAttribute('href'));
-  const realCounts = allFeaturedHrefs
-    .map(href=>({ href, count: parseInt(localStorage.getItem('ok_stat_plays_'+href.split('?')[0])||'0',10) }))
-    .filter(x=>x.count>0)
-    .sort((a,b)=> b.count-a.count)
-    .map(x=>x.href);
-  let popularList = realCounts;
-  if(popularList.length < 10){
-    const seed = new Date().toISOString().slice(0,10).split('-').reduce((a,c)=>a+parseInt(c,10),0);
-    const shuffled = [...allFeaturedHrefs].sort((a,b)=> ((a.charCodeAt(0)+seed)%7) - ((b.charCodeAt(0)+seed)%7));
-    popularList = [...new Set([...popularList, ...shuffled])];
-  }
-  fillRail('railPopular', popularList.slice(0,12));
-
-  // Son Oynananlar: gerçek localStorage geçmişinden
-  let recentPlayed = [];
-  try{ recentPlayed = JSON.parse(localStorage.getItem('ok_stat_recent')||'[]'); }catch(e){}
-  const recentHrefs = recentPlayed.filter(r=>r.path!=='index.html').map(r=>r.path);
-  fillRail('railRecent', [...new Set(recentHrefs)].slice(0,12), 'Henüz oyun oynamadın. Rastgele Oyun butonuna basıp başlayabilirsin!');
-
-  // ---- Rastgele Oyun butonu (Woogi konuşarak yönlendirir) ----
-
-  const search = document.getElementById('searchInput');
-  const cats = document.querySelectorAll('.cat-pill');
-  let activeCat = 'all';
-
-  function applyFilter(){
-    const q = search.value.trim().toLowerCase();
-    const cards = document.querySelectorAll('.game-card');
-    const filtering = q.length > 0 || activeCat !== 'all';
-    cards.forEach(card=>{
-      const name = card.dataset.name || '';
-      const catList = (card.dataset.cat || '').split(' ');
-      const matchesCat = activeCat === 'all' || catList.includes(activeCat);
-      const matchesSearch = name.includes(q);
-      if(filtering){
-        card.style.display = (matchesCat && matchesSearch) ? '' : 'none';
-      } else {
-        card.style.display = card.hasAttribute('data-lazy') ? 'none' : '';
-      }
-    });
-  }
-
-  const CAT_TIPS = {
-    hafiza:`🐼 Hafıza oyunları beynini süper güçlü yapar!`,
-    bulmaca:`🐼 Bulmacalarda acele etme, parçalar sırayla yerine oturur.`,
-    yaris:`🐼 Uzay Dünyası'nda hız senin dostun, direksiyonu sıkı tut!`,
-    spor:`🐼 Kale Dünyası seni bekliyor, topu file ile buluştur!`,
-    yaratici:`🐼 Çöl Dünyası'nda istediğin rengi seçebilirsin, sınır yok!`,
-    zeka:`🐼 Sayılarla oynamak matematiği eğlenceli yapar!`,
-    all:`🐼 Hepsine birden bakalım mı? Kaydırmaya devam et!`
-  };
-
-  document.getElementById('randomGameBtn').addEventListener('click', function(e){
-    e.preventDefault();
-    showMascotTip('🐼 Woogi senin için bir oyun seçiyor... 🎲');
-    playClick(600);
-    setTimeout(()=>{
-      const allCards = Array.from(document.querySelectorAll('.game-card'));
-      if(!allCards.length) return;
-      const pick = allCards[Math.floor(Math.random()*allCards.length)];
-      window.location.href = pick.getAttribute('href');
-    }, 550);
-  });
-
-  search.addEventListener('input', applyFilter);
-  cats.forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      cats.forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      activeCat = btn.dataset.cat;
-      applyFilter();
-      const tip = CAT_TIPS[activeCat];
-      if(tip) showMascotTip(tip);
-    });
-  });
-
-  // Bölüme ilk kez gelince Woogi selam versin
-  const sectionGreetings = {
-    'band-macera':`🐼 Uzay Dünyası'na hoş geldin, maceralar seni bekliyor!`,
-    'band-hareket':`🐼 Koşmaya, zıplamaya hazır mısın?`,
-    'band-yaris':`🐼 Motorunu çalıştır, yarış başlıyor!`,
-    'band-spor':`🐼 Kale Dünyası'nda top senin ayaklarında!`,
-    'band-mutfak':`🐼 Mmm, ne pişiriyoruz bugün?`,
-    'band-aksiyon':`🐼 Reflekslerini test etmeye hazır mısın?`,
-    'band-hafiza':`🐼 Orman Dünyası'nda hafızanı zorlayalım mı?`,
-    'band-bulmaca':`🐼 Parçaları birleştirip resmi tamamlayalım!`,
-    'band-yaratici':`🐼 Fırçanı al, Çöl Dünyası'nda renklere boyanalım!`,
-    'band-zeka':`🐼 Sayı avına çıkalım mı?`
-  };
-  const seenSections = new Set();
-  const bandObserver = new IntersectionObserver(entries=>{
-    entries.forEach(entry=>{
-      if(!entry.isIntersecting) return;
-      const cls = Array.from(entry.target.classList).find(c=> sectionGreetings[c]);
-      if(cls && !seenSections.has(cls)){
-        seenSections.add(cls);
-        showMascotTip(sectionGreetings[cls]);
-      }
-    });
-  }, { threshold:0.6 });
-  document.querySelectorAll('.section-band').forEach(band=> bandObserver.observe(band));
-  applyFilter();
-
-  // ---- Poki tarzı gerçek sonsuz kaydırma: büyük kataloglar parça parça açılır ----
-  const LAZY_GRIDS = ['hafizaGrid','bulmacaGrid','zekaGrid'];
-  const LAZY_BATCH = 16;
-  const lazyState = {};
-  LAZY_GRIDS.forEach(gridId=>{
-    const grid = document.getElementById(gridId);
-    if(!grid) return;
-    const cards = Array.from(grid.children);
-    lazyState[gridId] = { cards, revealed: LAZY_BATCH };
-    cards.forEach((c,i)=>{ if(i >= LAZY_BATCH) c.setAttribute('data-lazy','1'); });
-    const sentinel = document.createElement('div');
-    sentinel.className = 'lazy-sentinel';
-    sentinel.style.cssText = 'width:100%;height:4px;';
-    grid.insertAdjacentElement('afterend', sentinel);
-    const obs = new IntersectionObserver(entries=>{
-      entries.forEach(entry=>{
-        if(!entry.isIntersecting) return;
-        const st = lazyState[gridId];
-        const next = st.cards.slice(st.revealed, st.revealed + LAZY_BATCH);
-        next.forEach(c=>{ c.removeAttribute('data-lazy'); c.classList.add('reveal'); });
-        st.revealed += LAZY_BATCH;
-        applyFilter();
-        if(st.revealed >= st.cards.length){ obs.disconnect(); sentinel.remove(); }
-      });
-    }, { rootMargin:'400px' });
-    obs.observe(sentinel);
-  });
-  applyFilter();
-
-  // ---- Karşılama müziği (özgün, neşeli 16 nota + armoni katmanı) ----
-  const MELODY = [
-    {f:523.25,d:0.22}, {f:659.25,d:0.22}, {f:783.99,d:0.22}, {f:659.25,d:0.22},
-    {f:698.46,d:0.22}, {f:880.00,d:0.32}, {f:783.99,d:0.22}, {f:659.25,d:0.22},
-    {f:523.25,d:0.22}, {f:587.33,d:0.22}, {f:659.25,d:0.22}, {f:783.99,d:0.32},
-    {f:698.46,d:0.22}, {f:659.25,d:0.22}, {f:587.33,d:0.22}, {f:523.25,d:0.6}
-  ];
-  let musicMuted = localStorage.getItem('ok_music_muted') === 'true';
-  let musicPlaying = false, musicTimer = null, noteIndex = 0;
-  const MAX_LOOPS = 2;
-  const musicBtn = document.getElementById('musicToggle');
-  musicBtn.textContent = musicMuted ? '🔇' : '🔊';
-
-  function scheduleNote(){
-    if(musicMuted || !musicPlaying) return;
-    if(noteIndex >= MELODY.length * MAX_LOOPS){ stopMusic(); return; }
-    const note = MELODY[noteIndex % MELODY.length];
-    playTone(note.f, note.d*0.85, 'triangle', 0.08);
-    playTone(note.f/2, note.d*0.75, 'sine', 0.035); // yumuşak armoni katmanı
-    if(noteIndex % 4 === 0) playTone(note.f*2, note.d*0.4, 'sine', 0.025); // parıltılı tiz vurgu
-    noteIndex++;
-    musicTimer = setTimeout(scheduleNote, note.d*1000);
-  }
-  function startMusic(){
-    if(musicPlaying || musicMuted) return;
-    musicPlaying = true;
-    musicBtn.classList.add('playing');
-    noteIndex = 0;
-    scheduleNote();
-  }
-  function stopMusic(){
-    musicPlaying = false;
-    musicBtn.classList.remove('playing');
-    if(musicTimer) clearTimeout(musicTimer);
-  }
-
-  musicBtn.addEventListener('click', ()=>{
-    musicMuted = !musicMuted;
-    localStorage.setItem('ok_music_muted', musicMuted);
-    musicBtn.textContent = musicMuted ? '🔇' : '🔊';
-    if(musicMuted) stopMusic(); else startMusic();
-  });
-
-  // tarayıcılar sessiz açılış zorunlu kılar; ilk dokunuşta otomatik başlat
-  function firstInteraction(){
-    if(!musicMuted) startMusic();
-  }
-  document.addEventListener('click', firstInteraction, { once:true });
-  document.addEventListener('touchstart', firstInteraction, { once:true });
-
-  // ---- Karanlık/Aydınlık tema ----
-  const themeBtn = document.getElementById('themeToggle');
-  let isDark = localStorage.getItem('ok_theme') !== 'light';
-  function applyTheme(){
-    document.documentElement.classList.toggle('dark', isDark);
-    themeBtn.textContent = isDark ? '☀️' : '🌙';
-  }
-  applyTheme();
-  themeBtn.addEventListener('click', ()=>{
-    isDark = !isDark;
-    localStorage.setItem('ok_theme', isDark ? 'dark' : 'light');
-    applyTheme();
-    playClick(450);
-  });
-
-  // ---- Konuşan maskot ----
-  const MASCOT_TIPS = [
-    'Merhaba! Ben Woogi 🐾 Sana eşlik edeceğim!',
-    'Bugün hangi oyunu deneyelim?',
-    'Yeni oyunlar eklendi, bir göz at! ✨',
-    'Hafıza oyunları beynini güçlendirir 🧠',
-    'Yorulursan mola vermeyi unutma!',
-    'En sevdiğim oyun Labirent Macerası 🌀',
-    'Bulmaca oyunlarını denedin mi?',
-    'Harika gidiyorsun, devam et! 💪',
-    'Karanlık temayı denedin mi? Ay simgesine bas!',
-    'Yeni bir rekor kırmaya ne dersin?'
-  ];
-  const mascotChar = document.getElementById('mascotChar');
-  const mascotBubble = document.getElementById('mascotBubble');
-  let mascotTipIndex = 0;
-
-  function showMascotTip(text){
-    mascotBubble.textContent = text;
-    mascotBubble.classList.add('show');
-    clearTimeout(window._mascotHideT);
-    window._mascotHideT = setTimeout(()=> mascotBubble.classList.remove('show'), 4200);
-  }
-
-  document.getElementById('mascotWidget').addEventListener('click', ()=>{
-    mascotTipIndex = (mascotTipIndex+1) % MASCOT_TIPS.length;
-    showMascotTip(MASCOT_TIPS[mascotTipIndex]);
-    playClick(520);
-  });
-
-  // ---- Woogi'nin Hikayesi: ilk ziyarette tanıtım ----
-  const patiStoryModal = document.getElementById('patiStoryModal');
-  if(!localStorage.getItem('ok_pati_intro_seen')){
-    setTimeout(()=> patiStoryModal.classList.add('show'), 500);
-  }
-  document.getElementById('patiStoryCloseBtn').addEventListener('click', ()=>{
-    patiStoryModal.classList.remove('show');
-    localStorage.setItem('ok_pati_intro_seen', '1');
-    playSuccess();
-    showMascotTip('Harika! Hadi ilk oyununu seçelim 🎮');
-  });
-
-  // sayfa açılışında ve ardından periyodik olarak ipucu göster
-  let initialMascotTip = MASCOT_TIPS[0];
-  setInterval(()=>{
-    mascotTipIndex = (mascotTipIndex+1) % MASCOT_TIPS.length;
-    showMascotTip(MASCOT_TIPS[mascotTipIndex]);
-  }, 22000);
-
-  // ---- Başarılarım paneli: gerçek localStorage rekorlarını oku ----
-  const ACHIEVEMENT_REGISTRY = [
-    { key:'ok_araba_best_v3', name:'Araba Yarışı', emoji:'🏎️', unit:'m', href:'araba-yarisi.html' },
-    { key:'ok_motor_best_v3', name:'Motor Yarışı', emoji:'🏍️', unit:'m', href:'motor-yarisi.html' },
-    { key:'ok_ucak_best_v2', name:'Uçak Yarışı', emoji:'✈️', unit:'puan', href:'ucak-oyunu.html' },
-    { key:'ok_bisiklet_best', name:'Bisiklet Yarışı', emoji:'🚴', unit:'m', href:'bisiklet-yarisi.html' },
-    { key:'ok_tekne_best', name:'Tekne Yarışı', emoji:'🚤', unit:'m', href:'tekne-yarisi.html' },
-    { key:'ok_kaykay_best', name:'Kaykay Yarışı', emoji:'⛸️', unit:'m', href:'kaykay-yarisi.html' },
-    { key:'ok_at_best', name:'At Yarışı', emoji:'🐎', unit:'m', href:'at-yarisi.html' },
-    { key:'ok_zipla_best', name:'Zıpla Zıpla', emoji:'🐸', unit:'m', href:'zipla.html' },
-    { key:'ok_ucurtma_best', name:'Uçurtma Uçurma', emoji:'🪁', unit:'puan', href:'ucurtma.html' },
-    { key:'ok_paten_best', name:'Paten Kaçışı', emoji:'⛸️', unit:'m', href:'paten.html' },
-    { key:'ok_merdiven_best', name:'Merdiven Tırmanışı', emoji:'🏰', unit:'m', href:'merdiven.html' },
-    { key:'ok_ipatlama_best', name:'İp Atlama', emoji:'🤸', unit:'atlama', href:'ipatlama.html' },
-    { key:'ok_denge_best', name:'Denge Ustası', emoji:'🎪', unit:'puan', href:'denge.html' },
-    { key:'ok_penalti_best', name:'Penaltı Vuruşu', emoji:'⚽', unit:'gol', href:'penalti.html' },
-    { key:'ok_basketbol_best3', name:'Basketbol Atışı', emoji:'🏀', unit:'sayı', href:'basketbol.html' },
-    { key:'ok_balon_best', name:'Balon Patlatma', emoji:'🎈', unit:'puan', href:'balon.html' },
-    { key:'ok_hedef_best', name:'Hedef Vurma', emoji:'🎯', unit:'puan', href:'hedef.html' }
-  ];
-  const achRow = document.getElementById('achRow');
-  const achPanel = document.getElementById('achievements');
-  const earned = ACHIEVEMENT_REGISTRY
-    .map(a=>({ ...a, val: parseInt(localStorage.getItem(a.key)||'0',10) }))
-    .filter(a=> a.val > 0)
-    .sort((a,b)=> b.val - a.val);
-  if(earned.length){
-    achPanel.classList.remove('hidden');
-    earned.forEach(a=>{
-      const chip = document.createElement('a');
-      chip.className = 'ach-chip';
-      chip.href = a.href;
-      chip.innerHTML = `<span>${a.emoji}</span> ${a.name}: <span class="ach-val">${a.val} ${a.unit}</span>`;
-      achRow.appendChild(chip);
-    });
-    initialMascotTip = `Harikasın! ${earned.length} oyunda rekor kırmışsın! 🏆`;
-  }
-  setTimeout(()=> showMascotTip(initialMascotTip), 1200);
-
-  // ---- Profil sistemi ----
-  const AVATARS = ['🐱','🐶','🐰','🦊','🐼','🦁','🐸','🐵','🦄','🐧','🐻','🦋'];
-  const PROFILE_COLORS = ['#6C4EF5','#FF6B6B','#FFD23F','#2EC4B6','#FF6EC7','#3DD6FF','#7BC94A'];
-  const profileBadge = document.getElementById('profileBadge');
-  const profileModal = document.getElementById('profileModal');
-  const profileNameLabel = document.getElementById('profileNameLabel');
-  const profileAvatarIcon = document.getElementById('profileAvatarIcon');
-  const nameInput = document.getElementById('nameInput');
-  const avatarPicker = document.getElementById('avatarPicker');
-  const colorPicker = document.getElementById('colorPicker');
-  let selectedAvatar = localStorage.getItem('ok_profile_avatar') || AVATARS[0];
-  let selectedColor = localStorage.getItem('ok_profile_color') || PROFILE_COLORS[0];
-
-  AVATARS.forEach(a=>{
-    const el = document.createElement('div');
-    el.className = 'avatar-opt' + (a===selectedAvatar ? ' selected':'');
-    el.textContent = a;
-    el.onclick = ()=>{
-      document.querySelectorAll('.avatar-opt').forEach(x=>x.classList.remove('selected'));
-      el.classList.add('selected'); selectedAvatar = a; playClick(450);
-    };
-    avatarPicker.appendChild(el);
-  });
-  PROFILE_COLORS.forEach(c=>{
-    const el = document.createElement('div');
-    el.className = 'color-opt' + (c===selectedColor ? ' selected':'');
-    el.style.background = c;
-    el.onclick = ()=>{
-      document.querySelectorAll('.color-opt').forEach(x=>x.classList.remove('selected'));
-      el.classList.add('selected'); selectedColor = c; playClick(450);
-    };
-    colorPicker.appendChild(el);
-  });
-
-  function refreshProfileBadge(){
-    const name = localStorage.getItem('ok_profile_name');
-    if(name){
-      profileNameLabel.textContent = 'Merhaba, '+name+'!';
-      profileAvatarIcon.textContent = localStorage.getItem('ok_profile_avatar') || AVATARS[0];
-      profileAvatarIcon.style.background = localStorage.getItem('ok_profile_color') || PROFILE_COLORS[0];
-    } else {
-      profileNameLabel.textContent = 'Profil Oluştur';
-      profileAvatarIcon.textContent = '👤';
-      profileAvatarIcon.style.background = '';
-    }
-  }
-  refreshProfileBadge();
-
-  profileBadge.addEventListener('click', ()=>{
-    nameInput.value = localStorage.getItem('ok_profile_name') || '';
-    profileModal.classList.add('show');
-    playClick(500);
-  });
-  document.getElementById('closeProfileBtn').addEventListener('click', ()=> profileModal.classList.remove('show'));
-  profileModal.addEventListener('click', e=>{ if(e.target===profileModal) profileModal.classList.remove('show'); });
-  document.getElementById('saveProfileBtn').addEventListener('click', ()=>{
-    const name = nameInput.value.trim();
-    if(!name){ showMascotTip('Önce adını yazar mısın?'); return; }
-    localStorage.setItem('ok_profile_name', name);
-    localStorage.setItem('ok_profile_avatar', selectedAvatar);
-    localStorage.setItem('ok_profile_color', selectedColor);
-    refreshProfileBadge();
-    profileModal.classList.remove('show');
-    playSuccess();
-    showMascotTip(`Hoş geldin ${name}! Birlikte eğleneceğiz ${selectedAvatar}`);
-  });
-
-  // ---- Kategori ziyaretlerini gerçek tıklamalarla kaydet ----
-  document.addEventListener('click', e=>{
-    const card = e.target.closest('.game-card');
-    if(!card) return;
-    const cats = (card.dataset.cat||'').split(' ');
-    cats.forEach(c=>{
-      if(c && c!=='all') localStorage.setItem('ok_visited_'+c, '1');
-    });
-  });
-
-  // ---- Dünya Haritası ----
-  const REGIONS = [
-    { name:'Ev Dünyası', emoji:'🏠', cats:[], color1:'#7bc94a', color2:'#4a9a3a', always:true, href:'#oyunlar',
-      story:'Woogi\'nin sıcacık yuvası. Her maceraya buradan başlıyoruz!' },
-    { name:'Orman Dünyası', emoji:'🌲', cats:['hafiza','bulmaca'], color1:'#2d9d6f', color2:'#1b6b4a', href:'#hafizaCount',
-      story:'Ağaçların arasında hafızanı ve zekânı sınayan gizemli bulmacalar seni bekliyor.' },
-    { name:'Çöl Dünyası', emoji:'🏜️', cats:['yaratici','zeka'], color1:'#e8b04d', color2:'#c9822a', href:'#oyunlar',
-      story:'Kum tepelerinde hayal gücünü konuştur: boyama ve matematik vahaları burada!' },
-    { name:'Uzay Dünyası', emoji:'🚀', cats:['macera','yaris','hareket'], color1:'#6C4EF5', color2:'#2b2456', href:'#oyunlar',
-      story:'Yıldızlar arası yarışlar ve büyük maceralar için roketine atla!' },
-    { name:'Kale Dünyası', emoji:'🏰', cats:['spor','mutfak','aksiyon'], color1:'#ff7a3d', color2:'#c9302c', href:'#oyunlar',
-      story:'Şövalyelerin arenası: spor, mutfak ve aksiyon meydan okumaları burada.' }
-  ];
-  const worldMapGrid = document.getElementById('worldMapGrid');
-  REGIONS.forEach(r=>{
-    const discovered = r.always || r.cats.some(c=> localStorage.getItem('ok_visited_'+c));
-    const a = document.createElement('a');
-    a.className = 'region-card' + (discovered ? '' : ' locked');
-    a.href = r.href;
-    a.style.background = `linear-gradient(150deg, ${r.color1}, ${r.color2})`;
-    a.innerHTML = `<span class="r-emoji">${r.emoji}</span><div class="r-name">${r.name}</div>
-      <div class="r-badge">${discovered ? '✓ Keşfedildi' : '🔒 Keşfedilmedi'}</div>`;
-    a.addEventListener('mouseenter', ()=> showMascotTip(`🐼 ${r.story}`));
-    a.addEventListener('click', ()=> showMascotTip(`🐼 ${r.story}`));
-    worldMapGrid.appendChild(a);
-  });
-
-  // ---- Ebeveyn Paneli: gerçek localStorage verisiyle doldur ----
-  const GAME_DISPLAY_NAMES = {
-    'eslestirme.html':'Eşleştirme','simon.html':'Sıra Takibi','kelime.html':'Kelime Hafızası',
-    'gorsel.html':'Görsel Hafıza','yol.html':'Yol Hafızası','kaydirma.html':'Kaydırmalı Bulmaca',
-    'parca.html':'Parça Değiştirme','desen.html':'Desen Tamamlama','yapboz.html':'Yapboz',
-    'kelimeavi.html':'Kelime Avı','boyama.html':'Boyama Kitabı','matematik.html':'Matematik Yarışı',
-    'labirent.html':'Labirent','yakalama.html':'Balık Yakalama','zipla.html':'Zıpla Zıpla',
-    'araba-yarisi.html':'Araba Yarışı','motor-yarisi.html':'Motor Yarışı','ucak-oyunu.html':'Uçak Yarışı',
-    'bisiklet-yarisi.html':'Bisiklet Yarışı','tekne-yarisi.html':'Tekne Yarışı','kaykay-yarisi.html':'Kaykay Yarışı',
-    'at-yarisi.html':'At Yarışı','penalti.html':'Penaltı Vuruşu','basketbol.html':'Basketbol Atışı',
-    'futbol.html':'Futbol Maçı','futbol-simsek.html':'Şimşek FC','serbest-vurus.html':'Serbest Vuruş',
-    'sandvic.html':'Sandviç Ustası','pizza.html':'Pizza Fırını','balon.html':'Balon Patlatma',
-    'hedef.html':'Hedef Vurma','ucurtma.html':'Uçurtma Uçurma','paten.html':'Paten Kaçışı',
-    'merdiven.html':'Merdiven Tırmanışı','ipatlama.html':'İp Atlama','denge.html':'Denge Ustası',
-    'index.html':'Ana Sayfa'
-  };
-
-  function openParentPanel(){
-    document.getElementById('parentModal').classList.add('show');
-
-    // Firebase yapılandırılmadıysa: eskisi gibi doğrudan istatistikleri göster
-    if(!window.FIREBASE_READY){
-      document.getElementById('parentAuthGate').style.display = 'none';
-      document.getElementById('parentUnverified').style.display = 'none';
-      document.getElementById('parentAuthedArea').style.display = 'none';
-      renderParentStats();
-      return;
-    }
-
-    // Firebase yapılandırıldıysa: giriş durumuna göre doğru ekranı göster
-    if(!fbUser){
-      document.getElementById('parentAuthGate').style.display = 'block';
-      document.getElementById('parentUnverified').style.display = 'none';
-      document.getElementById('parentAuthedArea').style.display = 'none';
-      document.getElementById('parentStatsGrid').innerHTML = '';
-      document.getElementById('parentBody').innerHTML = '';
-    } else if(!fbUser.emailVerified){
-      document.getElementById('parentAuthGate').style.display = 'none';
-      document.getElementById('parentUnverified').style.display = 'block';
-      document.getElementById('parentAuthedArea').style.display = 'none';
-      document.getElementById('parentStatsGrid').innerHTML = '';
-      document.getElementById('parentBody').innerHTML = '';
-    } else {
-      document.getElementById('parentAuthGate').style.display = 'none';
-      document.getElementById('parentUnverified').style.display = 'none';
-      document.getElementById('parentAuthedArea').style.display = 'block';
-      document.getElementById('parentEmailLabel').textContent = '✅ ' + fbUser.email;
-      renderParentStats();
-    }
-  }
-
-  function renderParentStats(){
-    const totalSec = parseInt(localStorage.getItem('ok_stat_totalSeconds')||'0',10);
-    const totalPlays = parseInt(localStorage.getItem('ok_stat_totalPlays')||'0',10);
-    const today = new Date().toISOString().slice(0,10);
-    const todaySec = parseInt(localStorage.getItem('ok_stat_seconds_'+today)||'0',10);
-    const todayPlays = parseInt(localStorage.getItem('ok_stat_day_'+today)||'0',10);
-
-    document.getElementById('parentStatsGrid').innerHTML = `
-      <div class="parent-stat"><div class="num">${Math.round(todaySec/60)}</div><div class="lbl">Bugün (dakika)</div></div>
-      <div class="parent-stat"><div class="num">${todayPlays}</div><div class="lbl">Bugün açılan oyun</div></div>
-      <div class="parent-stat"><div class="num">${Math.round(totalSec/60)}</div><div class="lbl">Toplam (dakika)</div></div>
-      <div class="parent-stat"><div class="num">${totalPlays}</div><div class="lbl">Toplam oyun açılışı</div></div>`;
-
-    const body = document.getElementById('parentBody');
-    body.innerHTML = '';
-
-    if(totalPlays === 0){
-      body.innerHTML = '<div class="empty-note">Henüz veri yok — çocuğunuz bir oyun oynadığında burada gerçek istatistikler görünecek.</div>';
-      return;
-    }
-
-    // en çok oynanan oyunlar (gerçek localStorage sayaçlarından)
-    const gamePlayCounts = [];
-    for(let i=0;i<localStorage.length;i++){
-      const k = localStorage.key(i);
-      if(k && k.startsWith('ok_stat_plays_')){
-        const path = k.replace('ok_stat_plays_','');
-        if(path === 'index.html') continue;
-        gamePlayCounts.push({ path, name: GAME_DISPLAY_NAMES[path]||path, count: parseInt(localStorage.getItem(k)||'0',10) });
-      }
-    }
-    gamePlayCounts.sort((a,b)=>b.count-a.count);
-    const top5 = gamePlayCounts.slice(0,5);
-    if(top5.length){
-      const maxCount = top5[0].count;
-      let html = '<h4>🎮 En Çok Oynanan Oyunlar</h4><div class="parent-list">';
-      top5.forEach(g=>{
-        html += `<div class="parent-list-item"><span>${g.name}</span><span>${g.count} kez</span></div>
-          <div class="parent-bar-track"><div class="parent-bar-fill" style="width:${Math.round(g.count/maxCount*100)}%"></div></div>`;
-      });
-      html += '</div>';
-      body.innerHTML += html;
-    }
-
-    // son oynananlar
-    let recent = [];
-    try{ recent = JSON.parse(localStorage.getItem('ok_stat_recent')||'[]'); }catch(e){ recent = []; }
-    if(recent.length){
-      let html = '<h4>🕐 Son Oynanan Oyunlar</h4><div class="parent-list">';
-      recent.filter(r=>r.path!=='index.html').slice(0,5).forEach(r=>{
-        const d = new Date(r.t);
-        const timeStr = d.toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) + ' ' + d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
-        html += `<div class="parent-list-item"><span>${GAME_DISPLAY_NAMES[r.path]||r.name}</span><span style="opacity:.6; font-weight:600;">${timeStr}</span></div>`;
-      });
-      html += '</div>';
-      body.innerHTML += html;
-    }
-
-    // en başarılı kategori (kayıtlı rekorlardan)
-    const catTotals = {};
-    ACHIEVEMENT_REGISTRY.forEach(a=>{
-      const val = parseInt(localStorage.getItem(a.key)||'0',10);
-      if(val>0) catTotals[a.name] = val;
-    });
-    const bestGames = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,3);
-    if(bestGames.length){
-      let html = '<h4>🏆 En Başarılı Olduğu Oyunlar</h4><div class="parent-list">';
-      bestGames.forEach(([name,val])=>{
-        html += `<div class="parent-list-item"><span>${name}</span><span>Rekor: ${val}</span></div>`;
-      });
-      html += '</div>';
-      body.innerHTML += html;
-    }
-  }
-
-  document.getElementById('closeParentBtn').addEventListener('click', ()=> document.getElementById('parentModal').classList.remove('show'));
-  document.getElementById('parentModal').addEventListener('click', e=>{ if(e.target.id==='parentModal') document.getElementById('parentModal').classList.remove('show'); });
-
-  // ---- Gerçek verilerle istatistik şeridi ----
-  function computeStreak(){
-    let streak = 0;
-    for(let i=0;i<365;i++){
-      const d = new Date(); d.setDate(d.getDate()-i);
-      const key = 'ok_stat_day_'+d.toISOString().slice(0,10);
-      if(localStorage.getItem(key)){ streak++; } else { break; }
-    }
-    return streak;
-  }
-  const recordCount = ACHIEVEMENT_REGISTRY.filter(a=> parseInt(localStorage.getItem(a.key)||'0',10) > 0).length;
-  const discoveredCount = REGIONS.filter(r=> r.always || r.cats.some(c=>localStorage.getItem('ok_visited_'+c))).length;
-  const streakDays = computeStreak();
-  const todayKey2 = new Date().toISOString().slice(0,10);
-  const todayMin = Math.round(parseInt(localStorage.getItem('ok_stat_seconds_'+todayKey2)||'0',10)/60);
-
-  const statsRow = document.getElementById('statsRow');
-  const stats = [
-    { icon:'🏆', label:'Rekor', val: recordCount },
-    { icon:'🗺️', label:'Bölge', val: discoveredCount+'/7' },
-    { icon:'🔥', label:'Gün Serisi', val: streakDays },
-    { icon:'⏱️', label:'Bugün', val: todayMin+' dk' }
-  ];
-  stats.forEach(s=>{
-    const pill = document.createElement('div');
-    pill.className = 'stat-pill';
-    pill.innerHTML = `<span class="icon">${s.icon}</span> <span class="val">${s.val}</span> ${s.label}`;
-    statsRow.appendChild(pill);
-  });
-  document.getElementById('headerStreak').textContent = streakDays;
-
-  // ---- Macera banner: ilerlemeye göre kişiselleştirilmiş öneri ----
-  const undiscovered = REGIONS.find(r=> !r.always && !r.cats.some(c=>localStorage.getItem('ok_visited_'+c)));
-  const profileName = localStorage.getItem('ok_profile_name');
-  if(discoveredCount <= 1){
-    document.getElementById('adventureTitle').textContent = profileName ? `Hoş geldin, ${profileName}!` : 'Maceraya Hazır mısın?';
-    document.getElementById('adventureSub').textContent = 'Dünya haritasını keşfet, ilk bölgeni aç!';
-  } else if(undiscovered){
-    document.getElementById('adventureTitle').textContent = `${undiscovered.emoji} ${undiscovered.name} Seni Bekliyor!`;
-    document.getElementById('adventureSub').textContent = 'Henüz keşfetmediğin yeni bir bölge var.';
-    document.getElementById('adventureCard').href = undiscovered.href;
-  } else {
-    document.getElementById('adventureTitle').textContent = 'Tüm Bölgeleri Keşfettin! 🎉';
-    document.getElementById('adventureSub').textContent = `${streakDays} gündür buradasın, harikasın!`;
-    document.getElementById('adventureCta').textContent = 'Yeniden Oyna →';
-  }
-
-  // ---- Sidebar (mobil çekmece + masaüstü sabit) ----
-  const sidebar = document.getElementById('sidebar');
-  const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-  const sidebarToggle = document.getElementById('sidebarToggle');
-  function openSidebar(){ sidebar.classList.add('open'); sidebarBackdrop.classList.add('show'); }
-  function closeSidebar(){ sidebar.classList.remove('open'); sidebarBackdrop.classList.remove('show'); }
-  sidebarToggle.addEventListener('click', ()=>{ sidebar.classList.contains('open') ? closeSidebar() : openSidebar(); playClick(480); });
-  sidebarBackdrop.addEventListener('click', closeSidebar);
-  sidebar.querySelectorAll('.sb-item[href]').forEach(a=> a.addEventListener('click', ()=> closeSidebar()));
-
-  document.getElementById('sbProfileBtn').addEventListener('click', ()=>{ closeSidebar(); profileBadge.click(); });
-  document.getElementById('sbParentBtn').addEventListener('click', ()=>{ closeSidebar(); openParentPanel(); playClick(500); });
-  document.getElementById('sbThemeBtn').addEventListener('click', ()=>{ themeBtn.click(); });
-  document.getElementById('sbMusicBtn').addEventListener('click', ()=>{ musicBtn.click(); });
-
-  // ---- Günlük Görevler (gerçek veriden) ----
-  const todayStr = new Date().toISOString().slice(0,10);
-  const todayPlaysCount = parseInt(localStorage.getItem('ok_stat_day_'+todayStr)||'0',10);
-  const todayMinutes = Math.round(parseInt(localStorage.getItem('ok_stat_seconds_'+todayStr)||'0',10)/60);
-  let todayRecent = [];
-  try{ todayRecent = JSON.parse(localStorage.getItem('ok_stat_recent')||'[]'); }catch(e){}
-  const todayUniqueGames = new Set(
-    todayRecent.filter(r=> new Date(r.t).toISOString().slice(0,10)===todayStr).map(r=>r.path)
-  ).size;
-
-  const QUESTS = [
-    { icon:'🎮', label:'1 oyun aç', cur: Math.min(todayPlaysCount,1), max:1 },
-    { icon:'⏱️', label:'10 dakika oyna', cur: Math.min(todayMinutes,10), max:10 },
-    { icon:'🎯', label:'3 farklı oyun dene', cur: Math.min(todayUniqueGames,3), max:3 }
-  ];
-  const questsList = document.getElementById('questsList');
-  QUESTS.forEach(q=>{
-    const done = q.cur >= q.max;
-    const row = document.createElement('div');
-    row.className = 'quest-item' + (done ? ' done' : '');
-    row.innerHTML = `<span class="q-icon">${done?'✅':q.icon}</span>
-      <div class="q-body">
-        <div class="q-label"><span>${q.label}</span><span>${q.cur}/${q.max}</span></div>
-        <div class="quest-track"><div class="quest-fill" style="width:${Math.round(q.cur/q.max*100)}%"></div></div>
-      </div>`;
-    questsList.appendChild(row);
-  });
-
-  // ---- Günlük Sandık (gerçek: günde bir kez açılabilir) ----
-  const chestBtn = document.getElementById('chestBtn');
-  const chestNote = document.getElementById('chestNote');
-  const chestKey = 'ok_chest_opened_'+todayStr;
-  function refreshChest(){
-    if(localStorage.getItem(chestKey)){
-      chestBtn.disabled = true; chestBtn.textContent = '📭';
-      chestNote.textContent = 'Bugün açtın! Yarın tekrar gel 🌙';
-    } else {
-      chestBtn.disabled = false; chestBtn.textContent = '📦';
-      chestNote.textContent = 'Her gün bir kez açabilirsin!';
-    }
-  }
-  refreshChest();
-  chestBtn.addEventListener('click', ()=>{
-    if(localStorage.getItem(chestKey)) return;
-    localStorage.setItem(chestKey, '1');
-    playSuccess();
-    fireConfetti(document.getElementById('chestsBox'));
-    showMascotTip('Harika! Sandığı açtın, yarın yenisi seni bekliyor! 🎁');
-    refreshChest();
-  });
-
-  // ---- Ebeveyn Hesabı: Firebase kimlik doğrulama olayları ----
-  let authMode = 'signin'; // 'signin' | 'signup'
-  const authEmailEl = document.getElementById('authEmail');
-  const authPasswordEl = document.getElementById('authPassword');
-  const authErrorEl = document.getElementById('authError');
-  const authSubmitBtn = document.getElementById('authSubmitBtn');
-
-  function setAuthMode(mode){
-    authMode = mode;
-    document.getElementById('tabSignIn').style.opacity = mode==='signin' ? 1 : .55;
-    document.getElementById('tabSignUp').style.opacity = mode==='signup' ? 1 : .55;
-    authSubmitBtn.textContent = mode==='signin' ? 'Giriş Yap' : 'Kayıt Ol';
-    authErrorEl.style.display = 'none';
-  }
-  document.getElementById('tabSignIn').addEventListener('click', ()=> setAuthMode('signin'));
-  document.getElementById('tabSignUp').addEventListener('click', ()=> setAuthMode('signup'));
-
-  authSubmitBtn.addEventListener('click', ()=>{
-    const email = authEmailEl.value.trim();
-    const pass = authPasswordEl.value;
-    if(!email || !pass){
-      authErrorEl.textContent = 'E-posta ve şifre gerekli.';
-      authErrorEl.style.display = 'block';
-      return;
-    }
-    authSubmitBtn.disabled = true;
-    authErrorEl.style.display = 'none';
-    const done = ()=>{ authSubmitBtn.disabled = false; };
-    const onErr = (msg)=>{ authErrorEl.textContent = msg; authErrorEl.style.display = 'block'; done(); };
-    if(authMode === 'signup'){
-      parentSignUp(email, pass, ()=>{ done(); openParentPanel(); playSuccess(); }, onErr);
-    } else {
-      parentSignIn(email, pass, ()=>{ done(); openParentPanel(); playSuccess(); }, onErr);
-    }
-  });
-
-  document.getElementById('signOutBtn').addEventListener('click', ()=>{
-    parentSignOut();
-    document.getElementById('parentModal').classList.remove('show');
-  });
-
-  document.getElementById('resendVerifyBtn').addEventListener('click', ()=>{
-    resendVerificationEmail(
-      ()=> showMascotTip('Doğrulama e-postası tekrar gönderildi! 📧'),
-      (msg)=> showMascotTip(msg)
-    );
-  });
-  document.getElementById('checkVerifyBtn').addEventListener('click', ()=>{
-    if(fbAuth && fbAuth.currentUser){
-      fbAuth.currentUser.reload().then(()=>{
-        fbUser = fbAuth.currentUser;
-        openParentPanel();
-        if(fbUser.emailVerified) playSuccess();
-      });
-    }
-  });
-
-  // Firebase'i başlat ve oturum durumu değişikliklerini dinle
-  if(initFirebase()){
-    fbAuth.onAuthStateChanged(user=>{
-      fbUser = user;
-      if(document.getElementById('parentModal').classList.contains('show')) openParentPanel();
-    });
-  }
-</script>
+<script src="assets/index.js"></script>
 
 </body>
 </html>

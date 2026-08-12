@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Eşleştirme — WoogiGames</title>
 <meta name="description" content="Aynı kartları bul, hafızanı güçlendir! Çocuklar için ücretsiz eşleştirme hafıza oyunu.">
 <meta name="robots" content="index, follow">
@@ -11,11 +18,15 @@
 <meta property="og:title" content="Eşleştirme — WoogiGames">
 <meta property="og:description" content="Aynı kartları bul, hafızanı güçlendir! Çocuklar için ücretsiz eşleştirme hafıza oyunu.">
 <meta property="og:url" content="https://woogigames.com/eslestirme.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Eşleştirme — WoogiGames">
 <meta name="twitter:description" content="Aynı kartları bul, hafızanı güçlendir! Çocuklar için ücretsiz eşleştirme hafıza oyunu.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -42,7 +53,41 @@
     position:absolute; inset:0; display:none; align-items:center; justify-content:center;
     background:rgba(255,255,255,.85); border-radius:20px; z-index:9;
   }
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:36px; height:36px; border:none; border-radius:10px;
+    background:rgba(20,14,50,.55); color:#fff; font-size:1.05rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.25);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Eşleştirme",
+  "url": "https://woogigames.com/eslestirme.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Aynı kartları bul, hafızanı güçlendir! Çocuklar için ücretsiz eşleştirme hafıza oyunu.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Educational",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Eğitici Oyunlar", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Eşleştirme", "item": "https://woogigames.com/eslestirme.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <button id="muteCtl">🔊</button>
@@ -59,17 +104,18 @@
     <div id="countdownOverlay"></div>
     <div id="overlay">
       <div class="big">🎉</div>
-      <div class="msg">Tüm çiftleri buldun!</div>
+      <div class="msg">Tüm çiftleri başarıyla eşleştirdin!</div>
       <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
-      <button class="btn" onclick="init()">Tekrar Oyna</button>
+      <button class="btn" onclick="playAgain()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
 
 <script src="common.js"></script>
 <script>
-const { theme, level } = getParams();
+let { theme, level } = getParams();
+let pendingLevel = level;
 setTitle('Eşleştirme');
 document.getElementById('title').textContent = `🧠 ${theme.name} Eşleştirme`;
 document.documentElement.style.setProperty('--th-1', theme.hue1);
@@ -87,15 +133,20 @@ muteCtl.addEventListener('click', ()=>{
 });
 function snd(fn){ if(!muted) fn(); }
 
-const pairsCount = Math.min(theme.emojis.length, 3 + level * 2);
-const cols = pairsCount <= 6 ? 4 : 5;
-document.getElementById('grid').style.gridTemplateColumns = `repeat(${cols}, 70px)`;
-document.getElementById('total').textContent = pairsCount;
-const parMoves = Math.round(pairsCount * 1.6);
+let pairsCount, cols, parMoves;
 
 let deck, flipped, matched, moves, lock, combo, particles = [];
 
 function init(){
+  // Adaptif zorluk: bir önceki turda ayarlanan seviye burada devreye girer
+  // (bkz. dosyanın altındaki "Tekrar Oyna" -> playAgain()).
+  level = pendingLevel;
+  pairsCount = Math.min(theme.emojis.length, 3 + level * 2);
+  cols = pairsCount <= 6 ? 4 : 5;
+  document.getElementById('grid').style.gridTemplateColumns = `repeat(${cols}, 70px)`;
+  document.getElementById('total').textContent = pairsCount;
+  parMoves = Math.round(pairsCount * 1.6);
+
   const chosen = shuffle(theme.emojis).slice(0, pairsCount);
   deck = shuffle([...chosen, ...chosen]).map((e,i)=>({id:i, emoji:e, flipped:false, matched:false}));
   flipped = []; matched = 0; moves = 0; lock = true;
@@ -175,8 +226,13 @@ function flip(id){
         if(matched===pairsCount){
           stopThemeAmbient();
           const score = Math.max(0, pairsCount * 3 - Math.max(0, moves - parMoves));
+          // Adaptif zorluk: bu turu ne kadar iyi oynadığına göre bir sonraki
+          // turun seviyesini otomatik ayarla (bkz. common.js -> computeAdaptiveLevel).
+          const performanceRatio = Math.max(0, Math.min(1, parMoves / moves));
+          pendingLevel = computeAdaptiveLevel(level, performanceRatio);
           renderResultGrid('resultGrid', [['HAMLE', moves], ['ÇİFT', pairsCount], ['SEVİYE', LEVEL_NAMES[level]], ['EN İYİ SERİ', 'x'+combo.level]]);
           document.getElementById('stars').textContent = starRating(score, pairsCount * 3);
+          showAdaptiveNote(document.getElementById('overlay'), level, pendingLevel);
           showOverlay('overlay');
           fireConfetti(document.querySelector('.panel'));
         }
@@ -216,7 +272,11 @@ document.addEventListener('visibilitychange', ()=>{
   else if(!lock || matched < pairsCount) snd(()=> startThemeAmbient(theme.ambient, ()=>muted));
 });
 
+function playAgain(){ init(); }
+
 init();
+
+initFullscreenButton('fsBtn', document.getElementById('wrap'));
 </script>
 </body>
 </html>

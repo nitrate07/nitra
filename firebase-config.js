@@ -1,22 +1,12 @@
 // ==========================================================================
-// FIREBASE YAPILANDIRMASI — BU DOSYAYI DOLDURMANIZ GEREKİYOR
+// FIREBASE YAPILANDIRMASI — woogigames-58547 projesine bağlandı (2026-08-12)
 // ==========================================================================
-// Aşağıdaki değerler örnek/boş değerlerdir. Site bu haliyle çalışır ama
-// "Ebeveyn Hesabı" özelliği devre dışı kalır (site geri kalanı normal çalışır).
+// Aşağıdaki değerler artık gerçek Firebase projenize ait. Kalan tek adım:
+// Firestore'da "Rules" sekmesine gidip aşağıdaki güvenlik kurallarını
+// yapıştırıp YAYINLAMAK (Publish) — bu yapılmadan Ebeveyn Hesabı ve Liderlik
+// Tablosu Firestore'a yazamaz/okuyamaz.
 //
-// GERÇEK ÜYELİK SİSTEMİNİ AKTİFLEŞTİRMEK İÇİN:
-//
-// 1) https://console.firebase.google.com adresine gidin, Google hesabınızla giriş yapın
-// 2) "Proje Ekle" (Add Project) deyin, bir isim verin (örn. "oyun-kutusu"), devam edin
-//    (Google Analytics'i kapatabilirsiniz, gerekmiyor)
-// 3) Sol menüden "Build" > "Authentication" > "Get Started"
-//    "Sign-in method" sekmesinden "Email/Password" seçeneğini AÇIN (Enable)
-// 4) Sol menüden "Build" > "Firestore Database" > "Create Database"
-//    "Production mode" seçin, size yakın bir bölge (örn. europe-west) seçin
-// 5) Sol üstteki ⚙️ (Ayarlar) > "Project settings" > en altta "Your apps"
-//    "</>" (Web) simgesine tıklayın, bir takma isim verin, "Register app"
-// 6) Karşınıza çıkan "firebaseConfig" nesnesini KOPYALAYIN, aşağıya yapıştırın
-// 7) Firestore'da "Rules" sekmesine gidip aşağıdaki kuralları yapıştırıp yayınlayın:
+// KALAN ADIM — Firestore güvenlik kuralları:
 //
 //    rules_version = '2';
 //    service cloud.firestore {
@@ -24,19 +14,41 @@
 //        match /parents/{parentId} {
 //          allow read, write: if request.auth != null && request.auth.uid == parentId;
 //        }
+//        // "Liderlik Tablosu" için: herkes okuyabilir, sadece kendi kaydını
+//        // oluşturup güncelleyebilir. Gerçek ad/e-posta/adres YAZILMAZ —
+//        // sadece takma ad, gün serisi (streak) ve toplam oyun sayısı saklanır.
+//        match /leaderboard/{docId} {
+//          allow read: if true;
+//          allow create: if request.resource.data.name is string
+//                        && request.resource.data.name.size() <= 24
+//                        && request.resource.data.streak is int
+//                        && request.resource.data.totalPlays is int;
+//          allow update: if resource.data.name == request.resource.data.name;
+//          allow delete: if false;
+//        }
 //      }
 //    }
 //
-// Bu 7 adımdan sonra site otomatik olarak gerçek üyelik sistemine geçer.
+// Bu kurallar yayınlandığında site otomatik olarak gerçek üyelik sistemine ve
+// gerçek dünya çapında Liderlik Tablosu'na geçer — kod tarafında başka hiçbir
+// değişiklik gerekmez.
 // ==========================================================================
+//
+// NOT: Firebase panelinde size "npm install firebase" ile modüler SDK
+// kurulumu önerildi — bu, React/Vue gibi derleme (build) adımı olan modern
+// projeler içindir. WoogiGames saf statik HTML/JS bir site olduğu için
+// index.html içinde zaten "compat" SDK'ları <script> etiketiyle yüklüyoruz
+// (firebase-app-compat.js, firebase-auth-compat.js, firebase-firestore-compat.js).
+// Bu yüzden npm/import adımlarını yapmanıza GEREK YOK — sadece aşağıdaki
+// firebaseConfig değerleri ve Firestore kuralları yeterli.
 
 var FIREBASE_CONFIG = {
-  apiKey: "BURAYA_YAPISTIRIN",
-  authDomain: "BURAYA_YAPISTIRIN",
-  projectId: "BURAYA_YAPISTIRIN",
-  storageBucket: "BURAYA_YAPISTIRIN",
-  messagingSenderId: "BURAYA_YAPISTIRIN",
-  appId: "BURAYA_YAPISTIRIN"
+  apiKey: "AIzaSyA_ltNUQ6n1PH7T1Mga5ULGAHS5xZ8vYn4",
+  authDomain: "woogigames-58547.firebaseapp.com",
+  projectId: "woogigames-58547",
+  storageBucket: "woogigames-58547.firebasestorage.app",
+  messagingSenderId: "1007862615450",
+  appId: "1:1007862615450:web:4d413ae435da17bdc53e23"
 };
 
 // Yapılandırmanın gerçekten doldurulup doldurulmadığını kontrol eder

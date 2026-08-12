@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Bisiklet Yarışı — WoogiGames</title>
 <meta name="description" content="Pedalları çevir, rakiplerini geç! Ücretsiz bisiklet yarışı oyunu tarayıcında hemen başlar.">
 <meta name="robots" content="index, follow">
@@ -11,11 +18,15 @@
 <meta property="og:title" content="Bisiklet Yarışı — WoogiGames">
 <meta property="og:description" content="Pedalları çevir, rakiplerini geç! Ücretsiz bisiklet yarışı oyunu tarayıcında hemen başlar.">
 <meta property="og:url" content="https://woogigames.com/bisiklet-yarisi.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Bisiklet Yarışı — WoogiGames">
 <meta name="twitter:description" content="Pedalları çevir, rakiplerini geç! Ücretsiz bisiklet yarışı oyunu tarayıcında hemen başlar.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -36,7 +47,41 @@
   #muteCtl{ width:48px; height:54px; border:none; border-radius:14px; background:#fff; color:var(--ink); font-size:1.2rem; box-shadow:0 4px 0 #a8d888; cursor:pointer; }
   #muteCtl:active{transform:translateY(3px);}
   p.hint{ font-size:.82rem; opacity:.65; margin-top:8px; text-align:center; max-width:340px; }
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:36px; height:36px; border:none; border-radius:10px;
+    background:rgba(20,14,50,.55); color:#fff; font-size:1.05rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.25);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Bisiklet Yarışı",
+  "url": "https://woogigames.com/bisiklet-yarisi.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Pedalları çevir, rakiplerini geç! Ücretsiz bisiklet yarışı oyunu tarayıcında hemen başlar.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Racing",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Yarış Oyunları", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Bisiklet Yarışı", "item": "https://woogigames.com/bisiklet-yarisi.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
@@ -49,6 +94,7 @@
   </div>
   <div id="nitroBar"><div id="nitroFill" style="width:100%"></div></div>
   <div id="wrap">
+    <button id="fsBtn" class="fs-btn">⛶</button>
     <canvas id="c" width="380" height="600"></canvas>
     <div id="countdownOverlay"></div>
     <div id="overlay">
@@ -66,13 +112,21 @@
     <button class="ctl" id="rightBtn">▶</button>
     <button id="muteCtl">🔊</button>
   </div>
-  <p class="hint">Şerit değiştir, engellerden kaç, muz toplayıp PEDAL ile hızlan!</p>
+  <p class="hint">Şeritler arasında çevik geçişler yap, taşlara çarpmadan kaç, yolda muzlar toplayıp PEDAL ile fırtına gibi hızlan!</p>
 
 <script src="common.js"></script>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
+
+// Retina/yuksek DPI netligi: mantiksal oyun boyutu (W x H) degismiyor, sadece
+// canvas'in gercek piksel arka bellegi ekran yogunluguna gore buyutuluyor ve
+// tum cizimler ctx.scale ile bu olcege otomatik uyduruluyor.
+const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+canvas.width = W * DPR;
+canvas.height = H * DPR;
+ctx.scale(DPR, DPR);
 const laneCount = 3;
 const ROAD_MARGIN = 36;
 const roadWidth = W - ROAD_MARGIN*2;
@@ -124,11 +178,11 @@ function endGame(){
   const d=Math.floor(score);
   if(d>bestScore){ bestScore=d; localStorage.setItem('ok_bisiklet_best', bestScore); }
   document.getElementById('best').textContent=bestScore;
-  document.getElementById('overMsg').textContent=`${d} metre gidebildin!`;
+  document.getElementById('overMsg').textContent=`Bisikletinle tam ${d} metre yol katettin!`;
   renderResultGrid('resultGrid', [['MESAFE', d+' m'], ['REKOR', bestScore+' m'], ['EN İYİ SERİ', 'x'+combo.level]]);
   document.getElementById('stars').textContent=starRating(d,900);
-  showOverlay('overlay');
-  if(d >= 600) fireConfetti(document.getElementById('wrap'));
+  showOverlay('overlay', d >= 600 ? {celebrate:true} : undefined);
+  if(d >= 600) fireConfetti(document.getElementById('wrap'), {big:true});
   snd(playError);
 }
 function loop(){
@@ -212,6 +266,9 @@ canvas.addEventListener('touchstart', e=>{ touchStartX=e.touches[0].clientX; });
 canvas.addEventListener('touchend', e=>{ if(touchStartX===null) return; const dx=e.changedTouches[0].clientX-touchStartX;
   if(dx>30) moveLane(1); else if(dx<-30) moveLane(-1); touchStartX=null; });
 startGame();
+
+initFullscreenButton('fsBtn', document.getElementById('wrap'));
+initLandscapeHint();
 </script>
 </body>
 </html>

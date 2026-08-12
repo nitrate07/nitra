@@ -2,7 +2,7 @@
 :root{
   --bg:#F7F5FF; --ink:#1B1B3A; --purple:#6C4EF5; --purple-dark:#4a34c9;
   --coral:#FF6B6B; --coral-dark:#c94b4b; --yellow:#FFD23F; --teal:#2EC4B6; --teal-dark:#1c9c90;
-  --radius-lg:22px; --radius-md:14px; --radius-sm:10px;
+  --radius-lg:22px; --radius-md:14px; --radius-sm:10px; --card:#ffffff;
   --shadow-card:0 2px 0 rgba(255,255,255,.7) inset, 0 12px 28px rgba(108,78,245,.16), 0 1px 0 rgba(108,78,245,.05);
   --ease-pop:cubic-bezier(.34,1.56,.64,1);
 }
@@ -151,12 +151,19 @@ a.back{color:var(--purple); font-weight:800; text-decoration:none; align-self:fl
    Tek bir oyunun farklı bir chrome yüksekliği varsa, o oyun kendi <style> bloğunda
    canvas{ max-height:calc(100svh - Npx); } ile bu genel değeri override edebilir. */
 canvas{
-  width:100%; max-width:600px; height:auto; display:block; margin:0 auto;
-  max-height:max(220px, calc(100vh - 260px));
-  max-height:max(220px, calc(100svh - 260px));
+  width:100%; max-width:680px; height:auto; display:block; margin:0 auto;
+  max-height:max(240px, calc(100vh - 220px));
+  max-height:max(240px, calc(100svh - 220px));
 }
-#wrap{ width:100%; max-width:600px; margin:0 auto; position:relative; }
-.panel{ width:100%; max-width:600px; margin:0 auto; box-sizing:border-box; }
+#wrap{ width:100%; max-width:680px; margin:0 auto; position:relative; }
+.panel{ width:100%; max-width:680px; margin:0 auto; box-sizing:border-box; }
+
+/* Geniş masaüstü ekranlarında oyun alanını daha büyük göster (mobil davranışı değişmez) */
+@media (min-width:820px){
+  canvas{ max-width:1040px; max-height:max(300px, calc(100vh - 180px)); max-height:max(300px, calc(100svh - 180px)); }
+  #wrap{ max-width:1040px; }
+  .panel{ max-width:1040px; }
+}
 
 /* İlerleme çubuğu (milestone pulse destekli) */
 .progress-track{ width:100%; max-width:260px; height:10px; background:#EDE9FF; border-radius:999px; overflow:hidden; margin:0 auto 10px; position:relative; }
@@ -166,3 +173,228 @@ canvas{
 @keyframes milestone-pulse{
   0%{ filter:brightness(1); } 45%{ filter:brightness(1.5); transform:scaleY(1.3); } 100%{ filter:brightness(1); transform:scaleY(1); }
 }
+
+/* ==========================================================================
+   Koyu tema (dark mode) — ana sayfayla (index.html) tutarlı, paylaşılan tema.
+   Bir sayfanın <html> etiketine 'dark' sınıfı eklendiğinde devreye girer.
+   Sayfa <head>'inde, common.css yüklenmeden ÖNCE çalışan küçük bir satır içi
+   script bu sınıfı localStorage'daki 'ok_theme' tercihine göre ayarlar
+   (bkz. her oyun sayfasının en üstü) — böylece tema geçişinde yanıp sönme
+   (FOUC) olmaz ve ana sayfadan gelen kullanıcı aynı temayla karşılaşır. */
+html.dark{
+  --bg:#0d0a26; --ink:#F0EEFF; --card:#1a1640;
+}
+html.dark body{
+  background:
+    radial-gradient(circle at 8% 12%, rgba(255,209,63,.08), transparent 45%),
+    radial-gradient(circle at 92% 18%, rgba(46,196,182,.10), transparent 45%),
+    radial-gradient(circle at 20% 20%, #1a1640, var(--bg) 60%);
+}
+html.dark a.back{ color:#a996ff; }
+html.dark #hud span{
+  background:linear-gradient(180deg,var(--card),#150f38); color:var(--ink);
+  box-shadow:0 3px 0 #0a0824, 0 1px 0 rgba(255,255,255,.06) inset;
+}
+html.dark .levelpick a{ background:var(--card); color:var(--ink); box-shadow:0 3px 0 #0a0824; }
+html.dark .levelpick a.active{ background:var(--purple); color:#fff; box-shadow:0 3px 0 var(--purple-dark); }
+html.dark .panel{
+  background:linear-gradient(180deg,var(--card),#150f38);
+  box-shadow:0 2px 0 rgba(255,255,255,.05) inset, 0 12px 28px rgba(0,0,0,.4), 0 1px 0 rgba(0,0,0,.2);
+}
+html.dark #overlay{ background:rgba(13,10,38,.97); color:var(--ink); }
+html.dark .choice{ background:linear-gradient(180deg,var(--card),#150f38); border-color:#2a2260; color:var(--ink); box-shadow:0 3px 0 #0a0824; }
+html.dark .choice.picked{ background:#241c50; outline-color:var(--purple); }
+html.dark .letter{ background:linear-gradient(180deg,var(--card),#150f38); color:var(--ink); box-shadow:0 2px 0 #0a0824, 0 1px 0 rgba(255,255,255,.05) inset; }
+html.dark .word-chip{ background:linear-gradient(180deg,var(--card),#150f38); color:var(--ink); box-shadow:0 3px 0 #0a0824; }
+html.dark .progress-track{ background:#241c50; }
+html.dark .result-grid .rk{ color:#9089b8; }
+html.dark p.hint{ color:var(--ink); opacity:.65; }
+
+/* Paylaşılan tam ekran düğmesi (birçok oyun sayfasında kullanılır; sayfa
+   kendi renk temasını üstüne yazabilir, taban davranış/konum burada) */
+.fs-btn{
+  position:absolute; top:10px; right:10px; z-index:10; width:36px; height:36px; border:none; border-radius:10px;
+  background:rgba(20,14,50,.55); color:#fff; font-size:1.05rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.25);
+  -webkit-tap-highlight-color:transparent;
+}
+.fs-btn:active{ transform:scale(.92); }
+
+/* Adaptif zorluk notu (common.js -> showAdaptiveNote) */
+.adaptive-note{
+  font-size:.76rem; font-weight:800; color:var(--purple-dark); background:#EDE9FF; border-radius:999px;
+  padding:6px 14px; margin:2px auto 8px; display:none;
+}
+html.dark .adaptive-note{ background:#241c50; color:#c9beff; }
+
+/* Oyun bitişinde "Benzer Oyunlar" rayı (common.js -> showOverlay() tarafından otomatik eklenir) */
+.similar-games{ width:100%; margin-top:10px; padding-top:10px; border-top:1px dashed #E4DDFF; }
+html.dark .similar-games{ border-top-color:#2a2260; }
+.similar-title{ font-size:.72rem; font-weight:800; letter-spacing:.5px; color:#9089b8; margin-bottom:8px; }
+.similar-rail{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.similar-card{
+  display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none; color:var(--ink);
+  background:linear-gradient(180deg,#fff,#f7f5ff); border-radius:var(--radius-sm); padding:8px 10px; min-width:74px;
+  box-shadow:0 2px 0 #ddd; font-weight:800; font-size:.68rem; transition:transform .12s;
+}
+html.dark .similar-card{ background:linear-gradient(180deg,var(--card),#150f38); box-shadow:0 2px 0 #0a0824; }
+.similar-card:active{ transform:scale(.95); }
+.similar-icon{ font-size:1.3rem; }
+.similar-name{ text-align:center; line-height:1.15; }
+
+/* Klavyeyle gezinme için görünür odak halkası (erişilebilirlik) */
+a:focus-visible, button:focus-visible, .btn:focus-visible, .choice:focus-visible,
+.letter:focus-visible, .cell:focus-visible, .levelpick a:focus-visible{
+  outline:3px solid var(--purple); outline-offset:2px;
+}
+
+/* ==========================================================================
+   Paylaşılan "Woogi'ye Sor" yardımcı widget'ı — common.js tarafından her oyun
+   sayfasına otomatik eklenir (ana sayfa hariç; o kendi zengin sürümünü
+   assets/index.css + assets/index.js ile kullanmaya devam eder). Stiller,
+   ana sayfadakiyle görsel tutarlılık için assets/index.css'teki maskot
+   panelinden uyarlanmıştır. */
+#mascotWidget{
+  position:fixed; bottom:16px; left:16px; z-index:200; display:flex; align-items:flex-end; gap:10px;
+  cursor:pointer;
+}
+#mascotChar{
+  font-size:2.6rem; animation:mascotIdle 2.2s ease-in-out infinite; line-height:1;
+  filter:drop-shadow(0 6px 10px rgba(108,78,245,.4)); background:none; border:none; padding:0;
+}
+@keyframes mascotIdle{ 0%,100%{ transform:translateY(0) rotate(-3deg);} 50%{ transform:translateY(-8px) rotate(3deg);} }
+#mascotBubble{
+  background:#fff; border-radius:16px 16px 16px 4px; padding:10px 14px; font-weight:800; font-size:.82rem;
+  color:var(--ink); box-shadow:0 4px 0 #e4e0f7, 0 8px 20px rgba(0,0,0,.12); max-width:200px;
+  opacity:0; transform:translateY(6px) scale(.9); transition:opacity .25s, transform .25s; position:relative;
+}
+#mascotBubble.show{ opacity:1; transform:translateY(0) scale(1); }
+html.dark #mascotBubble{ background:#1a1640; color:var(--ink); box-shadow:0 4px 0 #0a0824, 0 8px 20px rgba(0,0,0,.3); }
+@media (max-width:600px){ #mascotWidget{ bottom:10px; left:10px; } #mascotChar{ font-size:2.1rem; } #mascotBubble{ max-width:150px; font-size:.75rem; } }
+
+#mascotChatPanel{
+  position:fixed; bottom:16px; left:16px; z-index:201; width:300px; max-width:calc(100vw - 32px);
+  max-height:min(440px, calc(100vh - 32px)); background:var(--card); border-radius:20px;
+  box-shadow:0 10px 30px rgba(0,0,0,.25), 0 0 0 1px rgba(0,0,0,.06); display:none; flex-direction:column;
+  overflow:hidden; opacity:0; transform:translateY(12px) scale(.96); transition:opacity .2s, transform .2s;
+}
+#mascotChatPanel.show{ display:flex; opacity:1; transform:translateY(0) scale(1); }
+#mascotChatHeader{
+  background:linear-gradient(135deg,var(--purple),var(--purple-dark)); color:#fff; font-weight:800;
+  padding:12px 14px; display:flex; align-items:center; justify-content:space-between; flex:0 0 auto;
+}
+#mascotChatClose{ background:rgba(255,255,255,.2); border:none; color:#fff; width:26px; height:26px; border-radius:8px; cursor:pointer; font-size:.8rem; }
+#mascotChatLog{ flex:1 1 auto; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; min-height:140px; max-height:260px; }
+.mchat-msg{ max-width:85%; padding:8px 12px; border-radius:14px; font-size:.82rem; line-height:1.4; font-weight:600; }
+.mchat-msg a{ color:inherit; text-decoration:underline; }
+.mchat-msg.woogi{ align-self:flex-start; background:#EDE9FF; color:var(--ink); border-bottom-left-radius:4px; }
+.mchat-msg.user{ align-self:flex-end; background:var(--purple); color:#fff; border-bottom-right-radius:4px; }
+html.dark .mchat-msg.woogi{ background:#241c50; color:var(--ink); }
+#mascotChatQuick{ display:flex; gap:6px; flex-wrap:wrap; padding:0 12px 8px; flex:0 0 auto; }
+.mchat-chip{
+  background:#F7F5FF; border:1px solid #E4DDFF; color:var(--purple-dark); font-size:.7rem; font-weight:800;
+  padding:5px 10px; border-radius:999px; cursor:pointer; font-family:inherit;
+}
+html.dark .mchat-chip{ background:#1a1640; border-color:#2a2260; color:#c9beff; }
+#mascotChatForm{ display:flex; gap:8px; padding:10px 12px; border-top:1px solid #EDE9FF; flex:0 0 auto; }
+html.dark #mascotChatForm{ border-top-color:#2a2260; }
+#mascotChatInput{
+  flex:1; border:1px solid #E4DDFF; border-radius:12px; padding:9px 12px; font-size:.82rem; font-family:inherit;
+  background:var(--bg); color:var(--ink);
+}
+html.dark #mascotChatInput{ border-color:#2a2260; }
+#mascotChatSend{
+  width:38px; height:38px; border:none; border-radius:12px; background:var(--purple); color:#fff;
+  font-size:1rem; cursor:pointer; flex:0 0 auto;
+}
+#mascotChatSend:active{ transform:scale(.94); }
+@media (max-width:600px){ #mascotChatPanel{ left:10px; bottom:10px; width:calc(100vw - 20px); } }
+
+/* ==========================================================================
+   2. RENK TEMASI — "Okyanus". Varsayılan (mor/mercan) tema hiçbir öznitelik
+   gerektirmez; <html data-theme="ocean"> ayarlandığında sadece renk token'ları
+   (--purple/--coral/--teal/--bg vb.) değişir, bunları kullanan HER bileşen
+   (butonlar, kartlar, HUD, maskot widget'ı...) otomatik olarak yeniden
+   renklenir — ayrı bir CSS bakımı gerekmez. Açık/koyu mod ile bağımsız
+   çalışır (bkz. html.dark[data-theme="ocean"] alt satırı).
+   Tercih localStorage 'ok_color_theme' anahtarında saklanır ve her sayfanın
+   <head>'inde (dark mod ile aynı satırda) FOUC olmadan uygulanır. ========== */
+[data-theme="ocean"]{
+  --purple:#1E88E5; --purple-dark:#125ea3;
+  --coral:#FF9F5A; --coral-dark:#cc7a3d;
+  --teal:#00BFA5; --teal-dark:#009688;
+  --bg:#EAF7FF;
+}
+html.dark[data-theme="ocean"]{
+  --bg:#04121f; --ink:#E3F6FF; --card:#0a2438;
+}
+
+/* ==========================================================================
+   3. XP / SEVİYE — seviye atlama toast'ının iç öğeleri (bkz. common.js
+   earnXP()/_showLevelUpToast()) ve header/profildeki seviye rozeti + XP
+   çubuğu (bkz. index.html). ========================================== */
+.xp-levelup-toast .lu-icon{ font-size:2rem; line-height:1; }
+.xp-levelup-toast .lu-text{ font-size:.82rem; line-height:1.35; }
+.xp-levelup-toast .lu-text b{ font-size:.95rem; }
+#xpLevelBadge{
+  display:inline-flex; align-items:center; gap:4px; background:var(--card,#fff);
+  border-radius:20px; padding:5px 10px; font-weight:800; font-size:.78rem;
+  box-shadow:0 2px 8px rgba(0,0,0,.08); cursor:pointer; color:var(--ink,#1b1b3a);
+}
+#xpLevelBadge #xpLevelIcon{ font-size:1rem; }
+.xp-bar-track{ background:rgba(120,120,150,.18); border-radius:20px; height:10px; overflow:hidden; }
+.xp-bar-fill{ height:100%; border-radius:20px; background:linear-gradient(90deg,var(--purple,#6C4EF5),var(--coral,#FF6B6B)); transition:width .5s cubic-bezier(.34,1.56,.64,1); }
+
+/* ==========================================================================
+   4. GÖRSEL EFEKT YÜKSELTMESİ (v19) — "üst düzey" prodüksiyon hissi için
+   paylaşılan mikro-etkileşimler. Hepsi common.js tarafından tetiklenir/DOM'a
+   enjekte edilir; hiçbir oyunun HTML'i değişmeden otomatik olarak TÜM sitede
+   aktif olur (ripple + pırıltı zaten var olan triggerCorrectFx()/tıklama
+   akışına bağlıdır — mevcut çağrı noktaları hiç değişmedi). ================ */
+
+/* Dokunma/tıklama "ripple" dalgası — common.js'teki global pointerdown
+   dinleyicisi tarafından .btn/.choice/.levelpick a/.cell/.similar-card
+   içine otomatik enjekte edilir. */
+.ripple-layer{ position:absolute; inset:0; overflow:hidden; border-radius:inherit; pointer-events:none; }
+.ripple{
+  position:absolute; border-radius:50%; background:rgba(255,255,255,.55);
+  transform:scale(0); animation:ripple-anim .6s ease-out forwards; pointer-events:none;
+}
+html.dark .ripple{ background:rgba(255,255,255,.22); }
+@keyframes ripple-anim{ to{ transform:scale(1); opacity:0; } }
+
+/* Masaüstünde hover ile hafif "kaldırma" hissi (yalnızca gerçek fare/hover
+   desteği olan cihazlarda — dokunmatik ekranlarda yapışkan hover olmaz) */
+@media (hover:hover) and (pointer:fine){
+  .btn{ transition:transform .15s var(--ease-pop), box-shadow .15s; }
+  .btn:hover{ transform:translateY(-2px); box-shadow:0 6px 0 var(--coral-dark), 0 8px 16px rgba(255,107,107,.25); }
+  .btn.alt:hover{ box-shadow:0 6px 0 var(--purple-dark), 0 8px 16px rgba(108,78,245,.25); }
+  .choice:hover:not(.correct):not(.wrong):not(.picked){ transform:translateY(-2px); box-shadow:0 5px 0 #ddd, 0 6px 14px rgba(108,78,245,.15); }
+  .levelpick a:hover{ transform:translateY(-1px); box-shadow:0 4px 0 #ddd; }
+  .similar-card:hover{ transform:translateY(-2px) scale(1.03); box-shadow:0 4px 0 #ddd, 0 6px 14px rgba(0,0,0,.1); }
+}
+
+/* Doğru cevap/başarı anında yıldız/pırıltı patlaması — common.js'teki
+   spawnSparkleBurst() tarafından enjekte edilir; triggerCorrectFx() ZATEN
+   her oyunda çağrıldığı için (bkz. common.js) tek satırlık bir bağlantıyla
+   TÜM oyunlarda otomatik çalışır, hiçbir oyun dosyası değişmeden. */
+.sparkle-particle{
+  position:absolute; left:0; top:0; pointer-events:none; font-size:1.05rem; z-index:60; line-height:1;
+  transform:translate(calc(var(--px) - 50%), calc(var(--py) - 50%)) scale(.3);
+  animation:sparkle-float .75s ease-out forwards;
+}
+@keyframes sparkle-float{
+  0%{ opacity:0; transform:translate(calc(var(--px) - 50%), calc(var(--py) - 50%)) scale(.3) rotate(0deg); }
+  22%{ opacity:1; transform:translate(calc(var(--px) - 50%), calc(var(--py) - 50%)) scale(1.15) rotate(var(--sr)); }
+  100%{ opacity:0; transform:translate(calc(var(--px) + var(--sx) - 50%), calc(var(--py) + var(--sy) - 50%)) scale(.55) rotate(var(--sr)); }
+}
+
+/* Kazanma ekranında (overlay) kısa bir altın parıltı taraması — sadece
+   "mükemmel/büyük" başarı anlarında common.js -> showOverlay(el,{celebrate:true})
+   ile eklenir; normal bitişlerde hiçbir şey değişmez. */
+.panel.shine-sweep{ position:relative; overflow:hidden; }
+.panel.shine-sweep::after{
+  content:''; position:absolute; top:0; left:-60%; width:35%; height:100%;
+  background:linear-gradient(120deg, transparent, rgba(255,255,255,.6), transparent);
+  transform:skewX(-18deg); animation:shine-move 1.1s ease-in-out .15s; pointer-events:none;
+}
+@keyframes shine-move{ from{ left:-60%; } to{ left:130%; } }

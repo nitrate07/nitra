@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Sandviç Ustası — WoogiGames</title>
 <meta name="description" content="Malzemeleri sırayla diz, sandviçini tamamla! Ücretsiz mutfak oyunu, çocuklar için güvenli.">
 <meta name="robots" content="index, follow">
@@ -11,11 +18,15 @@
 <meta property="og:title" content="Sandviç Ustası — WoogiGames">
 <meta property="og:description" content="Malzemeleri sırayla diz, sandviçini tamamla! Ücretsiz mutfak oyunu, çocuklar için güvenli.">
 <meta property="og:url" content="https://woogigames.com/sandvic.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Sandviç Ustası — WoogiGames">
 <meta name="twitter:description" content="Malzemeleri sırayla diz, sandviçini tamamla! Ücretsiz mutfak oyunu, çocuklar için güvenli.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -39,7 +50,41 @@
     position:absolute; inset:0; display:none; align-items:center; justify-content:center;
     background:rgba(255,255,255,.85); border-radius:20px; z-index:9;
   }
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:36px; height:36px; border:none; border-radius:10px;
+    background:rgba(20,14,50,.55); color:#fff; font-size:1.05rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.25);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Sandviç Ustası",
+  "url": "https://woogigames.com/sandvic.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Malzemeleri sırayla diz, sandviçini tamamla! Ücretsiz mutfak oyunu, çocuklar için güvenli.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Casual",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Mutfak Oyunları", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Sandviç Ustası", "item": "https://woogigames.com/sandvic.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
@@ -52,6 +97,7 @@
   <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
   <div id="recipeCard"><span>Sipariş:</span><div id="recipeIcons"></div></div>
   <div class="panel" style="display:flex; flex-direction:column; align-items:center; position:relative;">
+    <button id="fsBtn" class="fs-btn">⛶</button>
     <div id="stackArea"></div>
     <div id="tray"></div>
     <div id="countdownOverlay"></div>
@@ -65,7 +111,7 @@
     </div>
   </div>
   <button id="muteCtl">🔊</button>
-  <p style="font-size:.85rem; opacity:.7; margin-top:10px; text-align:center;">Sipariş kartındaki sırayla malzemeleri tepsiden tıkla, sandviçi doğru sırayla inşa et!</p>
+  <p style="font-size:.85rem; opacity:.7; margin-top:10px; text-align:center;">Sipariş kartındaki sırayı takip ederek tepsiden doğru malzemeyi seç, sandviçini adım adım inşa et!</p>
 
 <script src="common.js"></script>
 <script>
@@ -148,7 +194,7 @@ function handlePick(ic){
     triggerWrongFx(document.querySelector('.panel'));
     if(wrong >= 3){
       running = false;
-      document.getElementById('overMsg').textContent = `${round-1} sipariş tamamladın!`;
+      document.getElementById('overMsg').textContent = `Bu turda ${round-1} sipariş tamamladın!`;
       renderResultGrid('resultGrid', [['SİPARİŞ', round-1], ['EN İYİ SERİ', 'x'+combo.level]]);
       document.getElementById('stars').textContent = starRating(round-1, goalRounds);
       showOverlay('overlay');
@@ -157,6 +203,8 @@ function handlePick(ic){
 }
 
 startGame();
+
+initFullscreenButton('fsBtn', document.querySelector('.panel'));
 </script>
 </body>
 </html>

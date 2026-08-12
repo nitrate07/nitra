@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Labirent Macerası — WoogiGames</title>
 <meta name="description" content="Labirentte kayıp olma, çıkışı bul! Ücretsiz labirent macerası oyunu, birçok tema seçeneğiyle.">
 <meta name="robots" content="index, follow">
@@ -11,11 +18,15 @@
 <meta property="og:title" content="Labirent Macerası — WoogiGames">
 <meta property="og:description" content="Labirentte kayıp olma, çıkışı bul! Ücretsiz labirent macerası oyunu, birçok tema seçeneğiyle.">
 <meta property="og:url" content="https://woogigames.com/labirent.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Labirent Macerası — WoogiGames">
 <meta name="twitter:description" content="Labirentte kayıp olma, çıkışı bul! Ücretsiz labirent macerası oyunu, birçok tema seçeneğiyle.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -51,7 +62,41 @@
   }
   #muteCtl:active{transform:translateY(3px); box-shadow:0 1px 0 #e0c48a;}
   p.hint{ font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:340px;}
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:36px; height:36px; border:none; border-radius:10px;
+    background:rgba(20,14,50,.55); color:#fff; font-size:1.05rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.25);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Labirent Macerası",
+  "url": "https://woogigames.com/labirent.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Labirentte kayıp olma, çıkışı bul! Ücretsiz labirent macerası oyunu, birçok tema seçeneğiyle.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Puzzle",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Bulmaca Oyunları", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Labirent Macerası", "item": "https://woogigames.com/labirent.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
@@ -62,11 +107,12 @@
     <span id="gemStat">⭐ <span id="gems">0</span></span>
   </div>
   <div id="wrap">
+    <button id="fsBtn" class="fs-btn">⛶</button>
     <canvas id="c" width="440" height="440"></canvas>
     <div id="levelIntro"><span id="levelIntroText">Bölüm 1</span></div>
     <div id="overlay">
       <div class="big">🎉</div>
-      <div class="msg" id="overMsg">Harika! Çıkışı buldun!</div>
+      <div class="msg" id="overMsg">Harika iş! Labirentin çıkışını başarıyla buldun!</div>
       <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="starsEl"></div>
       <button class="btn" id="nextBtn">Sonraki Bölüm</button>
@@ -80,7 +126,7 @@
     <button class="ctl" id="down">↓</button>
     <button class="ctl" id="right">→</button>
   </div>
-  <p class="hint">Ok tuşları veya butonlarla kediyi çıkışa yönlendir, yolda ⭐ topla! Fenerin ışığı seni takip eder.</p>
+  <p class="hint">Ok tuşlarını ya da yön butonlarını kullanarak karakterini dolambaçlı labirentin içinde çıkışa doğru yönlendir; yol boyunca parıldayan ⭐'ları toplamayı unutma! Fenerin ışığı attığın her adımda seninle birlikte hareket eder.</p>
 
 <script src="common.js"></script>
 <script>
@@ -197,7 +243,17 @@ const Audio_ = (function(){
 
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
-let cols = 9, rows = 9, cell = canvas.width/cols;
+const W = canvas.width, H = canvas.height;
+
+// Retina/yuksek DPI netligi: mantiksal oyun boyutu (W x H) degismiyor, sadece
+// canvas'in gercek piksel arka bellegi ekran yogunluguna gore buyutuluyor ve
+// tum cizimler ctx.scale ile bu olcege otomatik uyduruluyor.
+const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+canvas.width = W * DPR;
+canvas.height = H * DPR;
+ctx.scale(DPR, DPR);
+
+let cols = 9, rows = 9, cell = W/cols;
 let level = 1, seconds = 0, timer = null, playing = true, gems = 0, totalGems = 0;
 let particles = [], pulse = 0, shakeMag = 0;
 
@@ -228,7 +284,7 @@ let maze, player, goal, gemList;
 function setup(){
   cols = 7 + level; rows = 7 + level;
   if(cols>15) cols=15; if(rows>15) rows=15;
-  cell = canvas.width/cols;
+  cell = W/cols;
   maze = genMaze(cols, rows);
   player = {x:0,y:0, renderX:cell/2, renderY:cell/2};
   goal = {x:cols-1,y:rows-1};
@@ -264,12 +320,12 @@ function draw(){
   const sx = (Math.random()-0.5)*shakeMag, sy = (Math.random()-0.5)*shakeMag;
   shakeMag *= 0.82; if(shakeMag<0.1) shakeMag=0;
 
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0,0,W,H);
   ctx.save();
   ctx.translate(sx, sy);
 
   ctx.fillStyle = '#2b2013';
-  ctx.fillRect(-6,-6,canvas.width+12,canvas.height+12);
+  ctx.fillRect(-6,-6,W+12,H+12);
 
   // zemin karoları (hafif desenli)
   for(let y=0;y<rows;y++) for(let x=0;x<cols;x++){
@@ -335,7 +391,7 @@ function draw(){
   lightGrad.addColorStop(0, 'rgba(0,0,0,0)');
   lightGrad.addColorStop(1, 'rgba(0,0,0,.58)');
   ctx.fillStyle = lightGrad;
-  ctx.fillRect(-6,-6,canvas.width+12,canvas.height+12);
+  ctx.fillRect(-6,-6,W+12,H+12);
 
   ctx.restore();
   requestAnimationFrame(draw);
@@ -371,13 +427,18 @@ function move(dx,dy){
     const perfect = gems === totalGems;
     Audio_.levelComplete(perfect);
     const score = gems*2 + Math.max(0, 10 - Math.floor(seconds/6));
-    document.getElementById('overMsg').textContent = perfect ? 'Mükemmel! Tüm yıldızları topladın!' : 'Harika! Çıkışı buldun!';
+    document.getElementById('overMsg').textContent = perfect ? 'Mükemmel keşif! Bütün yıldızları toplayarak çıkışı buldun!' : 'Harika iş! Labirentin çıkışını başarıyla buldun!';
     renderResultGrid('resultGrid', [
       ['SÜRE', seconds+' sn'], ['YILDIZ', gems+'/'+totalGems], ['BÖLÜM', level], ['SKOR', score]
     ]);
     document.getElementById('starsEl').textContent = starRating(score, totalGems*2+10);
-    showOverlay('overlay');
-    fireConfetti(document.querySelector('#wrap'));
+    if(perfect){
+      showOverlay('overlay', {celebrate:true});
+      fireConfetti(document.querySelector('#wrap'), {big:true});
+    } else {
+      showOverlay('overlay');
+      fireConfetti(document.querySelector('#wrap'));
+    }
   }
 }
 
@@ -407,6 +468,9 @@ document.addEventListener('visibilitychange', ()=>{
 });
 
 setup();
+
+initFullscreenButton('fsBtn', document.getElementById('wrap'));
+initLandscapeHint();
 </script>
 </body>
 </html>

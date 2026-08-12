@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Basketbol Atışı — WoogiGames</title>
 <meta name="description" content="Potaya doğru nişan al ve sayı yap! Eğlenceli basketbol atış oyunu, çocuklar için güvenli ve ücretsiz.">
 <meta name="robots" content="index, follow">
@@ -11,11 +18,15 @@
 <meta property="og:title" content="Basketbol Atışı — WoogiGames">
 <meta property="og:description" content="Potaya doğru nişan al ve sayı yap! Eğlenceli basketbol atış oyunu, çocuklar için güvenli ve ücretsiz.">
 <meta property="og:url" content="https://woogigames.com/basketbol.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Basketbol Atışı — WoogiGames">
 <meta name="twitter:description" content="Potaya doğru nişan al ve sayı yap! Eğlenceli basketbol atış oyunu, çocuklar için güvenli ve ücretsiz.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -29,13 +40,48 @@
   #comboText{ position:absolute; top:14px; left:50%; transform:translate(-50%,0); font-weight:900; font-size:1.3rem; color:#fff;
     text-shadow:0 2px 4px rgba(0,0,0,.4); opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; }
   p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:340px;}
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:36px; height:36px; border:none; border-radius:10px;
+    background:rgba(20,14,50,.55); color:#fff; font-size:1.05rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.25);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Basketbol Atışı",
+  "url": "https://woogigames.com/basketbol.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Potaya doğru nişan al ve sayı yap! Eğlenceli basketbol atış oyunu, çocuklar için güvenli ve ücretsiz.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Sports",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Spor Oyunları", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Basketbol Atışı", "item": "https://woogigames.com/basketbol.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>🏀 Basketbol Atışı</h1>
   <div id="hud"><span>🏀 Skor: <span id="score">0</span></span><span>🔥 Seri: <span id="streak">0</span></span><span>⏱️ <span id="time">45</span> sn</span><span>🏆 <span id="best">0</span></span></div>
   <div id="wrap">
+    <button id="fsBtn" class="fs-btn">⛶</button>
     <canvas id="c" width="400" height="560"></canvas>
     <div id="powerBar"><div id="powerFill"></div></div>
     <div id="comboText"></div>
@@ -50,13 +96,21 @@
     </div>
   </div>
   <button id="muteCtl">🔊</button>
-  <p class="hint">Topu tut, potaya doğru yukarı sürükle, sonra bırak! Noktalı çizgi nereye gideceğini gösterir.</p>
+  <p class="hint">Topu avucunda tut, potaya doğru kararlılıkla sürükle, sonra parmağını bırak! Noktalı çizgi, topun izleyeceği yolu önceden gösterir.</p>
 
 <script src="common.js"></script>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
+
+// Retina/yuksek DPI netligi: mantiksal oyun boyutu (W x H) degismiyor, sadece
+// canvas'in gercek piksel arka bellegi ekran yogunluguna gore buyutuluyor ve
+// tum cizimler ctx.scale ile bu olcege otomatik uyduruluyor.
+const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+canvas.width = W * DPR;
+canvas.height = H * DPR;
+ctx.scale(DPR, DPR);
 const GRAVITY = 0.55;
 const PLAYER_X = W/2;
 const PLAYER_FEET_Y = H - 40;
@@ -115,11 +169,11 @@ function endGame(){
   cancelAnimationFrame(raf);
   if(score > bestScore){ bestScore = score; localStorage.setItem('ok_basketbol_best3', bestScore); }
   document.getElementById('best').textContent = bestScore;
-  document.getElementById('overMsg').textContent = `${score} sayı yaptın!`;
+  document.getElementById('overMsg').textContent = `Toplamda ${score} sayı topladın!`;
   renderResultGrid('resultGrid', [['SKOR', score], ['EN İYİ SERİ', streak], ['REKOR', bestScore]]);
   document.getElementById('stars').textContent = starRating(score, 15);
-  showOverlay('overlay');
-  if(score >= 100) fireConfetti(document.getElementById('wrap'));
+  showOverlay('overlay', score >= 100 ? {celebrate:true} : undefined);
+  if(score >= 100) fireConfetti(document.getElementById('wrap'), {big:true});
   snd(playSuccess);
 }
 
@@ -362,6 +416,9 @@ canvas.addEventListener('mouseleave', release);
 canvas.addEventListener('touchend', e=>{ e.preventDefault(); release(); }, {passive:false});
 
 startGame();
+
+initFullscreenButton('fsBtn', document.getElementById('wrap'));
+initLandscapeHint();
 </script>
 </body>
 </html>

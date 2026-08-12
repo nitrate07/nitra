@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Balon Patlatma — WoogiGames</title>
 <meta name="description" content="Renkli balonları patlat, reflekslerini test et! Ücretsiz balon patlatma oyunu, kayıt gerekmez.">
 <meta name="robots" content="index, follow">
@@ -11,18 +18,56 @@
 <meta property="og:title" content="Balon Patlatma — WoogiGames">
 <meta property="og:description" content="Renkli balonları patlat, reflekslerini test et! Ücretsiz balon patlatma oyunu, kayıt gerekmez.">
 <meta property="og:url" content="https://woogigames.com/balon.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Balon Patlatma — WoogiGames">
 <meta name="twitter:description" content="Renkli balonları patlat, reflekslerini test et! Ücretsiz balon patlatma oyunu, kayıt gerekmez.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
   body{ padding-top:max(14px, env(safe-area-inset-top)); padding-bottom:max(14px, env(safe-area-inset-bottom)); }
   canvas{background:linear-gradient(#bfe9ff,#eafcff); touch-action:none; cursor:pointer;}
   p.hint{font-size:.85rem; opacity:.7; margin-top:8px; text-align:center; max-width:320px;}
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:36px; height:36px; border:none; border-radius:10px;
+    background:rgba(20,14,50,.55); color:#fff; font-size:1.05rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.25);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Balon Patlatma",
+  "url": "https://woogigames.com/balon.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Renkli balonları patlat, reflekslerini test et! Ücretsiz balon patlatma oyunu, kayıt gerekmez.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Arcade",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Aksiyon Oyunları", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Balon Patlatma", "item": "https://woogigames.com/balon.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
@@ -34,6 +79,7 @@
     <span>🏆 <span id="best">0</span></span>
   </div>
   <div id="wrap">
+    <button id="fsBtn" class="fs-btn">⛶</button>
     <canvas id="c" width="320" height="440"></canvas>
     <div id="countdownOverlay"></div>
     <div id="overlay">
@@ -45,13 +91,21 @@
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
-  <p class="hint">Yükselen renkli balonlara dokun, ama 💣 bombaya dokunma!</p>
+  <p class="hint">Havaya yükselen renk cümbüşü balonları patlat, ama gözünü dört aç: 💣 bombaya asla dokunma!</p>
 
 <script src="common.js"></script>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
+
+// Retina/yuksek DPI netligi: mantiksal oyun boyutu (W x H) degismiyor, sadece
+// canvas'in gercek piksel arka bellegi ekran yogunluguna gore buyutuluyor ve
+// tum cizimler ctx.scale ile bu olcege otomatik uyduruluyor.
+const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+canvas.width = W * DPR;
+canvas.height = H * DPR;
+ctx.scale(DPR, DPR);
 const COLORS = ['🎈','🔴','🟡','🟢','🔵','🟣'];
 
 let bestScore = parseInt(localStorage.getItem('ok_balon_best') || '0', 10);
@@ -97,11 +151,11 @@ function endGame(){
   cancelAnimationFrame(raf);
   if(score > bestScore){ bestScore = score; localStorage.setItem('ok_balon_best', bestScore); }
   document.getElementById('best').textContent = bestScore;
-  document.getElementById('overMsg').textContent = `${score} puan topladın!`;
+  document.getElementById('overMsg').textContent = `Bu turda ${score} puan kazandın!`;
   renderResultGrid('resultGrid', [['PUAN', score], ['REKOR', bestScore], ['EN İYİ COMBO', 'x'+combo.level]]);
   document.getElementById('stars').textContent = starRating(score, 400);
-  showOverlay('overlay');
-  if(score >= 250) fireConfetti(document.getElementById('wrap'));
+  showOverlay('overlay', score >= 250 ? {celebrate:true} : undefined);
+  if(score >= 250) fireConfetti(document.getElementById('wrap'), {big:true});
   playSuccess();
 }
 
@@ -185,6 +239,9 @@ canvas.addEventListener('touchstart', e=>{
 }, {passive:false});
 
 startGame();
+
+initFullscreenButton('fsBtn', document.getElementById('wrap'));
+initLandscapeHint();
 </script>
 </body>
 </html>

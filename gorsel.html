@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Görsel Hafıza — WoogiGames</title>
 <meta name="description" content="Görselleri hatırla, hafıza gücünü artır! Ücretsiz görsel hafıza oyunu WoogiGames&#x27;nda.">
 <meta name="robots" content="index, follow">
@@ -11,11 +18,15 @@
 <meta property="og:title" content="Görsel Hafıza — WoogiGames">
 <meta property="og:description" content="Görselleri hatırla, hafıza gücünü artır! Ücretsiz görsel hafıza oyunu WoogiGames&#x27;nda.">
 <meta property="og:url" content="https://woogigames.com/gorsel.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Görsel Hafıza — WoogiGames">
 <meta name="twitter:description" content="Görselleri hatırla, hafıza gücünü artır! Ücretsiz görsel hafıza oyunu WoogiGames&#x27;nda.">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -38,14 +49,49 @@
     position:absolute; inset:0; display:none; align-items:center; justify-content:center;
     background:rgba(255,255,255,.85); border-radius:20px; z-index:9;
   }
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:36px; height:36px; border:none; border-radius:10px;
+    background:rgba(20,14,50,.55); color:#fff; font-size:1.05rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.25);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Görsel Hafıza",
+  "url": "https://woogigames.com/gorsel.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "Görselleri hatırla, hafıza gücünü artır! Ücretsiz görsel hafıza oyunu WoogiGames&#x27;nda.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Educational",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Eğitici Oyunlar", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Görsel Hafıza", "item": "https://woogigames.com/gorsel.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1 id="title">👁️ Görsel Hafıza</h1>
-  <div id="hud"><span>📣 <span id="status">Hazırlan...</span></span></div>
+  <div id="hud"><span>📣 <span id="status">Hazırlan, gözlerini dört aç!</span></span></div>
   <div class="progress-track"><div class="progress-fill" id="studyBar" style="width:100%"></div></div>
   <div class="panel" style="position:relative;">
+    <button id="fsBtn" class="fs-btn">⛶</button>
     <div id="grid"></div>
     <button class="btn" id="confirmBtn" style="margin-top:14px; display:none;">Onayla</button>
     <div id="countdownOverlay"></div>
@@ -54,7 +100,7 @@
       <div class="msg" id="overMsg"></div>
       <div class="result-grid" id="resultGrid"></div>
       <div class="stars" id="stars"></div>
-      <button class="btn" onclick="location.reload()">Tekrar Oyna</button>
+      <button class="btn" onclick="playAgain()">Tekrar Oyna</button>
       <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
     </div>
   </div>
@@ -62,7 +108,8 @@
 
 <script src="common.js"></script>
 <script>
-const { theme, level } = getParams();
+let { theme, level } = getParams();
+let pendingLevel = level;
 setTitle('Görsel Hafıza');
 document.getElementById('title').textContent = `👁️ ${theme.name} Görsel Hafıza`;
 document.documentElement.style.setProperty('--th-1', theme.hue1);
@@ -79,43 +126,56 @@ muteCtl.addEventListener('click', ()=>{
 });
 function snd(fn){ if(!muted) fn(); }
 
-const size = [null,3,4,4,5][level];
-const totalCells = size*size;
-const itemCount = Math.min(theme.emojis.length, Math.round(totalCells * 0.35) + level);
-const studyTime = 2500 + level*400;
-
-document.getElementById('grid').style.gridTemplateColumns = `repeat(${size}, 64px)`;
-
-const itemIcons = shuffle(theme.emojis).slice(0, itemCount);
-const positions = shuffle([...Array(totalCells).keys()]).slice(0, itemCount);
-const answerSet = new Set(positions);
-
-const cells = [];
-const gridEl = document.getElementById('grid');
-for(let i=0;i<totalCells;i++){
-  const div = document.createElement('div');
-  div.className = 'cell gcell pop';
-  div.style.animationDelay = (Math.random()*0.2)+'s';
-  gridEl.appendChild(div);
-  cells.push(div);
-}
-positions.forEach((pos, idx)=>{
-  cells[pos].textContent = itemIcons[idx];
-  cells[pos].classList.add('show');
-});
+let size, totalCells, itemCount, studyTime, itemIcons, positions, answerSet, cells;
 let picked = new Set();
 let answered = false;
+const gridEl = document.getElementById('grid');
 
-const cd = document.getElementById('countdownOverlay');
-cd.style.display = 'flex';
-document.getElementById('status').textContent = 'Hazırlan...';
-runCountdown(cd, ()=>{
-  cd.style.display = 'none';
-  beginStudyPhase();
-});
+function init(){
+  // Adaptif zorluk: bir önceki turda ayarlanan seviye burada devreye girer
+  // (bkz. dosyanın altındaki "Tekrar Oyna" -> playAgain()).
+  level = pendingLevel;
+  size = [null,3,4,4,5][level];
+  totalCells = size*size;
+  itemCount = Math.min(theme.emojis.length, Math.round(totalCells * 0.35) + level);
+  studyTime = 2500 + level*400;
+
+  document.getElementById('grid').style.gridTemplateColumns = `repeat(${size}, 64px)`;
+
+  itemIcons = shuffle(theme.emojis).slice(0, itemCount);
+  positions = shuffle([...Array(totalCells).keys()]).slice(0, itemCount);
+  answerSet = new Set(positions);
+
+  cells = [];
+  gridEl.innerHTML = '';
+  for(let i=0;i<totalCells;i++){
+    const div = document.createElement('div');
+    div.className = 'cell gcell pop';
+    div.style.animationDelay = (Math.random()*0.2)+'s';
+    gridEl.appendChild(div);
+    cells.push(div);
+  }
+  positions.forEach((pos, idx)=>{
+    cells[pos].textContent = itemIcons[idx];
+    cells[pos].classList.add('show');
+  });
+  picked = new Set();
+  answered = false;
+  document.getElementById('confirmBtn').style.display = 'none';
+  document.getElementById('studyBar').style.width = '100%';
+  document.getElementById('overlay').style.display = 'none';
+
+  const cd = document.getElementById('countdownOverlay');
+  cd.style.display = 'flex';
+  document.getElementById('status').textContent = 'Hazırlan, gözlerini dört aç!';
+  runCountdown(cd, ()=>{
+    cd.style.display = 'none';
+    beginStudyPhase();
+  });
+}
 
 function beginStudyPhase(){
-  document.getElementById('status').textContent = `Ezberle! (${Math.round(studyTime/1000)} sn)`;
+  document.getElementById('status').textContent = `İyi bak ve ezberle! (${Math.round(studyTime/1000)} sn)`;
   const startTime = Date.now();
   const barTimer = setInterval(()=>{
     const pct = Math.max(0, 100 - ((Date.now()-startTime)/studyTime)*100);
@@ -125,7 +185,7 @@ function beginStudyPhase(){
 
   setTimeout(()=>{
     cells.forEach(c=>{ c.textContent=''; c.classList.remove('show'); });
-    document.getElementById('status').textContent = `Simge olan ${itemCount} kutuyu seç`;
+    document.getElementById('status').textContent = `Az önce simge olan ${itemCount} kutuyu bulup seç!`;
     document.getElementById('confirmBtn').style.display = 'inline-block';
     cells.forEach((c,i)=>{
       c.onclick = ()=>{
@@ -151,15 +211,25 @@ document.getElementById('confirmBtn').onclick = ()=>{
   });
   const success = correct === itemCount;
   snd(()=> success ? playSuccess() : playError());
+  // Adaptif zorluk: bu turdaki doğru oranına göre bir sonraki turun seviyesini ayarla.
+  const performanceRatio = itemCount > 0 ? correct / itemCount : 0;
+  pendingLevel = computeAdaptiveLevel(level, performanceRatio);
   setTimeout(()=>{
     document.getElementById('overIcon').textContent = success ? '🎉' : '💪';
-    document.getElementById('overMsg').textContent = `${itemCount} kutudan ${correct} tanesini doğru buldun!`;
+    document.getElementById('overMsg').textContent = `${itemCount} kutudan tam ${correct} tanesini doğru hatırladın!`;
     renderResultGrid('resultGrid', [['DOĞRU', correct+'/'+itemCount], ['SEVİYE', LEVEL_NAMES[level]]]);
     document.getElementById('stars').textContent = starRating(correct, itemCount);
-    showOverlay('overlay');
-    if(success) fireConfetti(document.querySelector('.panel'));
+    showAdaptiveNote(document.getElementById('overlay'), level, pendingLevel);
+    showOverlay('overlay', success ? {celebrate:true} : undefined);
+    if(success) fireConfetti(document.querySelector('.panel'), {big:true});
   }, 900);
 };
+
+function playAgain(){ init(); }
+
+init();
+
+initFullscreenButton('fsBtn', document.querySelector('.panel'));
 </script>
 </body>
 </html>

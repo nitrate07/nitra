@@ -3,19 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{document.documentElement.classList.toggle('dark', localStorage.getItem('ok_theme') !== 'light'); var _ct=localStorage.getItem('ok_color_theme'); if(_ct && _ct!=='mor') document.documentElement.setAttribute('data-theme', _ct);}catch(e){}</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6C4EF5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WoogiGames">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}</script>
 <title>Woogi'nin Macerası — WoogiGames</title>
-<meta name="description" content="WoogiGames'in kendi karakteri Woogi ile platform macerasına atıl! Zıpla, bambu topla, dünyaları keşfet. Ücretsiz ve tamamen özgün.">
+<meta name="description" content="WoogiGames'in kendi karakteri Woogi ile 4 dünyada platform macerasına atıl! Zıpla, bambu topla, patronları yen, yeni güçler kazan.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://woogigames.com/woogi-macera.html">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Woogi'nin Macerası — WoogiGames">
-<meta property="og:description" content="WoogiGames'in kendi karakteri Woogi ile platform macerasına atıl!">
+<meta property="og:description" content="WoogiGames'in kendi karakteri Woogi ile 4 dünyada platform macerasına atıl!">
 <meta property="og:url" content="https://woogigames.com/woogi-macera.html">
+<meta property="og:image" content="https://woogigames.com/assets/og-image.jpg">
 <meta property="og:site_name" content="WoogiGames">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Woogi'nin Macerası — WoogiGames">
-<meta name="twitter:description" content="WoogiGames'in kendi karakteri Woogi ile platform macerasına atıl!">
+<meta name="twitter:description" content="WoogiGames'in kendi karakteri Woogi ile 4 dünyada platform macerasına atıl!">
+<meta name="twitter:image" content="https://woogigames.com/assets/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="common.css">
 <style>
@@ -26,88 +37,361 @@
   h1{ font-family:'Fredoka',sans-serif; }
   #hud{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
   #hud span{ font-size:.82rem; }
+  #abilityRow{ display:flex; gap:6px; justify-content:center; margin:6px 0; min-height:26px; }
+  .ability-badge{ background:#fff; padding:4px 10px; border-radius:999px; font-size:.7rem; font-weight:800; box-shadow:0 2px 0 #ddd; }
   .progress-track{ margin:8px auto 10px; }
+
+  /* ---- Dünya Haritası ---- */
+  #worldMapScreen{ display:flex; flex-direction:column; align-items:center; gap:14px; max-width:520px; margin:0 auto; }
+  .world-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; width:100%; }
+  .world-card{
+    background:#fff; border-radius:20px; padding:18px 12px; text-align:center; cursor:pointer;
+    box-shadow:0 4px 0 #ddd; transition:transform .15s; position:relative; border:3px solid transparent;
+  }
+  .world-card:active{ transform:scale(.96); }
+  .world-card .w-icon{ font-size:2.6rem; display:block; margin-bottom:6px; }
+  .world-card h3{ font-family:'Fredoka',sans-serif; font-size:1.05rem; margin:0 0 4px; }
+  .world-card .w-stars{ font-size:.8rem; opacity:.7; }
+  .world-card.locked{ opacity:.55; cursor:default; filter:grayscale(.6); }
+  .world-card.locked .w-icon{ filter:grayscale(1); }
+  .world-card .w-lock{ position:absolute; top:8px; right:10px; font-size:1.1rem; }
+  .world-card .w-ability{ font-size:.68rem; font-weight:800; color:#6C4EF5; margin-top:4px; }
+
+  /* ---- Bölüm Seçimi ---- */
+  #stageSelectScreen{ display:flex; flex-direction:column; align-items:center; gap:14px; max-width:520px; margin:0 auto; }
+  .stage-path{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; padding:10px; }
+  .stage-node{
+    width:66px; height:66px; border-radius:18px; background:#fff; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; cursor:pointer; box-shadow:0 4px 0 #ddd; position:relative;
+    font-weight:900; transition:transform .15s;
+  }
+  .stage-node:active{ transform:scale(.94); }
+  .stage-node .sn-stars{ font-size:.6rem; margin-top:2px; }
+  .stage-node.locked{ opacity:.45; cursor:default; filter:grayscale(1); }
+  .stage-node.boss{ background:linear-gradient(135deg,#ff6b6b,#c94b4b); color:#fff; }
+  .stage-node.miniboss{ background:linear-gradient(135deg,#ff9f5a,#c9762a); color:#fff; }
+  .back-link-row{ display:flex; gap:10px; }
+
+  /* ---- Oyun Ekranı ---- */
   canvas{
     background:linear-gradient(var(--lv-sky1,#7fc8f8),var(--lv-sky2,#cdeeff));
-    display:block; margin:0 auto; width:auto; height:auto;
-    aspect-ratio:480/300; max-width:min(94vw,560px);
+    display:block; margin:0 auto;
+    width:100%; height:auto;
+    aspect-ratio:480/300; max-width:720px;
     max-height:calc(100vh - 300px); max-height:calc(100svh - 300px);
     border-radius:16px; box-shadow:0 0 0 4px #fff, 0 14px 34px rgba(0,0,0,.25);
     touch-action:none;
   }
-  #wrap{ position:relative; display:flex; justify-content:center; }
+  html.dark canvas{ box-shadow:0 0 0 4px #1a1640, 0 14px 34px rgba(0,0,0,.5); }
+  @media (min-width:820px){
+    canvas{ max-width:1080px; max-height:calc(100vh - 220px); max-height:calc(100svh - 220px); }
+    #wrap{ max-width:1080px; }
+    .controls{ max-width:1080px; }
+    #worldMapScreen, #stageSelectScreen{ max-width:820px; }
+    .world-grid{ grid-template-columns:repeat(4,1fr); }
+  }
+  #wrap{ position:relative; display:flex; justify-content:center; max-width:640px; margin:0 auto; }
+  .fs-btn{
+    position:absolute; top:10px; right:10px; z-index:10; width:38px; height:38px; border:none; border-radius:10px;
+    background:rgba(10,10,26,.55); color:#fff; font-size:1.15rem; cursor:pointer; box-shadow:0 0 0 1px rgba(255,255,255,.3);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .fs-btn:active{ transform:scale(.92); }
   #countdownOverlay{
     position:absolute; inset:0; display:none; align-items:center; justify-content:center;
     background:rgba(0,0,0,.25); border-radius:16px; z-index:9;
   }
+  #pauseOverlay{
+    position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+    background:rgba(10,10,26,.72); border-radius:16px; z-index:11; color:#fff; text-align:center;
+  }
+  #pauseOverlay .pause-title{ font-family:'Fredoka',sans-serif; font-size:1.6rem; }
+  #pauseOverlay .btn{ min-width:180px; }
+  #checkpointBanner{
+    display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:10;
+    background:linear-gradient(135deg,#3dd6ff,#2e94c9); color:#fff; padding:10px 20px; border-radius:14px;
+    font-weight:900; box-shadow:0 6px 0 #1c6f94; animation:pop-in .4s cubic-bezier(.34,1.56,.64,1);
+  }
   #levelBanner{
     position:absolute; top:14px; left:50%; transform:translate(-50%,-140%); z-index:8; pointer-events:none;
     background:rgba(20,14,50,.8); color:#fff; padding:8px 18px; border-radius:999px; font-weight:800;
-    font-family:'Fredoka',sans-serif; font-size:.95rem; transition:transform .5s cubic-bezier(.34,1.56,.64,1);
+    font-family:'Fredoka',sans-serif; font-size:.9rem; transition:transform .5s cubic-bezier(.34,1.56,.64,1); text-align:center;
   }
   #levelBanner.show{ transform:translate(-50%,0); }
-  .controls{ display:flex; justify-content:space-between; align-items:center; margin-top:14px; max-width:560px; margin-left:auto; margin-right:auto; padding:0 6px; }
+  #bossHpBar{
+    position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:7; width:70%; max-width:300px;
+    display:none;
+  }
+  #bossHpBar .bhb-track{ height:14px; background:rgba(0,0,0,.4); border-radius:999px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,.3); }
+  #bossHpBar .bhb-fill{ height:100%; background:linear-gradient(90deg,#ff6b6b,#ffd23f); transition:width .3s; }
+  #bossHpBar .bhb-name{ text-align:center; color:#fff; font-size:.7rem; font-weight:800; text-shadow:0 1px 3px rgba(0,0,0,.6); margin-bottom:2px; }
+
+  .controls{ display:flex; justify-content:space-between; align-items:center; margin-top:14px; max-width:560px; margin-left:auto; margin-right:auto; padding:0 6px; flex-wrap:wrap; gap:8px; }
   .dpad{ display:flex; gap:8px; }
   .ctl{
-    width:58px; height:58px; border:none; border-radius:16px; background:#fff; color:var(--ink); font-size:1.4rem;
+    width:56px; height:56px; border:none; border-radius:16px; background:#fff; color:var(--ink); font-size:1.3rem;
     box-shadow:0 4px 0 #ddd; cursor:pointer; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none;
   }
   .ctl:active{ transform:translateY(3px); box-shadow:0 1px 0 #ddd; }
-  #jumpBtn{ width:72px; height:72px; background:linear-gradient(180deg,#3dd6ff,#2e94c9); color:#fff; font-size:1.7rem; box-shadow:0 5px 0 #1c6f94; }
+  #jumpBtn{ width:68px; height:68px; background:linear-gradient(180deg,#3dd6ff,#2e94c9); color:#fff; font-size:1.6rem; box-shadow:0 5px 0 #1c6f94; }
   #jumpBtn:active{ box-shadow:0 1px 0 #1c6f94; }
-  #muteCtl{ width:46px; height:46px; border:none; border-radius:14px; background:#fff; color:var(--ink); font-size:1.1rem; box-shadow:0 3px 0 #ddd; cursor:pointer; }
+  #dashBtn{ width:68px; height:68px; background:linear-gradient(180deg,#FFD23F,#c9762a); color:#fff; font-size:1.05rem; font-weight:900; box-shadow:0 5px 0 #8a5a1a; display:none; }
+  #dashBtn:active{ box-shadow:0 1px 0 #8a5a1a; }
+  #dashBtn.on-cooldown{ opacity:.4; }
+  #muteCtl{ width:44px; height:44px; border:none; border-radius:14px; background:#fff; color:var(--ink); font-size:1rem; box-shadow:0 3px 0 #ddd; cursor:pointer; }
   #muteCtl:active{ transform:translateY(2px); }
-  p.hint{ font-size:.82rem; opacity:.65; margin-top:10px; text-align:center; max-width:360px; }
+  p.hint{ font-size:.8rem; opacity:.65; margin-top:10px; text-align:center; max-width:380px; }
   #overlay .big{ font-size:2.4rem; }
+  .chest-anim{ font-size:3rem; margin:6px 0; animation:chestPop .5s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes chestPop{ from{ transform:scale(0) rotate(-20deg); opacity:0;} to{ transform:scale(1) rotate(0); opacity:1;} }
+  .secret-banner{
+    display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:10;
+    background:linear-gradient(135deg,#FFD23F,#FF9F5A); color:#1B1B3A; padding:10px 20px; border-radius:14px;
+    font-weight:900; box-shadow:0 6px 0 #c9762a; animation:pop-in .4s cubic-bezier(.34,1.56,.64,1);
+  }
+
+  /* ---- Koyu tema düzeltmesi: bu sayfanın kendi bileşenleri (dünya kartları,
+     bölüm düğümleri, kontrol tuşları) common.css'in genel koyu tema kurallarının
+     kapsamı dışında kalıyordu; beyaz zemin + açık renk metin nedeniyle koyu temada
+     neredeyse görünmez oluyorlardı. ---- */
+  html.dark .world-card{ background:linear-gradient(180deg,var(--card),#150f38); box-shadow:0 4px 0 #0a0824; color:var(--ink); }
+  html.dark .world-card h3{ color:var(--ink); }
+  html.dark .world-card .w-stars{ color:var(--ink); }
+  html.dark .world-card.locked{ filter:grayscale(.6) brightness(.7); }
+  html.dark .stage-node{ background:linear-gradient(180deg,var(--card),#150f38); box-shadow:0 4px 0 #0a0824; color:var(--ink); }
+  html.dark .ctl{ background:linear-gradient(180deg,var(--card),#150f38); color:var(--ink); box-shadow:0 4px 0 #0a0824; }
+  html.dark .ctl:active{ box-shadow:0 1px 0 #0a0824; }
+  html.dark #muteCtl{ background:linear-gradient(180deg,var(--card),#150f38); color:var(--ink); box-shadow:0 3px 0 #0a0824; }
+
+  /* ---- Gerçek tam ekran: fs-btn tıklandığında #wrap Fullscreen API ile tam
+     ekrana geçiyor (common.js -> initFullscreenButton). Aşağıdaki kurallar
+     olmadan canvas, tam ekranda bile eski küçük boyutunda ortada kalıyordu.
+     Gerçek piksel boyutlandırması aşağıdaki JS (fitFullscreenCanvas) ile
+     en-boy oranı bozulmadan yapılıyor; burada sadece kapsayıcıyı ve karartılmış
+     kenar boşluklarını (letterbox) hazırlıyoruz. ---- */
+  #wrap:fullscreen{ max-width:none; width:100vw; height:100vh; background:#0a0824; align-items:center; }
+  #wrap:-webkit-full-screen{ max-width:none; width:100vw; height:100vh; background:#0a0824; align-items:center; }
+  #wrap:fullscreen canvas, #wrap:-webkit-full-screen canvas{
+    max-width:none; max-height:none; aspect-ratio:auto; border-radius:0; box-shadow:none;
+  }
+  #wrap:fullscreen #countdownOverlay, #wrap:-webkit-full-screen #countdownOverlay{ border-radius:0; }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Woogi'nin Macerası",
+  "url": "https://woogigames.com/woogi-macera.html",
+  "image": "https://woogigames.com/assets/og-image.jpg",
+  "description": "WoogiGames'in kendi karakteri Woogi ile 4 dünyada platform macerasına atıl! Zıpla, bambu topla, patronları yen, yeni güçler kazan.",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any (Web Browser)",
+  "genre": "Platform",
+  "inLanguage": "tr",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "WoogiGames", "url": "https://woogigames.com/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": "https://woogigames.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Macera Oyunları", "item": "https://woogigames.com/index.html#oyunlar" },
+    { "@type": "ListItem", "position": 3, "name": "Woogi'nin Macerası", "item": "https://woogigames.com/woogi-macera.html" }
+  ]
+}
+</script>
 </head>
 <body>
   <a class="back" href="index.html">← Oyunlara dön</a>
   <h1>🐼 Woogi'nin Macerası</h1>
-  <div id="hud">
-    <span>🎋 <span id="bambooCount">0</span></span>
-    <span>⭐ <span id="starCount">0</span></span>
-    <span>❤️ <span id="lives">3</span></span>
-    <span>🗺️ <span id="levelName">Orman Girişi</span></span>
-  </div>
-  <div class="progress-track"><div class="progress-fill" id="levelProgress" style="width:0%"></div></div>
 
-  <div id="wrap">
-    <canvas id="c" width="480" height="300"></canvas>
-    <div id="levelBanner"></div>
-    <div id="countdownOverlay"></div>
-    <div id="overlay">
-      <div class="big" id="overIcon">🎉</div>
-      <div class="msg" id="overMsg"></div>
-      <div class="result-grid" id="resultGrid"></div>
-      <div class="stars" id="starsEl"></div>
-      <button class="btn" id="retryBtn">Tekrar Oyna</button>
-      <button class="btn alt" id="nextLevelBtn" style="display:none;">Sonraki Dünya →</button>
-      <a class="btn alt" href="index.html" style="text-decoration:none; display:inline-block;">Oyunlara Dön</a>
+  <!-- ================= DÜNYA HARİTASI ================= -->
+  <div id="worldMapScreen">
+    <div id="hud">
+      <span>🎋 <span id="mapBamboo">0</span></span>
+      <span>⭐ <span id="mapStars">0</span>/84</span>
     </div>
+    <p class="hint">Bir dünya seç ve Woogi'yle destansı bir maceraya atıl! 🔒 Kilitli dünyalar, yıldız topladıkça birer birer açılıyor.</p>
+    <div class="world-grid" id="worldGrid"></div>
   </div>
 
-  <div class="controls">
-    <div class="dpad">
-      <button class="ctl" id="leftBtn">◀</button>
-      <button class="ctl" id="rightBtn">▶</button>
+  <!-- ================= BÖLÜM SEÇİMİ ================= -->
+  <div id="stageSelectScreen" style="display:none;">
+    <div class="back-link-row">
+      <button class="btn alt" id="toWorldMapBtn">← Dünya Haritası</button>
     </div>
-    <button id="muteCtl">🔊</button>
-    <button id="jumpBtn">⬆</button>
+    <h2 id="stageSelectTitle" style="font-family:'Fredoka',sans-serif;"></h2>
+    <div class="stage-path" id="stagePath"></div>
   </div>
-  <p class="hint">Ok tuşları / dokunmatik butonlarla yürü, ZIPLA ile engellerden atla ve düşmanların üstüne bas! 🎋 bambu topla, bayrağa ulaş.</p>
+
+  <!-- ================= OYUN EKRANI ================= -->
+  <div id="gameScreen" style="display:none;">
+    <div id="hud">
+      <span>🎋 <span id="bambooCount">0</span></span>
+      <span>⭐ <span id="starCount">0</span></span>
+      <span>❤️ <span id="lives">3</span></span>
+      <span>🗺️ <span id="levelName">-</span></span>
+    </div>
+    <div id="abilityRow"></div>
+    <div class="progress-track"><div class="progress-fill" id="levelProgress" style="width:0%"></div></div>
+
+    <div id="wrap">
+      <canvas id="c" width="480" height="300"></canvas>
+      <button id="fsBtn" class="fs-btn">⛶</button>
+      <div id="levelBanner"></div>
+      <div id="bossHpBar"><div class="bhb-name" id="bossName"></div><div class="bhb-track"><div class="bhb-fill" id="bossHpFill" style="width:100%"></div></div></div>
+      <div class="secret-banner" id="secretBanner">🎁 Gizli Sandık Bulundu!</div>
+      <div class="secret-banner" id="checkpointBanner">🚩 Kontrol Noktası!</div>
+      <div id="countdownOverlay"></div>
+      <div id="pauseOverlay">
+        <div class="pause-title">⏸️ Duraklatıldı</div>
+        <button class="btn" id="resumeBtn">▶️ Devam Et</button>
+        <button class="btn alt" id="quitToMapBtn">🗺️ Bölüm Haritası</button>
+      </div>
+      <div id="overlay">
+        <div class="big" id="overIcon">🎉</div>
+        <div class="msg" id="overMsg"></div>
+        <div class="chest-anim" id="chestAnim" style="display:none;">🎁</div>
+        <div class="result-grid" id="resultGrid"></div>
+        <div class="stars" id="starsEl"></div>
+        <button class="btn" id="retryBtn">Tekrar Oyna</button>
+        <button class="btn alt" id="nextLevelBtn" style="display:none;">Sonraki Bölüm →</button>
+        <button class="btn alt" id="backToStagesBtn">Bölüm Haritası</button>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="dpad">
+        <button class="ctl" id="leftBtn">◀</button>
+        <button class="ctl" id="rightBtn">▶</button>
+      </div>
+      <button id="muteCtl">🔊</button>
+      <button class="ctl" id="pauseBtn">⏸️</button>
+      <button id="dashBtn">DASH</button>
+      <button id="jumpBtn">⬆</button>
+    </div>
+    <p class="hint" id="controlHint">Ok tuşları ya da dokunmatik butonlarla koş, ZIPLA ile engelleri aş ve düşmanların tam tepesine basarak onları alt et!</p>
+  </div>
 
 <script src="common.js"></script>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
+
+// ---- Retina/yüksek DPI netliği: mantıksal oyun boyutu (W×H = 480×300) hiç
+// değişmiyor (tüm oyun mantığı hâlâ bu koordinat sisteminde çalışıyor), sadece
+// canvas'ın gerçek piksel arka belleği ekran yoğunluğuna göre büyütülüyor ve
+// tüm çizimler ctx.scale ile bu ölçeğe otomatik uyduruluyor. Böylece oyun
+// büyük/tam ekran gösterildiğinde bulanıklaşmak yerine keskin kalıyor.
+const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+canvas.width = W * DPR;
+canvas.height = H * DPR;
+ctx.scale(DPR, DPR);
+
+// ---- Gerçek tam ekran boyutlandırma: tarayıcının Fullscreen API'si #wrap'ı
+// tam ekrana genişletir ama canvas'ın GÖRÜNTÜLENEN boyutunu kendimiz
+// hesaplamamız gerekiyor (aksi halde eski küçük boyutunda ortada kalır).
+// En-boy oranı (480:300) korunarak ekrana sığdırılır, gerekirse üstte/altta
+// veya yanlarda ince bir boşluk (letterbox) bırakılır — görüntü hiç bozulmaz.
+function fitFullscreenCanvas(){
+  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  if(!isFs){ canvas.style.width = ''; canvas.style.height = ''; return; }
+  const availW = window.innerWidth, availH = window.innerHeight;
+  const ratio = W / H;
+  let dispW = availW, dispH = availW / ratio;
+  if(dispH > availH){ dispH = availH; dispW = availH * ratio; }
+  canvas.style.width = Math.floor(dispW) + 'px';
+  canvas.style.height = Math.floor(dispH) + 'px';
+}
+document.addEventListener('fullscreenchange', fitFullscreenCanvas);
+document.addEventListener('webkitfullscreenchange', fitFullscreenCanvas);
+window.addEventListener('resize', ()=>{ if(document.fullscreenElement || document.webkitFullscreenElement) fitFullscreenCanvas(); });
+
 const GRAVITY = 0.62;
 const JUMP_V = -12.5;
+const DOUBLE_JUMP_V = -10.5;
 const MOVE_SPEED = 2.7;
+const DASH_SPEED = 8.5;
 const GROUND_Y = H - 40;
 
-// ================= SES MOTORU (paylaşılan AudioContext) =================
+// ================= SEEDLİ RASTGELELİK (aynı bölüm her zaman aynı düzeni üretir) =================
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// ================= DÜNYALAR =================
+const WORLDS = [
+  { id:'orman', name:'Orman', icon:'🌳', ability:null, abilityName:null, unlockStars:0,
+    sky1:'#8fd88f', sky2:'#d4f0a8', groundA:'#8fd868', groundB:'#5c8f3a', enemyType:'log', enemyEmoji:'🪵',
+    bossMini:{name:'Kızgın Kütük', emoji:'🪵'}, bossBig:{name:'Orman Devi', emoji:'🌳'} },
+  { id:'dag', name:'Dağ', icon:'🏔️', ability:'double', abilityName:'Çift Zıplama', unlockStars:10,
+    sky1:'#cfd8e8', sky2:'#eef2f8', groundA:'#b9bfc9', groundB:'#7a8290', enemyType:'rock', enemyEmoji:'🪨',
+    bossMini:{name:'Kaya Yuvarlağı', emoji:'🪨'}, bossBig:{name:'Dağ Canavarı', emoji:'⛰️'} },
+  { id:'deniz', name:'Deniz', icon:'🌊', ability:'dash', abilityName:'Dash', unlockStars:24,
+    sky1:'#7fc8f8', sky2:'#cdeeff', groundA:'#5cc9e8', groundB:'#2e7a9c', enemyType:'bubble', enemyEmoji:'🫧',
+    bossMini:{name:'Dalga Balonu', emoji:'🫧'}, bossBig:{name:'Derin Ejder', emoji:'🐋'} },
+  { id:'volkan', name:'Volkan', icon:'🌋', ability:'shield', abilityName:'Kalkan', unlockStars:38,
+    sky1:'#c9502a', sky2:'#3a1a1a', groundA:'#5c2a1a', groundB:'#2a1210', enemyType:'ember', enemyEmoji:'🔥',
+    bossMini:{name:'Kor Küre', emoji:'🔥'}, bossBig:{name:'Lav İfriti', emoji:'🌋'} }
+];
+const STAGES_PER_WORLD = 7; // 0-4 normal, 5 mini-boss, 6 big-boss
+
+// ================= İLERLEME KAYDI =================
+function loadProgress(){
+  try{ return JSON.parse(localStorage.getItem('ok_woogi_progress_v2')) || {}; }catch(e){ return {}; }
+}
+function saveProgress(p){ localStorage.setItem('ok_woogi_progress_v2', JSON.stringify(p)); }
+function getWorldProgress(worldId){
+  const p = loadProgress();
+  return p[worldId] || Array(STAGES_PER_WORLD).fill(0);
+}
+function setStageStars(worldId, stageIdx, stars){
+  const p = loadProgress();
+  if(!p[worldId]) p[worldId] = Array(STAGES_PER_WORLD).fill(0);
+  if(stars > p[worldId][stageIdx]) p[worldId][stageIdx] = stars;
+  saveProgress(p);
+}
+function totalStars(){
+  const p = loadProgress();
+  let sum = 0;
+  Object.values(p).forEach(arr=> arr.forEach(s=> sum+=s));
+  return sum;
+}
+function worldStars(worldId){
+  return getWorldProgress(worldId).reduce((a,b)=>a+b,0);
+}
+function isWorldUnlocked(worldIdx){
+  return totalStars() >= WORLDS[worldIdx].unlockStars;
+}
+function isStageUnlocked(worldId, stageIdx){
+  if(stageIdx === 0) return true;
+  const prog = getWorldProgress(worldId);
+  return prog[stageIdx-1] > 0;
+}
+function getUnlockedAbilities(){
+  const total = totalStars();
+  const set = new Set();
+  WORLDS.forEach(w=>{ if(w.ability && total >= w.unlockStars) set.add(w.ability); });
+  return set;
+}
+function totalBambooCollected(){
+  return parseInt(localStorage.getItem('ok_woogi_totalBamboo') || '0', 10);
+}
+function addTotalBamboo(n){
+  localStorage.setItem('ok_woogi_totalBamboo', totalBambooCollected()+n);
+}
+
+// ================= SES MOTORU =================
 const Audio_ = (function(){
   let muted = localStorage.getItem('ok_woogi_muted') === '1';
   let noiseBuffer;
@@ -149,69 +433,81 @@ const Audio_ = (function(){
     }catch(e){}
   }
   function jump(){ tone(500,0.12,'square',0.13); tone(750,0.1,'square',0.1,0.06); }
+  function doubleJump(){ tone(650,0.1,'square',0.13); tone(950,0.12,'square',0.12,0.05); }
+  function dash(){ noiseBurst(0.15,0.16,1800,'bandpass'); tone(300,0.1,'sawtooth',0.1); }
   function land(){ tone(200,0.06,'sine',0.08); }
   function bamboo(){ tone(750,0.07,'triangle',0.13); tone(1050,0.1,'triangle',0.12,0.05); }
   function star(){ [700,900,1100].forEach((f,i)=>tone(f,0.1,'triangle',0.13,i*0.06)); }
   function stomp(){ noiseBurst(0.1,0.14,700,'lowpass'); tone(180,0.1,'square',0.12); }
   function hurt(){ noiseBurst(0.2,0.18,350,'lowpass'); tone(120,0.25,'sawtooth',0.15); }
+  function shieldBlock(){ tone(600,0.15,'sine',0.15); tone(900,0.1,'sine',0.12,0.08); }
+  function bossHit(){ noiseBurst(0.15,0.2,600,'lowpass'); tone(150,0.15,'square',0.15); }
+  function bossDefeat(){ [400,300,600,900,1200].forEach((f,i)=>tone(f,0.2,'triangle',0.15,i*0.1)); }
   function flag(){ [523,659,784,1046,1318].forEach((f,i)=>tone(f,0.18,'triangle',0.14,i*0.09)); }
+  function chest(){ [500,700,900,1200].forEach((f,i)=>tone(f,0.15,'triangle',0.13,i*0.08)); }
   function gameOver(){ [300,260,200,150].forEach((f,i)=>tone(f,0.3,'sawtooth',0.13,i*0.15)); }
+  function checkpoint(){ tone(500,0.09,'triangle',0.13); tone(700,0.11,'triangle',0.13,0.06); }
+  function heart(){ tone(600,0.09,'triangle',0.14); tone(800,0.1,'triangle',0.13,0.05); tone(1000,0.14,'triangle',0.13,0.1); }
   const arp = [262,330,392,330, 294,349,440,349];
   function scheduleMusic(){
     if(!musicOn){ musicTimeoutId=null; return; }
-    if(!muted){ tone(arp[musicStep%arp.length], 0.18, 'triangle', 0.035); if(musicStep%4===0) tone(65,0.4,'sawtooth',0.04); }
+    if(!muted){ tone(arp[musicStep%arp.length], 0.18, 'triangle', 0.032); if(musicStep%4===0) tone(65,0.4,'sawtooth',0.038); }
     musicStep++; musicTimeoutId = setTimeout(scheduleMusic, 240);
   }
   function startMusic(){ if(musicOn) return; musicOn=true; scheduleMusic(); }
   function stopMusic(){ musicOn=false; if(musicTimeoutId){ clearTimeout(musicTimeoutId); musicTimeoutId=null; } }
   function setMuted(v){ muted=v; localStorage.setItem('ok_woogi_muted', v?'1':'0'); }
   function isMuted(){ return muted; }
-  return { unlock, jump, land, bamboo, star, stomp, hurt, flag, gameOver, startMusic, stopMusic, setMuted, isMuted };
+  return { unlock, jump, doubleJump, dash, land, bamboo, star, stomp, hurt, shieldBlock, bossHit, bossDefeat,
+    flag, chest, gameOver, checkpoint, heart, startMusic, stopMusic, setMuted, isMuted };
 })();
 
-// ================= WOOGI ÇİZİMİ (tamamen özgün tasarım) =================
-function drawWoogi(x, y, facing, walkT, ducked){
+// ================= WOOGI ÇİZİMİ =================
+function drawWoogi(x, y, facing, walkT, hasShield, isDashing){
   ctx.save();
   ctx.translate(x, y);
   if(facing < 0) ctx.scale(-1, 1);
-  const bob = ducked ? 4 : Math.sin(walkT) * 2;
+  const bob = Math.sin(walkT) * 2;
 
-  // gölge
+  if(hasShield){
+    ctx.save(); ctx.globalAlpha = 0.35 + Math.sin(walkT*0.5)*0.15;
+    ctx.strokeStyle = '#3dd6ff'; ctx.lineWidth = 2; ctx.shadowColor='#3dd6ff'; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(0,-8,20,0,Math.PI*2); ctx.stroke(); ctx.restore();
+  }
+  if(isDashing){
+    ctx.save(); ctx.globalAlpha = 0.4;
+    for(let i=1;i<=3;i++){ ctx.fillStyle='#3dd6ff'; ctx.beginPath(); ctx.ellipse(-i*8*facing, -2, 8-i*2, 12, 0,0,Math.PI*2); ctx.fill(); }
+    ctx.restore();
+  }
+
   ctx.save(); ctx.globalAlpha = 0.18; ctx.fillStyle = '#000';
   ctx.beginPath(); ctx.ellipse(0, 16, 13, 4, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
 
-  // arka bacaklar (yürüme animasyonu)
   ctx.fillStyle = '#2b2b3a';
   const legSwing = Math.sin(walkT) * 6;
   ctx.fillRect(-7+legSwing*0.3, 6+bob, 5, 9-Math.abs(bob));
   ctx.fillRect(3-legSwing*0.3, 6+bob, 5, 9-Math.abs(bob));
 
-  // gövde
   const bodyGrad = ctx.createLinearGradient(0,-16,0,10);
   bodyGrad.addColorStop(0,'#ffffff'); bodyGrad.addColorStop(1,'#e8e8f0');
   ctx.fillStyle = bodyGrad;
   ctx.beginPath(); ctx.ellipse(0, -2+bob*0.3, 12, 15, 0, 0, Math.PI*2); ctx.fill();
 
-  // kollar
   ctx.fillStyle = '#f0f0f4';
   ctx.beginPath(); ctx.ellipse(-11, 2+bob*0.3, 4, 8, -0.3, 0, Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.ellipse(11, 2+bob*0.3, 4, 8, 0.3, 0, Math.PI*2); ctx.fill();
 
-  // kulaklar (siyah)
   ctx.fillStyle = '#1b1b24';
   ctx.beginPath(); ctx.arc(-9, -19, 5.5, 0, Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc(9, -19, 5.5, 0, Math.PI*2); ctx.fill();
 
-  // kafa
   ctx.fillStyle = '#ffffff';
   ctx.beginPath(); ctx.arc(0, -13, 12.5, 0, Math.PI*2); ctx.fill();
 
-  // göz yamaları (siyah panda desenleri)
   ctx.fillStyle = '#1b1b24';
   ctx.beginPath(); ctx.ellipse(-6, -14, 4.5, 5.5, -0.15, 0, Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.ellipse(6, -14, 4.5, 5.5, 0.15, 0, Math.PI*2); ctx.fill();
 
-  // gözler
   ctx.fillStyle = '#fff';
   ctx.beginPath(); ctx.arc(-6, -14, 2.6, 0, Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc(6, -14, 2.6, 0, Math.PI*2); ctx.fill();
@@ -219,13 +515,11 @@ function drawWoogi(x, y, facing, walkT, ducked){
   ctx.beginPath(); ctx.arc(-5.2, -14, 1.6, 0, Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc(6.8, -14, 1.6, 0, Math.PI*2); ctx.fill();
 
-  // burun ve gülümseme
   ctx.fillStyle = '#1b1b24';
   ctx.beginPath(); ctx.ellipse(0, -8, 2.2, 1.6, 0, 0, Math.PI*2); ctx.fill();
   ctx.strokeStyle = '#c94b6e'; ctx.lineWidth = 1.4; ctx.beginPath();
   ctx.arc(0, -8, 4, 0.15*Math.PI, 0.85*Math.PI); ctx.stroke();
 
-  // marka kulaklığı (mavi, ayırt edici imza öğesi)
   ctx.strokeStyle = '#2e94c9'; ctx.lineWidth = 3; ctx.lineCap='round';
   ctx.beginPath(); ctx.arc(0, -19, 13, Math.PI*1.08, Math.PI*1.92); ctx.stroke();
   ctx.fillStyle = '#3dd6ff';
@@ -243,99 +537,242 @@ function drawEnemy(e){
     ctx.fillStyle = '#5c3d22'; ctx.fillRect(-14,-2,28,4);
     ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-5,-4,3,0,Math.PI*2); ctx.arc(5,-4,3,0,Math.PI*2); ctx.fill();
     ctx.fillStyle = '#1b1b24'; ctx.beginPath(); ctx.arc(-5,-4,1.4,0,Math.PI*2); ctx.arc(5,-4,1.4,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle = '#1b1b24'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(-8,-9); ctx.lineTo(-3,-7); ctx.moveTo(8,-9); ctx.lineTo(3,-7); ctx.stroke();
-  } else if(e.type === 'sand'){
+  } else if(e.type === 'rock'){
     ctx.rotate(e.rot||0);
-    ctx.fillStyle = '#d9a24a'; ctx.beginPath(); ctx.arc(0,0,13,0,Math.PI*2); ctx.fill();
-    for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; ctx.strokeStyle='#b9822e'; ctx.lineWidth=3;
-      ctx.beginPath(); ctx.moveTo(Math.cos(a)*11,Math.sin(a)*11); ctx.lineTo(Math.cos(a)*16,Math.sin(a)*16); ctx.stroke(); }
+    ctx.fillStyle = '#8a8f9c'; ctx.beginPath();
+    for(let i=0;i<7;i++){ const a=i/7*Math.PI*2; const rr=13*(0.8+((i%3)*0.1)); const px=Math.cos(a)*rr, py=Math.sin(a)*rr; i===0?ctx.moveTo(px,py):ctx.lineTo(px,py); }
+    ctx.closePath(); ctx.fill();
     ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-4,-2,2.6,0,Math.PI*2); ctx.arc(4,-2,2.6,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#1b1b24'; ctx.beginPath(); ctx.arc(-4,-2,1.2,0,Math.PI*2); ctx.arc(4,-2,1.2,0,Math.PI*2); ctx.fill();
-  } else if(e.type === 'blob'){
-    const sq = 1+Math.sin(e.bob||0)*0.08;
+  } else if(e.type === 'bubble'){
+    const sq = 1+Math.sin(e.bob||0)*0.1;
     ctx.scale(1/sq, sq);
-    ctx.fillStyle = 'rgba(156,123,255,.85)'; ctx.shadowColor='#9c7bff'; ctx.shadowBlur=10;
-    ctx.beginPath(); ctx.arc(0,0,13,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-4,-2,3,0,Math.PI*2); ctx.arc(4,-2,3,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#1b1b24'; ctx.beginPath(); ctx.arc(-4,-1,1.5,0,Math.PI*2); ctx.arc(4,-1,1.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(125,220,255,.65)'; ctx.strokeStyle='rgba(255,255,255,.8)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(0,0,13,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#1b1b24'; ctx.beginPath(); ctx.arc(-4,-2,2,0,Math.PI*2); ctx.arc(4,-2,2,0,Math.PI*2); ctx.fill();
+  } else if(e.type === 'ember'){
+    const flick = 1+Math.sin((e.bob||0)*2)*0.15;
+    ctx.scale(flick, 1/flick);
+    ctx.fillStyle = 'rgba(255,120,40,.9)'; ctx.shadowColor='#ff6b1a'; ctx.shadowBlur=12;
+    ctx.beginPath(); ctx.arc(0,0,12,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#1b1b24'; ctx.shadowBlur=0; ctx.beginPath(); ctx.arc(-4,-2,2,0,Math.PI*2); ctx.arc(4,-2,2,0,Math.PI*2); ctx.fill();
   }
   ctx.restore();
 }
 
-// ================= SEVİYE VERİLERİ (5 dünya hikayesiyle bağlantılı) =================
+function drawBoss(b){
+  ctx.save(); ctx.translate(b.x, b.y);
+  const scale = 1 + (b.hitFlash||0)*0.15;
+  ctx.scale(scale, scale);
+  if(b.state==='telegraph'){ ctx.save(); ctx.globalAlpha=0.5+Math.sin((b.stateT||0)*0.6)*0.3; }
+  ctx.font = '54px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.shadowColor = 'rgba(0,0,0,.3)'; ctx.shadowBlur = 8;
+  ctx.fillText(b.emoji, 0, 0);
+  if(b.state==='stunned'){
+    ctx.font='16px serif'; ctx.fillText('😵', 0, -46);
+  }
+  if(b.state==='telegraph'){ ctx.restore(); }
+  ctx.restore();
+}
+
+// ================= SEVİYE ÜRETİCİ =================
 function ground(x1,x2){ return {x:x1, y:GROUND_Y, w:x2-x1, h:H-GROUND_Y, solid:true}; }
 function plat(x,y,w){ return {x, y, w, h:14, solid:true}; }
 
-const LEVELS = [
-  {
-    name:'Orman Girişi', bg:'orman', sky1:'#8fd88f', sky2:'#d4f0a8', width:2100,
-    platforms:[ ground(0,420), ground(500,760), ground(860,1180), ground(1260,1500), ground(1580,2100),
-      plat(300,GROUND_Y-70,90), plat(600,GROUND_Y-90,80), plat(950,GROUND_Y-110,90), plat(1350,GROUND_Y-80,80) ],
-    enemies:[ {x:640,type:'log',range:70,vx:0.8,y:GROUND_Y-12}, {x:1000,type:'log',range:90,vx:1,y:GROUND_Y-12}, {x:1650,type:'log',range:80,vx:0.9,y:GROUND_Y-12} ],
-    bamboo: [340,340,620,650,980,1010,1380,1700,1750,1800],
-    starsAt: [605, 955, 1355],
-    goalX: 2040
-  },
-  {
-    name:'Çöl Geçidi', bg:'col', sky1:'#ffd9a0', sky2:'#fff0d6', width:2300,
-    platforms:[ ground(0,380), ground(460,700), ground(780,1000), ground(1080,1360), ground(1440,1720), ground(1800,2300),
-      plat(250,GROUND_Y-80,80), plat(560,GROUND_Y-100,70), plat(850,GROUND_Y-120,90), plat(1150,GROUND_Y-90,80), plat(1500,GROUND_Y-100,90) ],
-    enemies:[ {x:520,type:'sand',range:60,vx:1.4,y:GROUND_Y-13,rot:0}, {x:900,type:'sand',range:70,vx:1.6,y:GROUND_Y-13,rot:0},
-      {x:1250,type:'sand',range:80,vx:1.3,y:GROUND_Y-13,rot:0}, {x:1900,type:'sand',range:90,vx:1.7,y:GROUND_Y-13,rot:0} ],
-    bamboo:[290,570,595,860,895,1180,1540,1900,1950,2000],
-    starsAt:[565, 855, 1505],
-    goalX: 2240
-  },
-  {
-    name:'Uzay Rotası', bg:'uzay', sky1:'#241a4d', sky2:'#0c0a1a', width:2500,
-    platforms:[ ground(0,300), plat(360,GROUND_Y-30,120), plat(560,GROUND_Y-90,90), plat(760,GROUND_Y-140,90),
-      plat(980,GROUND_Y-100,90), ground(1120,1360), plat(1440,GROUND_Y-60,90), plat(1640,GROUND_Y-120,90),
-      plat(1860,GROUND_Y-70,100), ground(2020,2500) ],
-    enemies:[ {x:620,type:'blob',range:60,vx:0.7,y:GROUND_Y-104,bob:0}, {x:820,type:'blob',range:50,vx:0.9,y:GROUND_Y-154,bob:0},
-      {x:1700,type:'blob',range:70,vx:0.8,y:GROUND_Y-134,bob:0}, {x:1200,type:'blob',range:100,vx:1,y:GROUND_Y-12,bob:0} ],
-    bamboo:[400,610,615,810,815,1000,1470,1670,1675,1900],
-    starsAt:[615, 815, 1675],
-    goalX: 2440
+function generateNormalStage(worldIdx, stageIdx){
+  const world = WORLDS[worldIdx];
+  const seed = worldIdx*10007 + stageIdx*733 + 91;
+  const rng = mulberry32(seed);
+  const diff = stageIdx;
+  const width = 1700 + diff*260;
+
+  const platforms = [];
+  let x = 0;
+  while(x < width - 260){
+    const segLen = 240 + rng()*200 - diff*8;
+    platforms.push(ground(x, x+segLen));
+    x += segLen;
+    if(x < width-380){ x += 66 + rng()*36 + diff*7; }
   }
-];
+  platforms.push(ground(x, width));
 
-let levelIdx = parseInt(new URLSearchParams(location.search).get('level') || '0', 10);
-if(levelIdx < 0 || levelIdx >= LEVELS.length) levelIdx = 0;
+  let px = 240;
+  const starsAt = [];
+  while(px < width - 220){
+    if(rng() < 0.5){
+      const py = GROUND_Y - (50 + rng()*90);
+      const pw = 70 + rng()*50;
+      platforms.push(plat(px, py, pw));
+      if(rng() < 0.4) starsAt.push(px+pw/2);
+      px += pw + 70 + rng()*80;
+    } else px += 160 + rng()*100;
+  }
 
-let player, camX, running, paused, lives, bambooTotal, starTotal, particles, shaker, raf, frameCount;
-let level, keys = {left:false, right:false, jump:false};
-let respawnX, respawnY;
+  const enemies = [];
+  let ex = 380;
+  while(ex < width - 260){
+    if(rng() < 0.45 + diff*0.05){
+      enemies.push({ x:ex, type:world.enemyType, range:50+rng()*50, vx:(0.7+rng()*0.5+diff*0.08), y:GROUND_Y-13, startX:ex, bob:0 });
+    }
+    ex += 240 + rng()*160 - diff*8;
+  }
 
-function applyLevelTheme(){
-  const l = LEVELS[levelIdx];
-  document.documentElement.style.setProperty('--lv-sky1', l.sky1);
-  document.documentElement.style.setProperty('--lv-sky2', l.sky2);
-  document.documentElement.style.setProperty('--lv-bg1', l.sky1);
-  document.documentElement.style.setProperty('--lv-bg2', l.sky2);
-  document.getElementById('levelName').textContent = l.name;
+  const bambooList = [];
+  let bx = 140;
+  while(bx < width-140){ bambooList.push(bx); bx += 85 + rng()*65; }
+
+  const secretX = width*0.55 + rng()*width*0.25;
+  const secret = { x:secretX, y:GROUND_Y-150, taken:false };
+
+  // Kontrol noktası: bölümün ortasında, canlar biterse en baştan değil buradan
+  // devam edilmesini sağlar — özellikle uzun/geç bölümlerde hayal kırıklığını azaltır.
+  const checkpoint = { x: width*0.5, y: GROUND_Y-15, reached:false };
+
+  // Kalp (ekstra can): her bölümde %40 ihtimalle, bölümün ilk yarısından sonra belirir.
+  const hearts = [];
+  if(rng() < 0.4){
+    hearts.push({ x: width*(0.62 + rng()*0.22), y: GROUND_Y-70, taken:false });
+  }
+
+  return {
+    name: world.name+' '+(stageIdx+1), worldIdx, stageIdx, bg: world.id,
+    sky1:world.sky1, sky2:world.sky2, groundA:world.groundA, groundB:world.groundB, width,
+    platforms, enemies, bamboo: bambooList.map(bx=>({x:bx,y:GROUND_Y-40,taken:false})),
+    starsAt: starsAt.map(sx=>({x:sx,y:GROUND_Y-90,taken:false})), secret, checkpoint, hearts,
+    goalX: width-60, isBoss:false
+  };
 }
 
-function startLevel(){
-  level = JSON.parse(JSON.stringify(LEVELS[levelIdx]));
-  level.bamboo = level.bamboo.map(x=>({x, y:GROUND_Y-40, taken:false}));
-  level.starsAt = level.starsAt.map(x=>({x, y:GROUND_Y-90, taken:false}));
-  applyLevelTheme();
-  player = { x:40, y:GROUND_Y-15, vx:0, vy:0, w:22, h:30, onGround:false, facing:1, walkT:0, hurtT:0 };
+function generateBossStage(worldIdx, isBig){
+  const world = WORLDS[worldIdx];
+  const width = 900;
+  const bossData = isBig ? world.bossBig : world.bossMini;
+  const hp = isBig ? 5 : 3;
+  const attacks = isBig ? ['charge','slam','roll'] : ['charge','slam'];
+  return {
+    name: bossData.name, worldIdx, stageIdx: isBig ? 6 : 5, bg: world.id,
+    sky1:world.sky1, sky2:world.sky2, groundA:world.groundA, groundB:world.groundB, width,
+    platforms:[ ground(0,width) ], enemies:[], bamboo:[], starsAt:[], secret:null,
+    goalX: width+99999, isBoss:true,
+    boss:{ x:width-150, y:GROUND_Y-20, hp, maxHp:hp, name:bossData.name, emoji:bossData.emoji,
+      state:'idle', stateT:0, vx:-1.1, startX:width-150, range:130, attacks, dead:false, hitFlash:0, projectiles:[] }
+  };
+}
+
+// ================= OYUN DURUMU =================
+let player, camX, running, paused, lives, bambooTotal, starTotal, particles, shaker, raf, frameCount;
+let level, keys = {left:false, right:false, jump:false, dash:false};
+let respawnX, respawnY, abilities, secretFound, dashCooldown, shieldCharge, shieldRegenT;
+let curWorldIdx = 0, curStageIdx = 0;
+
+// ================= EKRAN YÖNETİMİ =================
+function showScreen(id){
+  ['worldMapScreen','stageSelectScreen','gameScreen'].forEach(s=>{
+    document.getElementById(s).style.display = (s===id) ? '' : 'none';
+  });
+}
+
+function renderWorldMap(){
+  document.getElementById('mapStars').textContent = totalStars();
+  document.getElementById('mapBamboo').textContent = totalBambooCollected();
+  const grid = document.getElementById('worldGrid');
+  grid.innerHTML = '';
+  WORLDS.forEach((w, idx)=>{
+    const unlocked = isWorldUnlocked(idx);
+    const ws = worldStars(w.id);
+    const card = document.createElement('div');
+    card.className = 'world-card pop' + (unlocked ? '' : ' locked');
+    card.innerHTML = `
+      ${unlocked ? '' : '<span class="w-lock">🔒</span>'}
+      <span class="w-icon">${w.icon}</span>
+      <h3>${w.name}</h3>
+      <div class="w-stars">⭐ ${ws}/${STAGES_PER_WORLD*3}</div>
+      ${w.abilityName ? `<div class="w-ability">${unlocked?'✓ ':''}${w.abilityName}</div>` : ''}
+      ${unlocked ? '' : `<div class="w-ability" style="color:#999;">${w.unlockStars} ⭐ gerekli</div>`}
+    `;
+    if(unlocked){
+      card.addEventListener('click', ()=>{ playClick(500); openStageSelect(idx); });
+    }
+    grid.appendChild(card);
+  });
+}
+
+function openStageSelect(worldIdx){
+  curWorldIdx = worldIdx;
+  const w = WORLDS[worldIdx];
+  document.getElementById('stageSelectTitle').textContent = `${w.icon} ${w.name}`;
+  const prog = getWorldProgress(w.id);
+  const path = document.getElementById('stagePath');
+  path.innerHTML = '';
+  for(let i=0;i<STAGES_PER_WORLD;i++){
+    const unlocked = isStageUnlocked(w.id, i);
+    const isMini = i===5, isBig = i===6;
+    const node = document.createElement('div');
+    node.className = 'stage-node pop' + (unlocked?'':' locked') + (isMini?' miniboss':'') + (isBig?' boss':'');
+    const label = isBig ? '👑' : isMini ? '⚔️' : (i+1);
+    node.innerHTML = `<div>${unlocked ? label : '🔒'}</div><div class="sn-stars">${unlocked ? '⭐'.repeat(prog[i])+'☆'.repeat(3-prog[i]) : ''}</div>`;
+    if(unlocked){
+      node.addEventListener('click', ()=>{ playClick(500); startStage(worldIdx, i); });
+    }
+    path.appendChild(node);
+  }
+  showScreen('stageSelectScreen');
+}
+
+document.getElementById('toWorldMapBtn').addEventListener('click', ()=>{ renderWorldMap(); showScreen('worldMapScreen'); });
+document.getElementById('backToStagesBtn').addEventListener('click', ()=>{ openStageSelect(curWorldIdx); showScreen('stageSelectScreen'); });
+
+// ================= BÖLÜM BAŞLATMA =================
+function startStage(worldIdx, stageIdx){
+  curWorldIdx = worldIdx; curStageIdx = stageIdx;
+  abilities = getUnlockedAbilities();
+  level = (stageIdx===5) ? generateBossStage(worldIdx, false)
+        : (stageIdx===6) ? generateBossStage(worldIdx, true)
+        : generateNormalStage(worldIdx, stageIdx);
+
+  document.documentElement.style.setProperty('--lv-sky1', level.sky1);
+  document.documentElement.style.setProperty('--lv-sky2', level.sky2);
+  document.documentElement.style.setProperty('--lv-bg1', level.sky1);
+  document.documentElement.style.setProperty('--lv-bg2', level.sky2);
+  document.getElementById('levelName').textContent = level.name;
+
+  const abRow = document.getElementById('abilityRow');
+  abRow.innerHTML = '';
+  abilities.forEach(a=>{
+    const w = WORLDS.find(w=>w.ability===a);
+    const badge = document.createElement('span');
+    badge.className = 'ability-badge';
+    badge.textContent = (a==='double'?'⬆⬆ ':a==='dash'?'💨 ':'🛡️ ') + w.abilityName;
+    abRow.appendChild(badge);
+  });
+  document.getElementById('dashBtn').style.display = abilities.has('dash') ? 'inline-flex' : 'none';
+
+  player = { x:40, y:GROUND_Y-15, vx:0, vy:0, w:22, h:30, onGround:false, facing:1, walkT:0, hurtT:0,
+    jumpsUsed:0, isDashing:0 };
   respawnX = 40; respawnY = GROUND_Y-15;
   camX = 0; running = false; paused = false; lives = 3; bambooTotal = 0; starTotal = 0;
-  particles = []; shaker = createShaker(); frameCount = 0;
+  particles = []; shaker = createShaker(); frameCount = 0; secretFound = false;
+  dashCooldown = 0; shieldCharge = abilities.has('shield') ? 1 : 0; shieldRegenT = 0;
+
   document.getElementById('bambooCount').textContent = 0;
   document.getElementById('starCount').textContent = 0;
   document.getElementById('lives').textContent = lives;
   document.getElementById('levelProgress').style.width = '0%';
   document.getElementById('overlay').style.display = 'none';
-  document.getElementById('nextLevelBtn').style.display = levelIdx < LEVELS.length-1 ? 'inline-flex' : 'none';
+  document.getElementById('chestAnim').style.display = 'none';
+  document.getElementById('nextLevelBtn').style.display = 'none';
+  document.getElementById('bossHpBar').style.display = level.isBoss ? '' : 'none';
+  if(level.isBoss){
+    document.getElementById('bossName').textContent = level.boss.name;
+    document.getElementById('bossHpFill').style.width = '100%';
+  }
 
+  showScreen('gameScreen');
   ctx.clearRect(0,0,W,H);
   drawScene();
 
   const banner = document.getElementById('levelBanner');
-  banner.textContent = `🗺️ ${level.name}`;
+  banner.textContent = level.isBoss ? `👑 ${level.name}` : `🗺️ ${level.name}`;
   banner.classList.add('show');
   setTimeout(()=> banner.classList.remove('show'), 1800);
 
@@ -347,48 +784,89 @@ function startLevel(){
   });
 }
 
-function rectsOverlap(a,b){
-  return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
-}
-
+function rectsOverlap(a,b){ return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
 function playerBox(){ return { x:player.x-player.w/2, y:player.y-player.h, w:player.w, h:player.h }; }
 
-function loseLife(){
+function takeDamage(){
+  if(player.hurtT > 0) return;
+  if(shieldCharge > 0){
+    shieldCharge = 0; shieldRegenT = 360;
+    Audio_.shieldBlock();
+    player.hurtT = 30;
+    spawnParticles(particles, player.x, player.y-15, 8, ['#3dd6ff','#fff'], {speed:3, life:16});
+    return;
+  }
   lives--;
   document.getElementById('lives').textContent = Math.max(0,lives);
   player.hurtT = 45;
   Audio_.hurt();
   shaker.trigger(10);
   spawnParticles(particles, player.x, player.y-15, 10, ['#ff6b6b','#c94b4b'], {speed:3.5, life:20});
-  if(lives <= 0){
-    endLevel(false);
-  } else {
-    player.x = respawnX; player.y = respawnY; player.vx=0; player.vy=0;
-  }
+  if(lives <= 0) endStage(false);
+  else { player.x = respawnX; player.y = respawnY; player.vx=0; player.vy=0; }
 }
 
-function endLevel(won){
+function endStage(won){
   running = false;
   Audio_.stopMusic();
   cancelAnimationFrame(raf);
-  const key = 'ok_woogi_stars_' + levelIdx;
-  const prevStars = parseInt(localStorage.getItem(key) || '0', 10);
-  const scorePct = won ? Math.round((bambooTotal/level.bamboo.length)*100) : 0;
-  const earnedStars = won ? starRating(bambooTotal + starTotal*3, level.bamboo.length + level.starsAt.length*3) : '☆☆☆';
-  if(won){
-    const starCount = (earnedStars.match(/⭐/g)||[]).length;
-    if(starCount > prevStars) localStorage.setItem(key, starCount);
+
+  if(!won){
+    document.getElementById('overIcon').textContent = '💔';
+    document.getElementById('overMsg').textContent = 'Canların tükendi — pes etme, tekrar dene!';
+    renderResultGrid('resultGrid', [
+      ['🎋 BAMBU', bambooTotal], ['DÜNYA', WORLDS[curWorldIdx].name]
+    ]);
+    document.getElementById('starsEl').textContent = '☆☆☆';
+    document.getElementById('nextLevelBtn').style.display = 'none';
+    showOverlay('overlay');
+    Audio_.gameOver();
+    return;
   }
-  document.getElementById('overIcon').textContent = won ? '🏁' : '💔';
-  document.getElementById('overMsg').textContent = won ? `${level.name} tamamlandı!` : 'Canların bitti, tekrar dene!';
-  renderResultGrid('resultGrid', [
-    ['🎋 BAMBU', bambooTotal+'/'+level.bamboo.length], ['⭐ YILDIZ', starTotal+'/'+level.starsAt.length],
-    ['CAN', Math.max(0,lives)], ['DÜNYA', level.name]
-  ]);
-  document.getElementById('starsEl').textContent = earnedStars;
-  showOverlay('overlay');
-  if(won){ Audio_.flag(); fireConfetti(document.getElementById('wrap')); }
-  else Audio_.gameOver();
+
+  addTotalBamboo(bambooTotal);
+  let earnedStars;
+  if(level.isBoss){
+    earnedStars = lives===3 ? 3 : lives===2 ? 2 : 1;
+  } else {
+    const bambooPct = level.bamboo.length ? bambooTotal/level.bamboo.length : 1;
+    const allStars = level.starsAt.length ? starTotal>=level.starsAt.length : true;
+    earnedStars = (bambooPct>=0.8 && allStars && lives>=2) ? 3 : (bambooPct>=0.5 || lives>=2) ? 2 : 1;
+  }
+  setStageStars(WORLDS[curWorldIdx].id, curStageIdx, earnedStars);
+
+  const wasWorldLocked4 = !isWorldUnlocked(3);
+  document.getElementById('overIcon').textContent = level.isBoss ? '👑' : '🏁';
+  document.getElementById('overMsg').textContent = `${level.name} bölümünü başarıyla tamamladın!`;
+  const rows = [ ['🎋 BAMBU', bambooTotal + (level.bamboo.length?('/'+level.bamboo.length):'')] ];
+  if(level.starsAt && level.starsAt.length) rows.push(['⭐ YILDIZ', starTotal+'/'+level.starsAt.length]);
+  rows.push(['CAN', Math.max(0,lives)]); rows.push(['DÜNYA', WORLDS[curWorldIdx].name]);
+  renderResultGrid('resultGrid', rows);
+  document.getElementById('starsEl').textContent = '⭐'.repeat(earnedStars) + '☆'.repeat(3-earnedStars);
+
+  const chestEl = document.getElementById('chestAnim');
+  chestEl.style.display = 'block';
+  chestEl.textContent = '🎁';
+  Audio_.chest();
+
+  const hasNext = curStageIdx < STAGES_PER_WORLD-1;
+  document.getElementById('nextLevelBtn').style.display = hasNext ? 'inline-flex' : 'none';
+
+  showOverlay('overlay', earnedStars === 3 ? {celebrate:true} : undefined);
+  if(level.isBoss) Audio_.bossDefeat(); else Audio_.flag();
+  fireConfetti(document.getElementById('wrap'), earnedStars === 3 ? {big:true} : undefined);
+
+  const nowUnlocked = WORLDS.map((w,i)=>isWorldUnlocked(i));
+  setTimeout(()=>{
+    WORLDS.forEach((w,i)=>{
+      if(nowUnlocked[i] && i>0){
+        const key = 'ok_woogi_seen_unlock_'+w.id;
+        if(!localStorage.getItem(key)){
+          localStorage.setItem(key,'1');
+        }
+      }
+    });
+  }, 100);
 }
 
 function stompEnemy(e){
@@ -396,6 +874,22 @@ function stompEnemy(e){
   Audio_.stomp();
   spawnParticles(particles, e.x, e.y, 8, ['#fff','#ddd'], {speed:3, life:16});
   player.vy = JUMP_V*0.6;
+}
+
+function hitBoss(){
+  const b = level.boss;
+  b.hp--; b.hitFlash = 8;
+  Audio_.bossHit();
+  shaker.trigger(8);
+  spawnParticles(particles, b.x, b.y-20, 10, ['#fff','#ffd23f'], {speed:3.5, life:18});
+  document.getElementById('bossHpFill').style.width = Math.max(0,(b.hp/b.maxHp)*100) + '%';
+  player.vy = JUMP_V*0.7;
+  if(b.hp <= 0){
+    b.dead = true;
+    spawnParticles(particles, b.x, b.y-20, 24, ['#ffd23f','#ff9f5a','#fff'], {speed:5, life:28});
+  } else {
+    b.state = 'stunned'; b.stateT = 0;
+  }
 }
 
 function drawBackgroundDecor(){
@@ -406,17 +900,21 @@ function drawBackgroundDecor(){
     ctx.fillStyle = 'rgba(34,120,34,.35)';
     for(let i=0;i<10;i++){ const tx = (i*260 - camX*0.5) % (l.width+260); ctx.beginPath();
       ctx.moveTo(tx, GROUND_Y+2); ctx.lineTo(tx+18, GROUND_Y-46); ctx.lineTo(tx+36, GROUND_Y+2); ctx.closePath(); ctx.fill(); }
-  } else if(l.bg === 'col'){
+  } else if(l.bg === 'dag'){
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    for(let i=0;i<7;i++){ const mx = (i*320 - camX*0.35) % (l.width+320); ctx.beginPath();
+      ctx.moveTo(mx, GROUND_Y+2); ctx.lineTo(mx+40, GROUND_Y-70); ctx.lineTo(mx+80, GROUND_Y+2); ctx.closePath(); ctx.fill(); }
+  } else if(l.bg === 'deniz'){
     ctx.fillStyle = 'rgba(255,255,255,.4)';
-    const sunX = 380 - camX*0.15;
-    ctx.beginPath(); ctx.arc(sunX, 55, 34, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = 'rgba(140,90,30,.3)';
-    for(let i=0;i<8;i++){ const px = (i*300 - camX*0.4) % (l.width+300); ctx.fillRect(px, GROUND_Y-50, 10, 50); ctx.beginPath(); ctx.arc(px+5, GROUND_Y-50, 9,0,Math.PI*2); ctx.fill(); }
-  } else if(l.bg === 'uzay'){
-    for(let i=0;i<40;i++){ const sx=(i*137)%W, sy=(i*89)%(H-60); ctx.fillStyle='rgba(255,255,255,.5)'; ctx.fillRect(sx,sy,2,2); }
-    ctx.fillStyle = 'rgba(156,123,255,.25)';
-    const moonX = 300 - camX*0.2;
-    ctx.beginPath(); ctx.arc(moonX, 60, 26, 0, Math.PI*2); ctx.fill();
+    for(let i=0;i<8;i++){ const cx=(i*300-camX*0.3)%(l.width+300); ctx.beginPath(); ctx.ellipse(cx,40+(i%3)*18,28,12,0,0,Math.PI*2); ctx.fill(); }
+    ctx.strokeStyle='rgba(255,255,255,.3)'; ctx.lineWidth=2;
+    for(let i=0;i<12;i++){ const wx=(i*180-camX*0.6)%(l.width+180); ctx.beginPath(); ctx.moveTo(wx,GROUND_Y-2); ctx.quadraticCurveTo(wx+20,GROUND_Y-10,wx+40,GROUND_Y-2); ctx.stroke(); }
+  } else if(l.bg === 'volkan'){
+    ctx.fillStyle = 'rgba(255,140,60,.25)';
+    for(let i=0;i<8;i++){ const mx=(i*340-camX*0.35)%(l.width+340); ctx.beginPath();
+      ctx.moveTo(mx,GROUND_Y+2); ctx.lineTo(mx+34,GROUND_Y-60); ctx.lineTo(mx+68,GROUND_Y+2); ctx.closePath(); ctx.fill(); }
+    for(let i=0;i<10;i++){ const ex=(i*230+frameCount*1.5-camX*0.4)%(l.width+230);
+      ctx.fillStyle='rgba(255,180,80,.5)'; ctx.beginPath(); ctx.arc(ex, GROUND_Y-100-((frameCount+i*40)%180), 3, 0, Math.PI*2); ctx.fill(); }
   }
 }
 
@@ -427,27 +925,22 @@ function drawScene(){
   ctx.save();
   ctx.translate(-camX, 0);
 
-  // platformlar
   level.platforms.forEach(p=>{
     if(p.x+p.w < camX-20 || p.x > camX+W+20) return;
     const grad = ctx.createLinearGradient(0,p.y,0,p.y+p.h+18);
-    if(level.bg==='orman'){ grad.addColorStop(0,'#8fd868'); grad.addColorStop(1,'#5c8f3a'); }
-    else if(level.bg==='col'){ grad.addColorStop(0,'#e8c878'); grad.addColorStop(1,'#b98f42'); }
-    else { grad.addColorStop(0,'#6a5aa8'); grad.addColorStop(1,'#3a2d6e'); }
+    grad.addColorStop(0, level.groundA); grad.addColorStop(1, level.groundB);
     ctx.fillStyle = grad;
     ctx.fillRect(p.x, p.y, p.w, Math.min(p.h+18, H-p.y));
   });
 
-  // bambu
-  level.bamboo.forEach(b=>{
+  if(level.bamboo) level.bamboo.forEach(b=>{
     if(b.taken || b.x < camX-20 || b.x > camX+W+20) return;
     ctx.save(); ctx.translate(b.x, b.y + Math.sin(frameCount*0.1+b.x)*3);
     ctx.font = '20px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText('🎋', 0, 0);
     ctx.restore();
   });
-  // yıldızlar
-  level.starsAt.forEach(s=>{
+  if(level.starsAt) level.starsAt.forEach(s=>{
     if(s.taken || s.x < camX-20 || s.x > camX+W+20) return;
     ctx.save(); ctx.translate(s.x, s.y + Math.sin(frameCount*0.14+s.x)*4);
     ctx.shadowColor='#FFD23F'; ctx.shadowBlur=10;
@@ -455,33 +948,141 @@ function drawScene(){
     ctx.fillText('⭐', 0, 0);
     ctx.restore();
   });
+  if(level.secret && !level.secret.taken && level.secret.x > camX-20 && level.secret.x < camX+W+20){
+    ctx.save(); ctx.translate(level.secret.x, level.secret.y + Math.sin(frameCount*0.12)*4);
+    ctx.shadowColor='#FF9F5A'; ctx.shadowBlur=12;
+    ctx.font = '22px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🎁', 0, 0);
+    ctx.restore();
+  }
+  if(level.hearts) level.hearts.forEach(h=>{
+    if(h.taken || h.x < camX-20 || h.x > camX+W+20) return;
+    ctx.save(); ctx.translate(h.x, h.y + Math.sin(frameCount*0.13+h.x)*4);
+    ctx.shadowColor='#ff6b6b'; ctx.shadowBlur=10;
+    ctx.font = '20px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('❤️', 0, 0);
+    ctx.restore();
+  });
+  if(level.checkpoint && level.checkpoint.x > camX-30 && level.checkpoint.x < camX+W+30){
+    ctx.save(); ctx.translate(level.checkpoint.x, GROUND_Y);
+    ctx.strokeStyle = level.checkpoint.reached ? '#3dd6ff' : '#8a5a2a'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-56); ctx.stroke();
+    ctx.font='20px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(level.checkpoint.reached ? '🚩' : '⚑', 8, -50);
+    ctx.restore();
+  }
 
-  // düşmanlar
-  level.enemies.forEach(e=>{ if(!e.dead && e.x > camX-30 && e.x < camX+W+30) drawEnemy(e); });
+  if(level.enemies) level.enemies.forEach(e=>{ if(!e.dead && e.x > camX-30 && e.x < camX+W+30) drawEnemy(e); });
+
+  if(level.isBoss && !level.boss.dead){
+    drawBoss(level.boss);
+    (level.boss.projectiles||[]).forEach(pr=>{
+      ctx.save(); ctx.translate(pr.x, pr.y);
+      ctx.font='20px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(pr.emoji, 0, 0);
+      ctx.restore();
+    });
+  }
 
   updateParticles(ctx, particles);
 
-  // Woogi
-  if(player.hurtT<=0 || frameCount%6<3) drawWoogi(player.x, player.y, player.facing, player.walkT, false);
+  const shielded = shieldCharge > 0;
+  if(player.hurtT<=0 || frameCount%6<3) drawWoogi(player.x, player.y, player.facing, player.walkT, shielded, player.isDashing>0);
 
-  // bayrak
-  ctx.save(); ctx.translate(level.goalX, GROUND_Y);
-  ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-70); ctx.stroke();
-  ctx.fillStyle='#7bff6b'; ctx.beginPath(); ctx.moveTo(0,-70); ctx.lineTo(26,-60); ctx.lineTo(0,-50); ctx.closePath(); ctx.fill();
-  ctx.restore();
+  if(!level.isBoss){
+    ctx.save(); ctx.translate(level.goalX, GROUND_Y);
+    ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-70); ctx.stroke();
+    ctx.fillStyle='#7bff6b'; ctx.beginPath(); ctx.moveTo(0,-70); ctx.lineTo(26,-60); ctx.lineTo(0,-50); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
 
   ctx.restore();
 }
 
-function loop(){
+function updateBoss(){
+  const b = level.boss;
+  if(b.dead){ if(b.deadT===undefined) b.deadT=0; b.deadT++; if(b.deadT>30) endStage(true); return; }
+  if(b.hitFlash>0) b.hitFlash--;
+  b.stateT = (b.stateT||0)+1;
+
+  if(b.state === 'idle'){
+    b.x += b.vx;
+    if(b.x > b.startX+b.range || b.x < b.startX-b.range) b.vx *= -1;
+    if(b.stateT > 90){ b.state='telegraph'; b.stateT=0; b.nextAttack = b.attacks[Math.floor(Math.random()*b.attacks.length)]; }
+  } else if(b.state === 'telegraph'){
+    if(b.stateT > 35){ b.state='attack'; b.stateT=0; b.attackDone=false; }
+  } else if(b.state === 'attack'){
+    if(b.nextAttack === 'charge'){
+      const dir = player.x < b.x ? -1 : 1;
+      b.x += dir*4.5;
+      if(b.stateT > 26){ b.state='stunned'; b.stateT=0; }
+    } else if(b.nextAttack === 'slam'){
+      if(b.stateT < 14){ b.y -= 2; }
+      else if(b.stateT === 14){ shaker.trigger(6); spawnParticles(particles, b.x, GROUND_Y-10, 10, ['#fff'], {speed:3, life:14}); }
+      else { b.y += 3; if(b.y > GROUND_Y-20){ b.y = GROUND_Y-20; b.state='stunned'; b.stateT=0; } }
+    } else if(b.nextAttack === 'roll'){
+      if(b.stateT === 1){
+        const dir = player.x < b.x ? -1 : 1;
+        b.projectiles.push({ x:b.x, y:GROUND_Y-14, vx:dir*3.2, emoji: level.bg==='deniz'?'🫧':level.bg==='volkan'?'🔥':'💥' });
+      }
+      if(b.stateT > 40){ b.state='stunned'; b.stateT=0; }
+    }
+  } else if(b.state === 'stunned'){
+    if(b.stateT > 55){ b.state='idle'; b.stateT=0; }
+  }
+
+  (b.projectiles||[]).forEach((pr,i)=>{
+    pr.x += pr.vx;
+    if(Math.hypot(pr.x-player.x, pr.y-(player.y-10)) < 16) takeDamage();
+    if(pr.x < camX-40 || pr.x > camX+W+40) b.projectiles.splice(i,1);
+  });
+
+  const distToBoss = Math.hypot(b.x-player.x, (b.y-20)-(player.y-15));
+  if(distToBoss < 24 && b.state !== 'stunned'){
+    if(player.vy>2 && (player.y-15) < b.y-15){ /* boss body top stomp still counts as damage unless stunned per design; ignore for balance */ takeDamage(); }
+    else takeDamage();
+  } else if(distToBoss < 22 && b.state === 'stunned' && player.vy > 1 && (player.y-15) < b.y){
+    hitBoss();
+  }
+}
+
+function togglePause(){
   if(!running) return;
+  paused = !paused;
+  const ov = document.getElementById('pauseOverlay');
+  if(paused){
+    cancelAnimationFrame(raf);
+    Audio_.stopMusic();
+    ov.style.display = 'flex';
+  } else {
+    ov.style.display = 'none';
+    Audio_.startMusic();
+    loop();
+  }
+}
+document.getElementById('pauseBtn').addEventListener('click', ()=>{ playClick(500); togglePause(); });
+document.getElementById('resumeBtn').addEventListener('click', togglePause);
+document.getElementById('quitToMapBtn').addEventListener('click', ()=>{
+  running = false; paused = false;
+  document.getElementById('pauseOverlay').style.display = 'none';
+  Audio_.stopMusic();
+  openStageSelect(curWorldIdx);
+  showScreen('stageSelectScreen');
+});
+
+function loop(){
+  if(!running || paused) return;
   frameCount++;
   const sh = shaker.tick();
 
-  // yatay hareket
   if(keys.left){ player.vx = -MOVE_SPEED; player.facing = -1; }
   else if(keys.right){ player.vx = MOVE_SPEED; player.facing = 1; }
   else player.vx *= 0.7;
+
+  if(player.isDashing > 0){
+    player.vx = DASH_SPEED * player.facing;
+    player.isDashing--;
+  }
 
   if(Math.abs(player.vx) > 0.3) player.walkT += 0.25; else player.walkT = 0;
 
@@ -491,7 +1092,6 @@ function loop(){
   const prevOnGround = player.onGround;
   player.onGround = false;
 
-  // X hareketi + çarpışma
   player.x += player.vx;
   let pb = playerBox();
   level.platforms.forEach(p=>{
@@ -503,7 +1103,6 @@ function loop(){
   });
   player.x = Math.max(14, Math.min(level.width-14, player.x));
 
-  // Y hareketi + çarpışma
   player.y += player.vy;
   pb = playerBox();
   level.platforms.forEach(p=>{
@@ -513,18 +1112,33 @@ function loop(){
       pb = playerBox();
     }
   });
-  if(!prevOnGround && player.onGround) Audio_.land();
+  if(!prevOnGround && player.onGround){ Audio_.land(); player.jumpsUsed = 0; }
 
-  if(keys.jump && player.onGround){ player.vy = JUMP_V; Audio_.jump(); keys.jump = false; spawnParticles(particles, player.x, player.y, 4, '#fff', {speed:1.5, life:10}); }
+  if(keys.jump){
+    const maxJumps = abilities.has('double') ? 2 : 1;
+    if(player.onGround){ player.vy = JUMP_V; Audio_.jump(); player.jumpsUsed = 1; keys.jump=false; spawnParticles(particles, player.x, player.y, 4, '#fff', {speed:1.5, life:10}); }
+    else if(player.jumpsUsed < maxJumps){ player.vy = DOUBLE_JUMP_V; Audio_.doubleJump(); player.jumpsUsed++; keys.jump=false; spawnParticles(particles, player.x, player.y, 6, '#3dd6ff', {speed:2, life:12}); }
+    else keys.jump=false;
+  }
 
-  // düşme (çukur)
-  if(player.y > H+30){ loseLife(); }
+  if(keys.dash && abilities.has('dash') && dashCooldown<=0 && player.isDashing<=0){
+    player.isDashing = 10; dashCooldown = 55; Audio_.dash();
+    spawnParticles(particles, player.x, player.y-10, 6, '#3dd6ff', {speed:2, life:14});
+  }
+  keys.dash = false;
+  if(dashCooldown>0) dashCooldown--;
+  const dashBtn = document.getElementById('dashBtn');
+  if(dashBtn.style.display!=='none') dashBtn.classList.toggle('on-cooldown', dashCooldown>0);
 
-  // kamera
-  camX = Math.max(0, Math.min(level.width - W, player.x - W/2));
+  if(abilities.has('shield') && shieldCharge<=0){
+    shieldRegenT--; if(shieldRegenT<=0){ shieldCharge = 1; }
+  }
 
-  // bambu toplama
-  level.bamboo.forEach(b=>{
+  if(player.y > H+30){ takeDamage(); if(lives>0){ } }
+
+  camX = Math.max(0, Math.min(Math.max(0,level.width - W), player.x - W/2));
+
+  if(level.bamboo) level.bamboo.forEach(b=>{
     if(!b.taken && Math.hypot(b.x-player.x, b.y-(player.y-15)) < 22){
       b.taken = true; bambooTotal++;
       document.getElementById('bambooCount').textContent = bambooTotal;
@@ -532,71 +1146,102 @@ function loop(){
       spawnParticles(particles, b.x, b.y, 6, ['#7bc94a','#FFD23F'], {speed:2.5, life:14});
     }
   });
-  level.starsAt.forEach(s=>{
+  if(level.starsAt) level.starsAt.forEach(s=>{
     if(!s.taken && Math.hypot(s.x-player.x, s.y-(player.y-15)) < 24){
       s.taken = true; starTotal++;
       document.getElementById('starCount').textContent = starTotal;
       Audio_.star();
       spawnParticles(particles, s.x, s.y, 10, ['#FFD23F','#fff'], {speed:3.5, life:20});
-      const pr = document.getElementById('wrap').getBoundingClientRect(), r = canvas.getBoundingClientRect();
-      showFloatingPoints(document.getElementById('wrap'), (r.left-pr.left)+(s.x-camX)*(r.width/W), (r.top-pr.top)+s.y*(r.height/H), '⭐ YILDIZ!', '#FFD23F');
     }
   });
+  if(level.secret && !level.secret.taken && !secretFound && Math.hypot(level.secret.x-player.x, level.secret.y-(player.y-15)) < 24){
+    level.secret.taken = true; secretFound = true; bambooTotal += 3;
+    document.getElementById('bambooCount').textContent = bambooTotal;
+    Audio_.chest();
+    spawnParticles(particles, level.secret.x, level.secret.y, 14, ['#FF9F5A','#FFD23F','#fff'], {speed:4, life:22});
+    const banner = document.getElementById('secretBanner');
+    banner.style.display = 'block';
+    setTimeout(()=> banner.style.display='none', 1400);
+  }
+  if(level.hearts) level.hearts.forEach(h=>{
+    if(!h.taken && Math.hypot(h.x-player.x, h.y-(player.y-15)) < 22){
+      h.taken = true; lives++;
+      document.getElementById('lives').textContent = lives;
+      Audio_.heart();
+      spawnParticles(particles, h.x, h.y, 10, ['#ff6b6b','#ffb3b3'], {speed:3, life:18});
+    }
+  });
+  if(level.checkpoint && !level.checkpoint.reached && Math.hypot(level.checkpoint.x-player.x, GROUND_Y-(player.y-15)) < 26){
+    level.checkpoint.reached = true;
+    respawnX = level.checkpoint.x; respawnY = GROUND_Y-15;
+    Audio_.checkpoint();
+    spawnParticles(particles, level.checkpoint.x, GROUND_Y-40, 8, ['#3dd6ff','#fff'], {speed:2.5, life:16});
+    const cpBanner = document.getElementById('checkpointBanner');
+    cpBanner.style.display = 'block';
+    setTimeout(()=> cpBanner.style.display='none', 1200);
+  }
 
-  // düşman etkileşimi
-  level.enemies.forEach(e=>{
+  if(level.enemies) level.enemies.forEach(e=>{
     if(e.dead) return;
     e.x += e.vx;
     if(e.startX===undefined) e.startX = e.x;
     if(e.x > e.startX+e.range || e.x < e.startX-e.range) e.vx *= -1;
-    if(e.type==='sand') e.rot = (e.rot||0) + 0.15;
-    if(e.type==='blob') e.bob = (e.bob||0) + 0.1;
+    if(e.type==='rock') e.rot = (e.rot||0) + 0.15;
+    if(e.type==='bubble' || e.type==='ember') e.bob = (e.bob||0) + 0.1;
 
     const dist = Math.hypot(e.x-player.x, e.y-(player.y-15));
     if(dist < 20){
       if(player.vy > 2 && (player.y-15) < e.y){ stompEnemy(e); }
-      else if(player.hurtT<=0){ loseLife(); }
+      else if(player.hurtT<=0){ takeDamage(); }
     }
   });
   if(player.hurtT>0) player.hurtT--;
 
-  // ilerleme
-  document.getElementById('levelProgress').style.width = Math.min(100, (player.x/level.goalX)*100) + '%';
+  if(level.isBoss && !level.boss.dead) updateBoss();
+  else if(level.isBoss && level.boss.dead){ updateBoss(); }
 
-  // bayrağa ulaşma
-  if(player.x > level.goalX - 10){ endLevel(true); return; }
+  if(!level.isBoss){
+    document.getElementById('levelProgress').style.width = Math.min(100, (player.x/level.goalX)*100) + '%';
+    if(player.x > level.goalX - 10){ endStage(true); return; }
+  }
 
   drawScene();
   raf = requestAnimationFrame(loop);
 }
 
 // ---- Kontroller ----
-document.getElementById('leftBtn').addEventListener('touchstart', e=>{ e.preventDefault(); keys.left=true; }, {passive:false});
-document.getElementById('leftBtn').addEventListener('touchend', e=>{ e.preventDefault(); keys.left=false; }, {passive:false});
-document.getElementById('leftBtn').addEventListener('mousedown', ()=> keys.left=true);
-document.getElementById('leftBtn').addEventListener('mouseup', ()=> keys.left=false);
-document.getElementById('rightBtn').addEventListener('touchstart', e=>{ e.preventDefault(); keys.right=true; }, {passive:false});
-document.getElementById('rightBtn').addEventListener('touchend', e=>{ e.preventDefault(); keys.right=false; }, {passive:false});
-document.getElementById('rightBtn').addEventListener('mousedown', ()=> keys.right=true);
-document.getElementById('rightBtn').addEventListener('mouseup', ()=> keys.right=false);
+function bindHold(id, setter){
+  const el = document.getElementById(id);
+  el.addEventListener('touchstart', e=>{ e.preventDefault(); setter(true); }, {passive:false});
+  el.addEventListener('touchend', e=>{ e.preventDefault(); setter(false); }, {passive:false});
+  el.addEventListener('mousedown', ()=> setter(true));
+  el.addEventListener('mouseup', ()=> setter(false));
+  el.addEventListener('mouseleave', ()=> setter(false));
+}
+bindHold('leftBtn', v=> keys.left=v);
+bindHold('rightBtn', v=> keys.right=v);
 document.getElementById('jumpBtn').addEventListener('touchstart', e=>{ e.preventDefault(); keys.jump=true; }, {passive:false});
 document.getElementById('jumpBtn').addEventListener('mousedown', ()=> keys.jump=true);
+document.getElementById('dashBtn').addEventListener('touchstart', e=>{ e.preventDefault(); keys.dash=true; }, {passive:false});
+document.getElementById('dashBtn').addEventListener('mousedown', ()=> keys.dash=true);
 
 window.addEventListener('keydown', e=>{
+  if(!running) return;
+  if(e.key==='p'||e.key==='P'||e.key==='Escape'){ togglePause(); e.preventDefault(); return; }
+  if(paused) return;
   if(e.key==='ArrowLeft') keys.left=true;
   if(e.key==='ArrowRight') keys.right=true;
   if(e.key===' '||e.key==='ArrowUp'){ keys.jump=true; e.preventDefault(); }
+  if(e.key==='Shift') keys.dash=true;
 });
 window.addEventListener('keyup', e=>{
   if(e.key==='ArrowLeft') keys.left=false;
   if(e.key==='ArrowRight') keys.right=false;
 });
 
-document.getElementById('retryBtn').addEventListener('click', startLevel);
+document.getElementById('retryBtn').addEventListener('click', ()=> startStage(curWorldIdx, curStageIdx));
 document.getElementById('nextLevelBtn').addEventListener('click', ()=>{
-  levelIdx = Math.min(LEVELS.length-1, levelIdx+1);
-  history.replaceState(null,'','?level='+levelIdx);
-  startLevel();
+  if(curStageIdx < STAGES_PER_WORLD-1) startStage(curWorldIdx, curStageIdx+1);
 });
 
 const muteCtl = document.getElementById('muteCtl');
@@ -609,11 +1254,14 @@ muteCtl.addEventListener('click', ()=>{
 
 document.addEventListener('visibilitychange', ()=>{
   if(document.hidden){ if(raf) cancelAnimationFrame(raf); Audio_.stopMusic(); }
-  else if(running){ Audio_.startMusic(); loop(); }
+  else if(running && !paused){ Audio_.startMusic(); loop(); }
 });
 
-document.title = `${LEVELS[levelIdx].name} — Woogi'nin Macerası — WoogiGames`;
-startLevel();
+// ---- Başlangıç ----
+initFullscreenButton('fsBtn', document.getElementById('wrap'));
+initLandscapeHint();
+renderWorldMap();
+showScreen('worldMapScreen');
 </script>
 </body>
 </html>
